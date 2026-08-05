@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { StockTicker } from '../types';
+import { StockTicker } from "../types";
 
 interface ModalState {
   isShareModalOpen: boolean;

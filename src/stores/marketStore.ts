@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { StockTicker, SortField } from "../types";
-import { INITIAL_STOCKS } from '../data/stocks';
+import { INITIAL_STOCKS } from "../data/stocks";
 
 
 interface MarketState {

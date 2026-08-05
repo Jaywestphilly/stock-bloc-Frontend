@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSecIntelData } from '../hooks/useSecIntelData';
+import { useSecIntelData } from "../hooks/useSecIntelData";
 import { ExternalLink, Database, Loader, Briefcase, FileText } from 'lucide-react';
 
 export const LiveSecIntelSection: React.FC = () => {

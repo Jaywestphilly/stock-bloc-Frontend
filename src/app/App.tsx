@@ -9,10 +9,10 @@ import { AnimatePresence } from "motion/react";
 import { Header } from "../components/Header";
 import { getRouteFromLocation, pushAppRoute } from "./router";
 import { CategoryTabs } from "../components/CategoryTabs";
-import { StockCard } from "../components/StockCard";
-import { HeatmapView } from "../components/HeatmapView";
-import { MarketPulseCard } from "../components/MarketPulseCard";
-import type { IntelligenceSubTab } from "../components/MarketIntelligenceHub";
+import { StockCard } from "../features/market/StockCard";
+import { HeatmapView } from "../features/market/HeatmapView";
+import { MarketPulseCard } from "../features/market/MarketPulseCard";
+import type { IntelligenceSubTab } from "../features/intelligence/MarketIntelligenceHub";
 import { LaunchSplashModal } from "../components/LaunchSplashModal";
 import { AffiliateLink } from "../components/AffiliateLink";
 import { GlobalDisclaimerBar } from "../components/GlobalDisclaimerBar";
@@ -70,55 +70,55 @@ const DataStatusPanel = lazy(() =>
 
 // Lazy-loaded hub components for code-splitting
 const MarketIntelligenceHub = lazy(() =>
-  import("../components/MarketIntelligenceHub").then((m) => ({ default: m.MarketIntelligenceHub }))
+  import("../features/intelligence/MarketIntelligenceHub").then((m) => ({ default: m.MarketIntelligenceHub }))
 );
 const RealEstateHub = lazy(() =>
-  import("../components/RealEstateHub").then((m) => ({ default: m.RealEstateHub }))
+  import("../features/portfolio/RealEstateHub").then((m) => ({ default: m.RealEstateHub }))
 );
 const CreditBuildingHub = lazy(() =>
-  import("../components/CreditBuildingHub").then((m) => ({ default: m.CreditBuildingHub }))
+  import("../features/portfolio/CreditBuildingHub").then((m) => ({ default: m.CreditBuildingHub }))
 );
 const SmallBusinessHub = lazy(() =>
-  import("../components/SmallBusinessHub").then((m) => ({ default: m.SmallBusinessHub }))
+  import("../features/portfolio/SmallBusinessHub").then((m) => ({ default: m.SmallBusinessHub }))
 );
 const YouTubeHub = lazy(() =>
-  import("../components/YouTubeHub").then((m) => ({ default: m.YouTubeHub }))
+  import("../features/intelligence/YouTubeHub").then((m) => ({ default: m.YouTubeHub }))
 );
 const InvestopediaTab = lazy(() =>
-  import("../components/InvestopediaTab").then((m) => ({ default: m.InvestopediaTab }))
+  import("../features/education/InvestopediaTab").then((m) => ({ default: m.InvestopediaTab }))
 );
 const DysonSwarmHub = lazy(() =>
-  import("../components/DysonSwarmHub").then((m) => ({ default: m.DysonSwarmHub }))
+  import("../features/research/DysonSwarmHub").then((m) => ({ default: m.DysonSwarmHub }))
 );
 const WarGovUfoHub = lazy(() =>
-  import("../components/WarGovUfoHub").then((m) => ({ default: m.WarGovUfoHub }))
+  import("../features/research/WarGovUfoHub").then((m) => ({ default: m.WarGovUfoHub }))
 );
 const AiRevolutionHub = lazy(() =>
-  import("../components/AiRevolutionHub").then((m) => ({ default: m.AiRevolutionHub }))
+  import("../features/research/AiRevolutionHub").then((m) => ({ default: m.AiRevolutionHub }))
 );
 const PlaybooksHub = lazy(() =>
-  import("../components/PlaybooksHub").then((m) => ({ default: m.PlaybooksHub }))
+  import("../features/education/PlaybooksHub").then((m) => ({ default: m.PlaybooksHub }))
 );
 const ProductStorePricing = lazy(() =>
   import("../components/ProductStorePricing").then((m) => ({ default: m.ProductStorePricing }))
 );
 const MacroBriefingHub = lazy(() =>
-  import("../components/MacroBriefingHub").then((m) => ({ default: m.MacroBriefingHub }))
+  import("../features/research/MacroBriefingHub").then((m) => ({ default: m.MacroBriefingHub }))
 );
 const MyBlocDashboard = lazy(() =>
-  import("../components/MyBlocDashboard").then((m) => ({ default: m.MyBlocDashboard }))
+  import("../features/portfolio/MyBlocDashboard").then((m) => ({ default: m.MyBlocDashboard }))
 );
 const BrandLandingHub = lazy(() =>
   import("../components/BrandLandingHub").then((m) => ({ default: m.BrandLandingHub }))
 );
 const DocsHub = lazy(() =>
-  import("../components/DocsHub").then((m) => ({ default: m.DocsHub }))
+  import("../features/education/DocsHub").then((m) => ({ default: m.DocsHub }))
 );
 const TerminalGuideHub = lazy(() =>
-  import("../components/TerminalGuideHub").then((m) => ({ default: m.TerminalGuideHub }))
+  import("../features/education/TerminalGuideHub").then((m) => ({ default: m.TerminalGuideHub }))
 );
 const NewsHub = lazy(() =>
-  import("../components/NewsHub").then((m) => ({ default: m.NewsHub }))
+  import("../features/intelligence/NewsHub").then((m) => ({ default: m.NewsHub }))
 );
 const CheckoutSuccess = lazy(() =>
   import("../components/CheckoutSuccess").then((m) => ({ default: m.CheckoutSuccess }))

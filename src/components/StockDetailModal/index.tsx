@@ -60,13 +60,13 @@ import {
 import { SentimentIndicator } from "../SentimentIndicator";
 import { triggerHaptic } from "../../utils/haptics";
 import { getInstitutionalDataForStock } from "../../utils/institutionalHelper";
-import { StockHeader } from './StockHeader';
-import { TradeSimulator } from './TradeSimulator';
-import { PriceChart } from './PriceChart';
-import { FinancialMetrics } from './FinancialMetrics';
-import { NewsPanel } from './NewsPanel';
-import { InstitutionalData } from './InstitutionalData';
-import { OptionsPanel } from './OptionsPanel';
+import { StockHeader } from "./StockHeader";
+import { TradeSimulator } from "./TradeSimulator";
+import { PriceChart } from "./PriceChart";
+import { FinancialMetrics } from "./FinancialMetrics";
+import { NewsPanel } from "./NewsPanel";
+import { InstitutionalData } from "./InstitutionalData";
+import { OptionsPanel } from "./OptionsPanel";
 
 
 const PIE_COLORS = [

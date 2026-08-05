@@ -1,6 +1,8 @@
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
+import http from 'http';
+import { Server as SocketIOServer } from 'socket.io';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Modality, ThinkingLevel } from '@google/genai';
 import { createEbookPdf } from './server/pdfGenerator.js';
@@ -3131,7 +3133,43 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  const httpServer = http.createServer(app);
+  const io = new SocketIOServer(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"]
+    }
+  });
+
+  io.on('connection', (socket) => {
+    console.log('Client connected to market data stream');
+    
+    // Simulate real-time market updates
+    const interval = setInterval(() => {
+      socket.emit('market_update', {
+        symbol: 'NVDA',
+        price: 120 + Math.random() * 5,
+        timestamp: Date.now()
+      });
+      socket.emit('market_update', {
+        symbol: 'AAPL',
+        price: 190 + Math.random() * 2,
+        timestamp: Date.now()
+      });
+      socket.emit('market_update', {
+        symbol: 'PLTR',
+        price: 25 + Math.random(),
+        timestamp: Date.now()
+      });
+    }, 3000);
+
+    socket.on('disconnect', () => {
+      console.log('Client disconnected');
+      clearInterval(interval);
+    });
+  });
+
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`Stock Bloc server running on http://0.0.0.0:${PORT}`);
   });
 }
