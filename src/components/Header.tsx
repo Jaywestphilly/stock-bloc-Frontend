@@ -1,0 +1,218 @@
+import React, { useState, useEffect } from "react";
+import { StockBlocLogo } from "./StockBlocLogo";
+import {
+  Sparkles,
+  ExternalLink,
+  Search,
+  Share2,
+  Radio,
+  Camera,
+  Globe,
+  Music,
+  UserCheck,
+  Terminal,
+  Zap,
+  DollarSign,
+  Building2,
+  ShieldCheck,
+  Eye,
+  Contrast,
+  BookOpen,
+  Youtube,
+} from "lucide-react";
+import { triggerHaptic } from "../utils/haptics";
+
+import { ViewTab } from "../types";
+
+interface HeaderProps {
+  onOpenSearch: () => void;
+  onOpenAiAssistant: () => void;
+  onOpenLinktree: () => void;
+  onOpenShare: () => void;
+  onOpenImageScanner: () => void;
+  onOpenGroundingSearch: () => void;
+  onOpenMusicPlayer: () => void;
+  onOpenAuth: () => void;
+  onOpenBloombergTerminal?: () => void;
+  onOpenProSubscription?: () => void;
+  onOpenBrokerages?: () => void;
+  userPlan?: "free" | "pro" | "institutional";
+  onSelectTab?: (tab: ViewTab) => void;
+  isDayMode?: boolean;
+  onToggleDayMode?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({
+  onOpenSearch,
+  onOpenAiAssistant,
+  onOpenLinktree,
+  onOpenShare,
+  onOpenImageScanner,
+  onOpenGroundingSearch,
+  onOpenMusicPlayer,
+  onOpenAuth,
+  onOpenBloombergTerminal,
+  onOpenProSubscription,
+  onOpenBrokerages,
+  userPlan = "pro",
+  onSelectTab,
+  isDayMode = false,
+  onToggleDayMode,
+}) => {
+
+  const [timeStr, setTimeStr] = useState("");
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setTimeStr(
+        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      );
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <header className="sticky top-0 z-30 w-full backdrop-blur-2xl bg-black/95 border-b border-cyan-500/30 text-white transition-colors relative overflow-hidden">
+      {/* Top Cyber Telemetry Bar */}
+      <div className="flex items-center justify-between px-5 pt-1.5 pb-1 text-[10px] font-mono tracking-widest text-cyan-400/90 bg-black/60 border-b border-cyan-500/20 select-none">
+        <span className="flex items-center gap-1">
+          <span className="w-1.5 h-1.5 bg-emerald-400 animate-ping inline-block" />
+          SYS.QUANT-88 // {timeStr || "19:42:01"}
+        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-[9px] text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 border border-emerald-400/40 rounded">
+            [QUANT-NODE: ONLINE]
+          </span>
+          <span className="hidden sm:inline text-cyan-500/80 font-bold">
+            SIGNAL: 99.8%
+          </span>
+        </div>
+      </div>
+
+      {/* Main Brand & Actions Header */}
+      <div className="px-4 py-2 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar relative">
+        {/* Brand Logo */}
+        <div
+          className="flex items-center gap-2.5 shrink-0 group cursor-pointer"
+          onClick={() => {
+            triggerHaptic("selection");
+            if (onSelectTab) onSelectTab("brand");
+            else onOpenLinktree();
+          }}
+        >
+          <StockBlocLogo
+            size="md"
+            showText={false}
+            className="group-hover:scale-105 transition-transform"
+          />
+          <div>
+            <div className="flex items-center gap-1.5">
+              <h1 className="font-black text-base tracking-wider text-cyan-100 uppercase group-hover:text-cyan-300 transition-colors flex items-center gap-1">
+                STOCK BLOC<span className="text-cyan-400">.</span>
+              </h1>
+            </div>
+            <p className="text-[9px] text-cyan-400/80 font-mono tracking-wider uppercase leading-none mt-0.5">
+              QUANT WEALTH MATRIX
+            </p>
+          </div>
+        </div>
+
+        {/* Action Toolbar with Blocky Alien Buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              if (onSelectTab) onSelectTab("my_bloc");
+            }}
+            className="px-2.5 py-1.5 bg-neutral-900 border border-amber-500/40 alien-block-cut-sm text-amber-300 hover:bg-amber-950/30 transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
+            title="My Bloc Dashboard"
+          >
+            <UserCheck className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline text-[11px] font-black uppercase">My Bloc</span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("light");
+              onOpenSearch();
+            }}
+            className="p-1.5 bg-neutral-900 border border-cyan-500/40 alien-block-cut-sm text-cyan-300 hover:bg-cyan-950/30 transition-all active:scale-90 cursor-pointer"
+            title="Search Watchlist"
+          >
+            <Search className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              if (onSelectTab) onSelectTab("youtube");
+            }}
+            className="px-2.5 py-1.5 bg-red-600/20 text-red-300 border border-red-500/50 hover:bg-red-950/40 alien-block-cut-sm text-[11px] font-mono font-black transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer shrink-0"
+            title="Stock Bloc YouTube Channel Videos (@stockbloc)"
+          >
+            <Youtube className="w-3.5 h-3.5 text-red-400 fill-red-500/20" />
+            <span className="hidden sm:inline">YOUTUBE VIDEOS</span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              if (onSelectTab) onSelectTab("pricing");
+            }}
+            className="px-2.5 py-1.5 bg-purple-500/20 text-purple-300 border border-purple-400/50 hover:bg-purple-950/40 alien-block-cut-sm text-[11px] font-mono font-black transition-all active:scale-95 flex items-center gap-1 cursor-pointer shrink-0"
+            title="Books, Playbooks Trilogy & Store"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-purple-400" />
+            <span className="hidden xs:inline">BOOKS & STORE</span>
+          </button>
+
+          {onOpenBloombergTerminal && (
+            <button
+              onClick={() => {
+                triggerHaptic("selection");
+                onOpenBloombergTerminal();
+              }}
+              className="px-2.5 py-1.5 bg-amber-400 text-black border border-amber-300 hover:bg-amber-300 alien-block-cut-sm text-[11px] font-mono font-black transition-all active:scale-95 flex items-center gap-1 cursor-pointer shadow-lg shadow-amber-400/20 shrink-0"
+              title="Open SB Terminal Workstation (100% Free & Unlocked)"
+            >
+              <Terminal className="w-3.5 h-3.5 text-black animate-pulse" />
+              <span>FREE TERMINAL</span>
+            </button>
+          )}
+
+          {onToggleDayMode && (
+            <button
+              onClick={() => {
+                triggerHaptic("medium");
+                onToggleDayMode();
+              }}
+              className={`px-2 py-1.5 border alien-block-cut-sm text-[10px] font-mono font-black transition-all active:scale-95 flex items-center gap-1 cursor-pointer shrink-0 ${
+                isDayMode
+                  ? "bg-slate-200 text-slate-800 border-slate-400 shadow-lg"
+                  : "bg-neutral-900 text-slate-300 border-slate-500/40 hover:bg-slate-800"
+              }`}
+              title="Toggle Day Mode / System Theme"
+            >
+              <Contrast className="w-3.5 h-3.5" />
+              <span className="hidden md:inline font-bold">DAY MODE</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              triggerHaptic("light");
+              onOpenShare();
+            }}
+            className="p-1.5 bg-neutral-900 border border-cyan-500/40 alien-block-cut-sm text-cyan-300 hover:bg-cyan-950/30 transition-all active:scale-90 cursor-pointer shrink-0"
+            title="Share App"
+          >
+            <Share2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+};
