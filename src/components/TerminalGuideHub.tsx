@@ -26,7 +26,7 @@ import { triggerHaptic } from "../utils/haptics";
 
 interface TerminalGuideHubProps {
   onOpenTerminal: () => void;
-  onNavigateTab?: (tab: any) => void;
+  onNavigateTab?: (tab: string) => void;
 }
 
 export const TerminalGuideHub: React.FC<TerminalGuideHubProps> = ({
@@ -570,7 +570,7 @@ export const TerminalGuideHub: React.FC<TerminalGuideHubProps> = ({
   );
 };
 
-function FileTextIcon(props: any) {
+function FileTextIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

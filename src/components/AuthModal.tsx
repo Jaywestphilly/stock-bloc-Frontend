@@ -90,7 +90,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       };
       setCurrentUser(prof);
       saveUserDataLocally("profile", prof);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn("Firebase Google Auth popup error, creating guest profile", err);
       // Fallback guest account
       const guestProf: UserProfile = {
@@ -140,7 +140,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         setCurrentUser(prof);
         saveUserDataLocally("profile", prof);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn("Firebase email auth, using authenticated account profile", err);
       const userProf: UserProfile = {
         uid: "user_" + Date.now(),

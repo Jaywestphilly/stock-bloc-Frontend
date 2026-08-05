@@ -22,7 +22,7 @@ export interface AnalyticsEventData {
   videoId?: string;
   playbookId?: string;
   email?: string;
-  [key: string]: any;
+  [key: string]: string | number | boolean | null | undefined | unknown;
 }
 
 /**

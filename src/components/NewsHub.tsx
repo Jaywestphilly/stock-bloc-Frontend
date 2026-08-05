@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { FEATURED_YOUTUBE_CHANNEL, INITIAL_YOUTUBE_VIDEOS } from "../data/youtube";
 import { PODCAST_NEWS_ARTICLES } from "../data/podcasts";
-import { YouTubeVideo } from "../types";
+import { YouTubeVideo, IntelFeedItem } from "../types";
 import { triggerHaptic } from "../utils/haptics";
 import { getStoredYouTubeVideos, syncYouTubeFeeds } from "../utils/youtubeSync";
 
@@ -113,7 +113,7 @@ export const NewsHub: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeVideoModal, setActiveVideoModal] = useState<YouTubeVideo | null>(null);
   const [feedVideos, setFeedVideos] = useState<YouTubeVideo[]>(() => getStoredYouTubeVideos());
-  const [intelFeed, setIntelFeed] = useState<any[]>([]);
+  const [intelFeed, setIntelFeed] = useState<IntelFeedItem[]>([]);
 
   useEffect(() => {
     const getChannelRank = (channelName: string): number => {
@@ -130,9 +130,9 @@ export const NewsHub: React.FC = () => {
       .then(res => res.json())
       .then(data => {
         if (data.intel_feed && Array.isArray(data.intel_feed)) {
-          const sorted = [...data.intel_feed].sort((a: any, b: any) => {
-            const rankA = getChannelRank(a.channel_name);
-            const rankB = getChannelRank(b.channel_name);
+          const sorted = [...data.intel_feed].sort((a: { channel_name?: string }, b: { channel_name?: string }) => {
+            const rankA = getChannelRank(a.channel_name || "");
+            const rankB = getChannelRank(b.channel_name || "");
             return rankA - rankB;
           });
           setIntelFeed(sorted);

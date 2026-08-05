@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence, PanInfo } from "motion/react";
-import { StockTicker } from "../types";
+import { StockTicker, PricePoint } from "../types";
 import { INITIAL_STOCKS } from "../data/stocks";
 import { getTickerSentiment } from "../utils/sentiment";
 import { formatChartTimestamp, formatYAxisTick, calculateCleanYAxisTicks } from "../utils/chartFormatters";
@@ -47,7 +47,13 @@ interface StockCardProps {
 }
 
 // Custom Chart Tooltip for Stock Card Area Chart
-const CustomCandleTooltip = ({ active, payload }: any) => {
+const CustomCandleTooltip = ({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{ payload: PricePoint & { open?: number; close?: number; high?: number; low?: number } }>;
+}) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
     const isUp = (data.close ?? data.price) >= (data.open ?? data.price);
@@ -199,7 +205,7 @@ const fetchHeadlines = async (
       title: item.title,
       source: item.source || "SB Terminal",
       time: item.time || "Today",
-      sentiment: (item.sentiment?.toLowerCase() as any) || "neutral",
+      sentiment: (item.sentiment?.toLowerCase() === "positive" || item.sentiment?.toLowerCase() === "bullish" ? "bullish" : item.sentiment?.toLowerCase() === "negative" || item.sentiment?.toLowerCase() === "bearish" ? "bearish" : "neutral"),
       url: item.url,
     }));
   }
@@ -210,7 +216,7 @@ const fetchHeadlines = async (
       title: item.title,
       source: item.source || "SB Terminal",
       time: item.time || "Today",
-      sentiment: (item.sentiment?.toLowerCase() as any) || "neutral",
+      sentiment: (item.sentiment?.toLowerCase() === "positive" || item.sentiment?.toLowerCase() === "bullish" ? "bullish" : item.sentiment?.toLowerCase() === "negative" || item.sentiment?.toLowerCase() === "bearish" ? "bearish" : "neutral"),
       url: item.url,
     }));
   }
@@ -267,7 +273,7 @@ const SECTOR_VOLATILITY_AVERAGES = (() => {
   return averages;
 })();
 
-export const StockCard: React.FC<StockCardProps> = ({
+export const StockCard: React.FC<StockCardProps> = React.memo(({
   stock,
   index = 0,
   onSelect,
@@ -592,7 +598,7 @@ export const StockCard: React.FC<StockCardProps> = ({
     );
   };
 
-  const handleDragEnd = (_: any, info: PanInfo) => {
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
     if (info.offset.x < -160 && onRemove) {
       if (stock.isPinned) {
         setIsShaking(true);
@@ -1174,4 +1180,4 @@ export const StockCard: React.FC<StockCardProps> = ({
       </motion.div>
     </motion.div>
   );
-};
+});

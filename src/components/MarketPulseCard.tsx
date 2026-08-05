@@ -55,7 +55,7 @@ export const MarketPulseCard: React.FC<MarketPulseCardProps> = ({
       } else {
         throw new Error("Failed to load Market Pulse");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.warn("Market Pulse fetch error:", err);
       // Fallback pulse data
       setPulseData({

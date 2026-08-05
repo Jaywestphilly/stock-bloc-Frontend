@@ -43,7 +43,7 @@ export interface UserProfile {
 }
 
 // Local persistence fallback if Firebase isn't fully provisioned in current environment
-export const saveUserDataLocally = (key: string, data: any) => {
+export const saveUserDataLocally = <T>(key: string, data: T) => {
   try {
     localStorage.setItem(`stockbloc_user_${key}`, JSON.stringify(data));
   } catch (e) {
@@ -51,10 +51,10 @@ export const saveUserDataLocally = (key: string, data: any) => {
   }
 };
 
-export const getUserDataLocally = (key: string, fallback: any = null) => {
+export const getUserDataLocally = <T>(key: string, fallback: T | null = null): T | null => {
   try {
     const raw = localStorage.getItem(`stockbloc_user_${key}`);
-    return raw ? JSON.parse(raw) : fallback;
+    return raw ? (JSON.parse(raw) as T) : fallback;
   } catch (e) {
     return fallback;
   }

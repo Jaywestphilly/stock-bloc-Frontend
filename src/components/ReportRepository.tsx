@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { ReportRawItem } from "../types";
 import { motion, AnimatePresence } from "motion/react";
 import {
   FileText,
@@ -55,13 +56,13 @@ export interface MasterReportItem {
   managerGoals?: string;
   detailsTable: {
     label1: string;
-    value1: string;
+    value1: string | number;
     label2: string;
-    value2: string;
+    value2: string | number;
     label3: string;
-    value3: string;
+    value3: string | number;
   };
-  rawItems: any[];
+  rawItems: ReportRawItem[];
 }
 
 export interface ExternalResource {
@@ -69,7 +70,7 @@ export interface ExternalResource {
   name: string;
   description: string;
   url: string;
-  icon: any;
+  icon: React.ElementType;
   badge: string;
   features: string[];
 }
@@ -425,10 +426,10 @@ export const ReportRepository: React.FC = () => {
       "AI Thesis / Analysis",
     ];
 
-    const rows = report.rawItems.map((f: any) => [
+    const rows = report.rawItems.map((f: ReportRawItem) => [
       `"${report.title.replace(/"/g, '""')}"`,
       `"${report.secFormCode || ""}"`,
-      `"${f.symbol}"`,
+      `"${f.symbol || ""}"`,
       `"${(f.companyName || f.name || "").replace(/"/g, '""')}"`,
       `"${f.quarterlyChangeType || "HOLD"}"`,
       `"${f.portfolioPercent || f.weightPercent || 0}%"`,
@@ -436,7 +437,7 @@ export const ReportRepository: React.FC = () => {
       `"${(f.aiThesis || f.notes || "").replace(/"/g, '""')}"`,
     ]);
 
-    const csvString = [headers.join(","), ...rows.map((r: any) => r.join(","))].join("\n");
+    const csvString = [headers.join(","), ...rows.map((r: string[]) => r.join(","))].join("\n");
     const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");

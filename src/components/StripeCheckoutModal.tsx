@@ -125,7 +125,7 @@ export const StripeCheckoutModal: React.FC<Props> = ({
       } else {
         throw new Error(data.message || "Failed to create checkout session");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Checkout error:", err);
       const mockSessionId = `cs_test_sb_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       setTimeout(() => {

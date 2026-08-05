@@ -123,7 +123,17 @@ export async function syncYouTubeFeeds(force: boolean = false): Promise<{
 
         if (data.status === "ok" && Array.isArray(data.items)) {
           const fetchedItems: YouTubeVideo[] = data.items.map(
-            (item: any, idx: number) => {
+            (
+              item: {
+                title?: string;
+                link?: string;
+                guid?: string;
+                pubDate?: string;
+                thumbnail?: string;
+                description?: string;
+              },
+              idx: number,
+            ) => {
               // Extract video ID from link or guid
               let videoId = "";
               if (item.link) {

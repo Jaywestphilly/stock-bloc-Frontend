@@ -399,3 +399,148 @@ export interface YouTubeChannel {
   channelUrl: string;
   description: string;
 }
+
+// Backend Watchlist & Financial Types
+export interface BackendWatchlistStock {
+  symbol: string;
+  price: number;
+  change?: number;
+  percent_change?: number;
+  sparkline?: number[];
+  market_cap?: string;
+  analysis_summary?: string;
+  sector?: SectorCategory;
+  pinned?: boolean;
+  target_price?: number;
+  rating?: string;
+  inst_holders?: Array<{ name: string; value: string }>;
+  headlines?: Array<{
+    title: string;
+    source: string;
+    time?: string;
+    sentiment?: string;
+    url?: string;
+  }>;
+}
+
+// Chart Candle Data
+export interface CandleDataPoint {
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume?: number;
+  isUp?: boolean;
+  changePercent?: number;
+}
+
+// Intel Feed Item
+export interface IntelFeedItem {
+  id: string;
+  title: string;
+  source: string;
+  timeAgo: string;
+  url: string;
+  relatedSymbol?: string;
+  sentiment: "positive" | "negative" | "neutral";
+  category?: string;
+  timestamp?: number;
+}
+
+// Report Repository Raw Items
+export interface ReportRawItem {
+  symbol?: string;
+  companyName?: string;
+  name?: string;
+  quarterlyChangeType?: string;
+  portfolioPercent?: string | number;
+  weightPercent?: string | number;
+  epsActual?: string | number;
+  sharesHeld?: string | number;
+  aiThesis?: string;
+  notes?: string;
+  [key: string]: any;
+}
+
+// Dyson Swarm Data Interfaces
+export interface DysonVideo {
+  id: string;
+  title: string;
+  url: string;
+  thumbnail?: string;
+  channelName?: string;
+}
+
+export interface DysonLaunch {
+  id: string;
+  name: string;
+  provider: string;
+  date?: string;
+  payload?: string;
+  status: string;
+  location?: string;
+  net_launch_time?: string;
+  description?: string;
+  stream_url?: string;
+  [key: string]: any;
+}
+
+export interface DysonStory {
+  id: string;
+  title: string;
+  summary?: string;
+  source?: string;
+  url?: string;
+  date?: string;
+  image_url?: string;
+  category?: string;
+  stat_callout?: string;
+  statCallout?: string;
+  story_summary?: string;
+  description?: string;
+  [key: string]: any;
+}
+
+export interface DysonLiveData {
+  upcoming_launches?: DysonLaunch[];
+  dyson_stories?: DysonStory[];
+  videos?: DysonVideo[];
+  updated_at?: string;
+}
+
+// StockDetailModal SubComponent Shared Props
+export interface StockDetailSubProps {
+  stock: StockTicker;
+  activeStock: StockTicker;
+  displayStock: StockTicker | null;
+  onClose: () => void;
+  onTogglePin?: (symbol: string) => void;
+  onShare?: (stock: StockTicker) => void;
+  onOpenBloombergTerminal?: () => void;
+  onOpenBrokerages?: (stock: StockTicker) => void;
+  timeframe: TimeFrame;
+  setTimeframe: (tf: TimeFrame) => void;
+  hoverIndex: number | null;
+  setHoverIndex: (idx: number | null) => void;
+  aiAnalysis: string | null;
+  setAiAnalysis: (val: string | null) => void;
+  isAiLoading: boolean;
+  setIsAiLoading: (val: boolean) => void;
+  aiError: string | null;
+  setAiError: (val: string | null) => void;
+  chartMode: "candle" | "line";
+  setChartMode: (mode: "candle" | "line") => void;
+  zoomLevel: number;
+  setZoomLevel: (val: number | ((prev: number) => number)) => void;
+  panOffset: number;
+  setPanOffset: (val: number | ((prev: number) => number)) => void;
+  showSMA: boolean;
+  setShowSMA: (val: boolean) => void;
+  showVWAP: boolean;
+  setShowVWAP: (val: boolean) => void;
+  showRSI: boolean;
+  setShowRSI: (val: boolean) => void;
+  [key: string]: any;
+}
+

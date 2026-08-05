@@ -32,8 +32,8 @@ export const useSecIntelData = () => {
         if (!res.ok) throw new Error("Failed to fetch");
         const json = await res.json();
         setData(json);
-      } catch (err: any) {
-        setError(err.message || "Failed to fetch SEC Intel data");
+      } catch (err: unknown) {
+        setError((err as Error)?.message || "Failed to fetch SEC Intel data");
       } finally {
         setLoading(false);
       }

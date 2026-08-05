@@ -31,7 +31,7 @@ import { EBookReaderModal, STOCK_BLOC_EBOOKS, EBook } from "./EBookReaderModal";
 
 
 interface Props {
-  onSelectTab?: (tab: any) => void;
+  onSelectTab?: (tab: string) => void;
 }
 
 export const PlaybooksHub: React.FC<Props> = ({ onSelectTab }) => {

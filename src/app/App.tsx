@@ -1,55 +1,128 @@
-import React, { useState, useMemo, useRef, useEffect, Suspense, lazy } from "react";
-import { AnimatePresence } from "motion/react";
-import { Header } from "./components/Header";
-import { getRouteFromLocation, pushAppRoute } from "./utils/router";
-import { CategoryTabs } from "./components/CategoryTabs";
-import { StockCard } from "./components/StockCard";
-import { StockDetailModal } from "./components/StockDetailModal";
-import { HeatmapView } from "./components/HeatmapView";
-import { MarketPulseCard } from "./components/MarketPulseCard";
-import type { IntelligenceSubTab } from "./components/MarketIntelligenceHub";
-import { AiCopilotModal } from "./components/AiCopilotModal";
-import { BrandLinktreeModal } from "./components/BrandLinktreeModal";
-import { SocialShareModal } from "./components/SocialShareModal";
-import { ImageAnalyzerModal } from "./components/ImageAnalyzerModal";
-import { LiveSearchGroundingModal } from "./components/LiveSearchGroundingModal";
-import { FocusMusicPlayerModal } from "./components/FocusMusicPlayerModal";
-import { AuthModal } from "./components/AuthModal";
-import { ProSubscriptionModal } from "./components/ProSubscriptionModal";
-import { LaunchSplashModal } from "./components/LaunchSplashModal";
-import { BloombergTerminalModal } from "./components/BloombergTerminalModal";
-import { BrokerageAffiliateModal } from "./components/BrokerageAffiliateModal";
-import { AffiliateLink } from "./components/AffiliateLink";
-import { GlobalDisclaimerBar } from "./components/GlobalDisclaimerBar";
-import { DisclaimerModal } from "./components/DisclaimerModal";
-import { NotFinancialAdviceTag } from "./components/NotFinancialAdviceTag";
-import { WatchlistNewsTicker } from "./components/WatchlistNewsTicker";
-import { BottomNav } from "./components/BottomNav";
-import { TopNavbar } from "./components/TopNavbar";
-import { CommandPalette } from "./components/CommandPalette";
-import { CheckoutSuccess } from "./components/CheckoutSuccess";
-import { TsunamiVolatilityTicker } from "./components/TsunamiVolatilityTicker";
-import { Footer } from "./components/Footer";
-import { OnboardingModal } from "./components/OnboardingModal";
 
-// Major Hub Components Direct Imports for Fast Synchronous Rendering
-import { MarketIntelligenceHub } from "./components/MarketIntelligenceHub";
-import { RealEstateHub } from "./components/RealEstateHub";
-import { CreditBuildingHub } from "./components/CreditBuildingHub";
-import { SmallBusinessHub } from "./components/SmallBusinessHub";
-import { YouTubeHub } from "./components/YouTubeHub";
-import { InvestopediaTab } from "./components/InvestopediaTab";
-import { DysonSwarmHub } from "./components/DysonSwarmHub";
-import { WarGovUfoHub } from "./components/WarGovUfoHub";
-import { AiRevolutionHub } from "./components/AiRevolutionHub";
-import { PlaybooksHub } from "./components/PlaybooksHub";
-import { ProductStorePricing } from "./components/ProductStorePricing";
-import { MacroBriefingHub } from "./components/MacroBriefingHub";
-import { MyBlocDashboard } from "./components/MyBlocDashboard";
-import { BrandLandingHub } from "./components/BrandLandingHub";
-import { DocsHub } from "./components/DocsHub";
-import { TerminalGuideHub } from "./components/TerminalGuideHub";
-import { NewsHub } from "./components/NewsHub";
+import { useMarketStore } from "../stores/marketStore";
+import { useUserStore } from "../stores/userStore";
+import { useModalStore } from "../stores/modalStore";
+import { BackendWatchlistStock } from "../types";
+
+import React, { useState, useMemo, useRef, useEffect, Suspense, lazy, useCallback } from "react";
+import { AnimatePresence } from "motion/react";
+import { Header } from "../components/Header";
+import { getRouteFromLocation, pushAppRoute } from "./router";
+import { CategoryTabs } from "../components/CategoryTabs";
+import { StockCard } from "../components/StockCard";
+import { HeatmapView } from "../components/HeatmapView";
+import { MarketPulseCard } from "../components/MarketPulseCard";
+import type { IntelligenceSubTab } from "../components/MarketIntelligenceHub";
+import { LaunchSplashModal } from "../components/LaunchSplashModal";
+import { AffiliateLink } from "../components/AffiliateLink";
+import { GlobalDisclaimerBar } from "../components/GlobalDisclaimerBar";
+import { NotFinancialAdviceTag } from "../components/NotFinancialAdviceTag";
+import { WatchlistNewsTicker } from "../components/WatchlistNewsTicker";
+import { BottomNav } from "../components/BottomNav";
+import { TopNavbar } from "../components/TopNavbar";
+import { CommandPalette } from "../components/CommandPalette";
+import { TsunamiVolatilityTicker } from "../components/TsunamiVolatilityTicker";
+import { Footer } from "../components/Footer";
+
+// Lazy-loaded heavy modal components for code-splitting and bundle size optimization
+const StockDetailModal = lazy(() =>
+  import("../components/StockDetailModal").then((m) => ({ default: m.StockDetailModal }))
+);
+const AiCopilotModal = lazy(() =>
+  import("../components/AiCopilotModal").then((m) => ({ default: m.AiCopilotModal }))
+);
+const BrandLinktreeModal = lazy(() =>
+  import("../components/BrandLinktreeModal").then((m) => ({ default: m.BrandLinktreeModal }))
+);
+const SocialShareModal = lazy(() =>
+  import("../components/SocialShareModal").then((m) => ({ default: m.SocialShareModal }))
+);
+const ImageAnalyzerModal = lazy(() =>
+  import("../components/ImageAnalyzerModal").then((m) => ({ default: m.ImageAnalyzerModal }))
+);
+const LiveSearchGroundingModal = lazy(() =>
+  import("../components/LiveSearchGroundingModal").then((m) => ({ default: m.LiveSearchGroundingModal }))
+);
+const FocusMusicPlayerModal = lazy(() =>
+  import("../components/FocusMusicPlayerModal").then((m) => ({ default: m.FocusMusicPlayerModal }))
+);
+const AuthModal = lazy(() =>
+  import("../components/AuthModal").then((m) => ({ default: m.AuthModal }))
+);
+const ProSubscriptionModal = lazy(() =>
+  import("../components/ProSubscriptionModal").then((m) => ({ default: m.ProSubscriptionModal }))
+);
+const BloombergTerminalModal = lazy(() =>
+  import("../components/BloombergTerminalModal").then((m) => ({ default: m.BloombergTerminalModal }))
+);
+const BrokerageAffiliateModal = lazy(() =>
+  import("../components/BrokerageAffiliateModal").then((m) => ({ default: m.BrokerageAffiliateModal }))
+);
+const DisclaimerModal = lazy(() =>
+  import("../components/DisclaimerModal").then((m) => ({ default: m.DisclaimerModal }))
+);
+const OnboardingModal = lazy(() =>
+  import("../components/OnboardingModal").then((m) => ({ default: m.OnboardingModal }))
+);
+const DataStatusPanel = lazy(() =>
+  import("../components/DataStatusPanel").then((m) => ({ default: m.DataStatusPanel }))
+);
+
+// Lazy-loaded hub components for code-splitting
+const MarketIntelligenceHub = lazy(() =>
+  import("../components/MarketIntelligenceHub").then((m) => ({ default: m.MarketIntelligenceHub }))
+);
+const RealEstateHub = lazy(() =>
+  import("../components/RealEstateHub").then((m) => ({ default: m.RealEstateHub }))
+);
+const CreditBuildingHub = lazy(() =>
+  import("../components/CreditBuildingHub").then((m) => ({ default: m.CreditBuildingHub }))
+);
+const SmallBusinessHub = lazy(() =>
+  import("../components/SmallBusinessHub").then((m) => ({ default: m.SmallBusinessHub }))
+);
+const YouTubeHub = lazy(() =>
+  import("../components/YouTubeHub").then((m) => ({ default: m.YouTubeHub }))
+);
+const InvestopediaTab = lazy(() =>
+  import("../components/InvestopediaTab").then((m) => ({ default: m.InvestopediaTab }))
+);
+const DysonSwarmHub = lazy(() =>
+  import("../components/DysonSwarmHub").then((m) => ({ default: m.DysonSwarmHub }))
+);
+const WarGovUfoHub = lazy(() =>
+  import("../components/WarGovUfoHub").then((m) => ({ default: m.WarGovUfoHub }))
+);
+const AiRevolutionHub = lazy(() =>
+  import("../components/AiRevolutionHub").then((m) => ({ default: m.AiRevolutionHub }))
+);
+const PlaybooksHub = lazy(() =>
+  import("../components/PlaybooksHub").then((m) => ({ default: m.PlaybooksHub }))
+);
+const ProductStorePricing = lazy(() =>
+  import("../components/ProductStorePricing").then((m) => ({ default: m.ProductStorePricing }))
+);
+const MacroBriefingHub = lazy(() =>
+  import("../components/MacroBriefingHub").then((m) => ({ default: m.MacroBriefingHub }))
+);
+const MyBlocDashboard = lazy(() =>
+  import("../components/MyBlocDashboard").then((m) => ({ default: m.MyBlocDashboard }))
+);
+const BrandLandingHub = lazy(() =>
+  import("../components/BrandLandingHub").then((m) => ({ default: m.BrandLandingHub }))
+);
+const DocsHub = lazy(() =>
+  import("../components/DocsHub").then((m) => ({ default: m.DocsHub }))
+);
+const TerminalGuideHub = lazy(() =>
+  import("../components/TerminalGuideHub").then((m) => ({ default: m.TerminalGuideHub }))
+);
+const NewsHub = lazy(() =>
+  import("../components/NewsHub").then((m) => ({ default: m.NewsHub }))
+);
+const CheckoutSuccess = lazy(() =>
+  import("../components/CheckoutSuccess").then((m) => ({ default: m.CheckoutSuccess }))
+);
 
 
 const HubLoadingFallback: React.FC = () => (
@@ -65,12 +138,11 @@ const HubLoadingFallback: React.FC = () => (
   </div>
 );
 
-import { DisclaimerBar } from "./components/DisclaimerBar";
-import { trackEvent } from "./utils/analytics";
-import { FloatingCommunityButton } from "./components/FloatingCommunityButton";
-import { DataStatusPanel } from "./components/DataStatusPanel";
-import { INITIAL_STOCKS, STOCK_NEWS_FEED } from "./data/stocks";
-import { StockTicker, SectorCategory, SortField, ViewTab } from "./types";
+import { DisclaimerBar } from "../components/DisclaimerBar";
+import { trackEvent } from "../utils/analytics";
+import { FloatingCommunityButton } from "../components/FloatingCommunityButton";
+import { INITIAL_STOCKS, STOCK_NEWS_FEED } from "../data/stocks";
+import { StockTicker, SectorCategory, SortField, ViewTab } from "../types";
 import {
   Search,
   Sparkles,
@@ -96,47 +168,32 @@ import {
   Download,
   Zap,
 } from "lucide-react";
-import { triggerHaptic } from "./utils/haptics";
+import { triggerHaptic } from "../utils/haptics";
 
 export function App() {
-  const [stocks, setStocks] = useState<StockTicker[]>(INITIAL_STOCKS);
-  const [selectedCategory, setSelectedCategory] = useState<
-    SectorCategory | "all"
-  >("tsunami");
-  const [sortField, setSortField] = useState<SortField>("changePercent");
-  const [sortDirection, setSortDirection] = useState<"desc" | "asc">("desc");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isSyncingLiveQuotes, setIsSyncingLiveQuotes] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const { stocks, setStocks } = useMarketStore();
+  const { selectedCategory, setSelectedCategory } = useMarketStore();
+  const { sortField, setSortField } = useMarketStore();
+  const { sortDirection, setSortDirection } = useMarketStore();
+  const { searchQuery, setSearchQuery } = useModalStore();
+  const { isSearchOpen, setIsSearchOpen } = useModalStore();
+  const { isSyncingLiveQuotes, setIsSyncingLiveQuotes } = useMarketStore();
+  const { lastSyncTime, setLastSyncTime } = useMarketStore();
 
   // Route & High Contrast Initial State
   const initialRoute = useMemo(() => getRouteFromLocation(), []);
   const [activeTab, setActiveTab] = useState<ViewTab>(initialRoute.tab);
-  const [isBloombergTerminalOpen, setIsBloombergTerminalOpen] = useState(
-    initialRoute.isTerminalOpen || false,
-  );
-  const [isDayMode, setIsDayMode] = useState(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("stockbloc_day_mode");
-      if (stored !== null) {
-        return stored === "true";
-      }
-      // Match system theme preference (prefers light mode -> day mode)
-      return (
-        window.matchMedia &&
-        window.matchMedia("(prefers-color-scheme: light)").matches
-      );
-    }
-    return false;
-  });
+  const { isCommandPaletteOpen, setIsCommandPaletteOpen } = useModalStore();
+  const { isBloombergTerminalOpen, setIsBloombergTerminalOpen } = useModalStore();
+  useEffect(() => {
+    if (initialRoute.isTerminalOpen) setIsBloombergTerminalOpen(true);
+  }, [initialRoute.isTerminalOpen, setIsBloombergTerminalOpen]);
+  const { isDayMode, setIsDayMode } = useUserStore();
 
-  const [watchlistSubTab, setWatchlistSubTab] = useState<"tickers" | "briefs">(
-    "tickers",
-  );
+  const { watchlistSubTab, setWatchlistSubTab } = useUserStore();
 
   // Helper to close all modal overlays
-  const closeAllModals = () => {
+  const closeAllModals = useCallback(() => {
     setIsBloombergTerminalOpen(false);
     setSelectedStock(null);
     setIsProSubscriptionOpen(false);
@@ -154,7 +211,7 @@ export function App() {
     setIsOnboardingOpen(false);
     setShareStock(null);
     setBrokerageStock(null);
-  };
+  }, []);
 
   // Helper to push history state when an overlay opens for back button handling
   const pushOverlayHistory = (isTerminal = false) => {
@@ -186,7 +243,7 @@ export function App() {
       // Cmd+K or Ctrl+K for Command Palette
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
+        setIsCommandPaletteOpen(!isCommandPaletteOpen);
         return;
       }
 
@@ -225,7 +282,7 @@ export function App() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isBloombergTerminalOpen, activeTab]);
+  }, [isBloombergTerminalOpen, activeTab, isCommandPaletteOpen, setIsCommandPaletteOpen, setIsBloombergTerminalOpen]);
 
   // Switch tab and default watchlist to tsunami list with route push
   const handleSelectTab = (tab: ViewTab) => {
@@ -271,31 +328,25 @@ export function App() {
       mediaQuery.addEventListener("change", handleSystemThemeChange);
       return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
     }
-  }, []);
+  }, [setIsDayMode]);
 
   const handleToggleDayMode = () => {
-    setIsDayMode((prev) => {
-      const next = !prev;
-      if (typeof window !== "undefined") {
-        localStorage.setItem("stockbloc_day_mode", String(next));
-      }
-      return next;
-    });
+    setIsDayMode(!isDayMode);
   };
 
-  const [selectedStock, setSelectedStock] = useState<StockTicker | null>(null);
-  const [shareStock, setShareStock] = useState<StockTicker | null>(null);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isAiCopilotOpen, setIsAiCopilotOpen] = useState(false);
-  const [isBrandLinktreeOpen, setIsBrandLinktreeOpen] = useState(false);
+  const { selectedStock, setSelectedStock } = useMarketStore();
+  const { shareStock, setShareStock } = useModalStore();
+  const { isShareModalOpen, setIsShareModalOpen } = useModalStore();
+  const { isAiCopilotOpen, setIsAiCopilotOpen } = useModalStore();
+  const { isBrandLinktreeOpen, setIsBrandLinktreeOpen } = useModalStore();
 
   // New Feature Modals
-  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
-  const [isImageScannerOpen, setIsImageScannerOpen] = useState(false);
-  const [isGroundingSearchOpen, setIsGroundingSearchOpen] = useState(false);
-  const [isMusicPlayerOpen, setIsMusicPlayerOpen] = useState(false);
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false);
+  const { isOnboardingOpen, setIsOnboardingOpen } = useModalStore();
+  const { isImageScannerOpen, setIsImageScannerOpen } = useModalStore();
+  const { isGroundingSearchOpen, setIsGroundingSearchOpen } = useModalStore();
+  const { isMusicPlayerOpen, setIsMusicPlayerOpen } = useModalStore();
+  const { isAuthOpen, setIsAuthOpen } = useModalStore();
+  const { isDisclaimerOpen, setIsDisclaimerOpen } = useModalStore();
 
   // Auto-show Onboarding for first-time visitors
   useEffect(() => {
@@ -310,19 +361,14 @@ export function App() {
     } catch (e) {
       console.warn("localStorage error", e);
     }
-  }, []);
+  }, [setIsOnboardingOpen]);
 
   // Command Palette & Data Status
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [isDataStatusOpen, setIsDataStatusOpen] = useState(false);
-  const [isProSubscriptionOpen, setIsProSubscriptionOpen] = useState(false);
-  const [isBrokerageModalOpen, setIsBrokerageModalOpen] = useState(false);
-  const [brokerageStock, setBrokerageStock] = useState<StockTicker | null>(
-    null,
-  );
-  const [userPlan, setUserPlan] = useState<"free" | "pro" | "institutional">(
-    "pro",
-  );
+    const { isDataStatusOpen, setIsDataStatusOpen } = useModalStore();
+  const { isProSubscriptionOpen, setIsProSubscriptionOpen } = useModalStore();
+  const { isBrokerageModalOpen, setIsBrokerageModalOpen } = useModalStore();
+  const { brokerageStock, setBrokerageStock } = useModalStore();
+  const { userPlan, setUserPlan } = useUserStore();
 
   const handleOpenBrokerage = (stk?: StockTicker | null) => {
     setBrokerageStock(stk || selectedStock || stocks[0]);
@@ -338,8 +384,8 @@ export function App() {
   // Toggle Pinned status
   const handleTogglePin = (symbol: string) => {
     triggerHaptic("selection");
-    setStocks((prev) =>
-      prev.map((s) =>
+    setStocks(
+      stocks.map((s) =>
         s.symbol === symbol ? { ...s, isPinned: !s.isPinned } : s,
       ),
     );
@@ -348,7 +394,7 @@ export function App() {
   // Remove Stock from Watchlist
   const handleRemoveStock = (symbol: string) => {
     triggerHaptic("warning");
-    setStocks((prev) => prev.filter((s) => s.symbol !== symbol));
+    setStocks(stocks.filter((s) => s.symbol !== symbol));
   };
 
   // Helpers for Quick Sorting
@@ -538,8 +584,8 @@ export function App() {
   };
 
   // Sync Live Market Stock Quotes via raw GitHub watchlist data
-  const handleSyncLiveQuotes = async () => {
-    if (isSyncingLiveQuotes) return;
+  const handleSyncLiveQuotes = useCallback(async () => {
+    if (useMarketStore.getState().isSyncingLiveQuotes) return;
     setIsSyncingLiveQuotes(true);
     triggerHaptic("refresh");
 
@@ -548,7 +594,7 @@ export function App() {
       if (!res.ok) throw new Error("Failed to fetch");
       const json = await res.json();
       if (json && json.watchlist && Array.isArray(json.watchlist)) {
-        const mappedStocks = json.watchlist.map((backendStock: any) => {
+        const mappedStocks = json.watchlist.map((backendStock: BackendWatchlistStock) => {
           const history1D = (backendStock.sparkline || []).map((price: number, i: number) => ({
             time: new Date(Date.now() - ((backendStock.sparkline || []).length - 1 - i) * 60 * 60 * 1000).toISOString(),
             price
@@ -595,7 +641,7 @@ export function App() {
     } finally {
       setIsSyncingLiveQuotes(false);
     }
-  };
+  }, []);
 
   // Auto-sync real-time market stock quotes on initial load and every 30 seconds
   useEffect(() => {
@@ -604,7 +650,7 @@ export function App() {
       handleSyncLiveQuotes();
     }, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [handleSyncLiveQuotes]);
 
   // Priority marquee items ensuring SPCX is #1, followed by QQQ and DXYZ
   const spacexStock =
@@ -896,7 +942,7 @@ export function App() {
                 <button
                   onClick={() => {
                     triggerHaptic("selection");
-                    setSortDirection((prev) => (prev === "desc" ? "asc" : "desc"));
+                    setSortDirection(sortDirection === "desc" ? "asc" : "desc");
                   }}
                   className="px-2.5 py-1.5 alien-block-cut-sm bg-neutral-900 hover:bg-neutral-800 border border-cyan-500/40 text-cyan-300 text-[10px] font-black font-mono flex items-center gap-1 cursor-pointer transition-all active:scale-95"
                   title="Toggle Sort Direction (High-to-Low or Low-to-High)"
@@ -1155,7 +1201,7 @@ export function App() {
             <ProductStorePricing
               onSelectTab={handleSelectTab}
               onSuccessCheckout={(sessionId) => {
-                handleSelectTab("checkout_success" as any);
+                handleSelectTab("checkout_success");
               }}
             />
           </div>
@@ -1203,11 +1249,12 @@ export function App() {
       {/* Floating X / Twitter / Community Action Button */}
       <FloatingCommunityButton />
 
-      {/* Full Disclaimer Modal */}
-      <DisclaimerModal
-        isOpen={isDisclaimerOpen}
-        onClose={() => setIsDisclaimerOpen(false)}
-      />
+      <Suspense fallback={null}>
+        {/* Full Disclaimer Modal */}
+        <DisclaimerModal
+          isOpen={isDisclaimerOpen}
+          onClose={() => setIsDisclaimerOpen(false)}
+        />
 
       {/* Search Drawer Modal */}
       {isSearchOpen && (
@@ -1380,6 +1427,8 @@ export function App() {
         onClose={() => setIsOnboardingOpen(false)}
         onNavigateTab={handleSelectTab}
       />
+
+      </Suspense>
 
       {/* App Launch Splash Overlay with Official Stock Bloc Emblem */}
       <LaunchSplashModal />

@@ -23,7 +23,7 @@ interface ProSubscriptionModalProps {
   isOpen: boolean;
   onClose: () => void;
   activePlan?: string;
-  onSelectPlan?: (plan: any) => void;
+  onSelectPlan?: (plan: "free" | "pro" | "institutional") => void;
 }
 
 export const ProSubscriptionModal: React.FC<ProSubscriptionModalProps> = ({

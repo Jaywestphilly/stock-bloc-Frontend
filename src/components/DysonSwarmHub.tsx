@@ -58,6 +58,7 @@ import {
   Youtube,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
+import { DysonLiveData, DysonLaunch, DysonStory } from "../types";
 
 type DysonSubTab =
   | "launch_countdown"
@@ -270,7 +271,7 @@ export const DysonSwarmHub: React.FC<DysonSwarmHubProps> = ({ stocks = [] }) => 
   const [activeVideo, setActiveVideo] = useState<any | null>(null);
   const [showEmbeddedSatelliteMap, setShowEmbeddedSatelliteMap] =
     useState(false);
-  const [dysonLiveData, setDysonLiveData] = useState<any>(null);
+  const [dysonLiveData, setDysonLiveData] = useState<DysonLiveData | null>(null);
   
   useEffect(() => {
     fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/dyson_swarm_data.json")
@@ -586,12 +587,12 @@ export const DysonSwarmHub: React.FC<DysonSwarmHubProps> = ({ stocks = [] }) => 
   });
 
   // Filter upcoming countdown launches
-  const activeLaunches = (dysonLiveData?.upcoming_launches || []).map((l: any, i: number) => ({
+  const activeLaunches = (dysonLiveData?.upcoming_launches || []).map((l: DysonLaunch, i: number) => ({
     id: `dyson-live-${i}`,
     missionName: l.name,
     rocket: l.provider === "SpaceX" ? "Falcon / Starship" : "Rocket",
     targetIsoDate: l.net_launch_time,
-    launchTimeUTC: new Date(l.net_launch_time).toLocaleTimeString('en-US', { timeZone: 'UTC' }) + ' UTC',
+    launchTimeUTC: new Date(l.net_launch_time || Date.now()).toLocaleTimeString('en-US', { timeZone: 'UTC' }) + ' UTC',
     launchSite: l.location,
     provider: l.provider,
     missionType: "Exploration",
@@ -601,14 +602,14 @@ export const DysonSwarmHub: React.FC<DysonSwarmHubProps> = ({ stocks = [] }) => 
   }));
 
   const sortedUpcomingLaunches = [...activeLaunches]
-    .filter((l: any) => {
+    .filter((l: { provider?: string }) => {
       if (launchProviderFilter === "all") return true;
       return l.provider === launchProviderFilter;
     })
     .sort(
-      (a: any, b: any) =>
-        new Date(a.net_launch_time || a.targetIsoDate).getTime() -
-        new Date(b.net_launch_time || b.targetIsoDate).getTime(),
+      (a: { net_launch_time?: string; targetIsoDate?: string }, b: { net_launch_time?: string; targetIsoDate?: string }) =>
+        new Date(a.net_launch_time || a.targetIsoDate || "").getTime() -
+        new Date(b.net_launch_time || b.targetIsoDate || "").getTime(),
     );
 
   // Next primary immediate launch
@@ -761,7 +762,7 @@ export const DysonSwarmHub: React.FC<DysonSwarmHubProps> = ({ stocks = [] }) => 
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {dysonLiveData.dyson_stories.map((story: any, idx: number) => (
+                {dysonLiveData.dyson_stories.map((story: DysonStory, idx: number) => (
                   <article
                     key={story.id || idx}
                     className="bg-[#050b14]/90 border border-cyan-500/30 hover:border-cyan-500/60 rounded-2xl overflow-hidden transition-all duration-300 shadow-xl shadow-cyan-500/5 group flex flex-col"
