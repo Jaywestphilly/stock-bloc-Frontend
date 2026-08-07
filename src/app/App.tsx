@@ -3,6 +3,7 @@ import { useMarketStore } from "../stores/marketStore";
 import { useUserStore } from "../stores/userStore";
 import { useModalStore } from "../stores/modalStore";
 import { BackendWatchlistStock } from "../types";
+import { formatUtcTimestamp, isDataStale } from "../utils/timeUtils";
 
 import React, { useState, useMemo, useRef, useEffect, Suspense, lazy, useCallback } from "react";
 import { AnimatePresence } from "motion/react";
@@ -24,104 +25,166 @@ import { CommandPalette } from "../components/CommandPalette";
 import { TsunamiVolatilityTicker } from "../components/TsunamiVolatilityTicker";
 import { Footer } from "../components/Footer";
 
+// Helper function for resilient dynamic imports with automatic retry and error recovery
+function safeLazy<T extends React.ComponentType<any>>(
+  importFn: () => Promise<any>,
+  exportName?: string
+) {
+  return lazy(async () => {
+    try {
+      const module = await importFn();
+      const Component = exportName ? module[exportName] : (module.default || module);
+      return { default: Component };
+    } catch (error) {
+      console.warn("Module script import failed, retrying...", error);
+      await new Promise((resolve) => setTimeout(resolve, 600));
+      try {
+        const module = await importFn();
+        const Component = exportName ? module[exportName] : (module.default || module);
+        return { default: Component };
+      } catch (retryError) {
+        console.error("Secondary module script import failed:", retryError);
+        const hasReloaded = sessionStorage.getItem("app_script_reload_attempt");
+        if (!hasReloaded) {
+          sessionStorage.setItem("app_script_reload_attempt", "true");
+          window.location.reload();
+        }
+        throw retryError;
+      }
+    }
+  });
+}
+
 // Lazy-loaded heavy modal components for code-splitting and bundle size optimization
-const StockDetailModal = lazy(() =>
-  import("../components/StockDetailModal").then((m) => ({ default: m.StockDetailModal }))
+const StockDetailModal = safeLazy(
+  () => import("../components/StockDetailModal"),
+  "StockDetailModal"
 );
-const AiCopilotModal = lazy(() =>
-  import("../components/AiCopilotModal").then((m) => ({ default: m.AiCopilotModal }))
+const AiCopilotModal = safeLazy(
+  () => import("../components/AiCopilotModal"),
+  "AiCopilotModal"
 );
-const BrandLinktreeModal = lazy(() =>
-  import("../components/BrandLinktreeModal").then((m) => ({ default: m.BrandLinktreeModal }))
+const BrandLinktreeModal = safeLazy(
+  () => import("../components/BrandLinktreeModal"),
+  "BrandLinktreeModal"
 );
-const SocialShareModal = lazy(() =>
-  import("../components/SocialShareModal").then((m) => ({ default: m.SocialShareModal }))
+const SocialShareModal = safeLazy(
+  () => import("../components/SocialShareModal"),
+  "SocialShareModal"
 );
-const ImageAnalyzerModal = lazy(() =>
-  import("../components/ImageAnalyzerModal").then((m) => ({ default: m.ImageAnalyzerModal }))
+const ImageAnalyzerModal = safeLazy(
+  () => import("../components/ImageAnalyzerModal"),
+  "ImageAnalyzerModal"
 );
-const LiveSearchGroundingModal = lazy(() =>
-  import("../components/LiveSearchGroundingModal").then((m) => ({ default: m.LiveSearchGroundingModal }))
+const LiveSearchGroundingModal = safeLazy(
+  () => import("../components/LiveSearchGroundingModal"),
+  "LiveSearchGroundingModal"
 );
-const FocusMusicPlayerModal = lazy(() =>
-  import("../components/FocusMusicPlayerModal").then((m) => ({ default: m.FocusMusicPlayerModal }))
+const FocusMusicPlayerModal = safeLazy(
+  () => import("../components/FocusMusicPlayerModal"),
+  "FocusMusicPlayerModal"
 );
-const AuthModal = lazy(() =>
-  import("../components/AuthModal").then((m) => ({ default: m.AuthModal }))
+const AuthModal = safeLazy(
+  () => import("../components/AuthModal"),
+  "AuthModal"
 );
-const ProSubscriptionModal = lazy(() =>
-  import("../components/ProSubscriptionModal").then((m) => ({ default: m.ProSubscriptionModal }))
+const ProSubscriptionModal = safeLazy(
+  () => import("../components/ProSubscriptionModal"),
+  "ProSubscriptionModal"
 );
-const BloombergTerminalModal = lazy(() =>
-  import("../components/BloombergTerminalModal").then((m) => ({ default: m.BloombergTerminalModal }))
+const BloombergTerminalModal = safeLazy(
+  () => import("../components/BloombergTerminalModal"),
+  "BloombergTerminalModal"
 );
-const BrokerageAffiliateModal = lazy(() =>
-  import("../components/BrokerageAffiliateModal").then((m) => ({ default: m.BrokerageAffiliateModal }))
+const BrokerageAffiliateModal = safeLazy(
+  () => import("../components/BrokerageAffiliateModal"),
+  "BrokerageAffiliateModal"
 );
-const DisclaimerModal = lazy(() =>
-  import("../components/DisclaimerModal").then((m) => ({ default: m.DisclaimerModal }))
+const DisclaimerModal = safeLazy(
+  () => import("../components/DisclaimerModal"),
+  "DisclaimerModal"
 );
-const OnboardingModal = lazy(() =>
-  import("../components/OnboardingModal").then((m) => ({ default: m.OnboardingModal }))
+const OnboardingModal = safeLazy(
+  () => import("../components/OnboardingModal"),
+  "OnboardingModal"
 );
-const DataStatusPanel = lazy(() =>
-  import("../components/DataStatusPanel").then((m) => ({ default: m.DataStatusPanel }))
+const DataStatusPanel = safeLazy(
+  () => import("../components/DataStatusPanel"),
+  "DataStatusPanel"
 );
 
 // Lazy-loaded hub components for code-splitting
-const MarketIntelligenceHub = lazy(() =>
-  import("../features/intelligence/MarketIntelligenceHub").then((m) => ({ default: m.MarketIntelligenceHub }))
+const MarketIntelligenceHub = safeLazy(
+  () => import("../features/intelligence/MarketIntelligenceHub"),
+  "MarketIntelligenceHub"
 );
-const RealEstateHub = lazy(() =>
-  import("../features/portfolio/RealEstateHub").then((m) => ({ default: m.RealEstateHub }))
+const RealEstateHub = safeLazy(
+  () => import("../features/portfolio/RealEstateHub"),
+  "RealEstateHub"
 );
-const CreditBuildingHub = lazy(() =>
-  import("../features/portfolio/CreditBuildingHub").then((m) => ({ default: m.CreditBuildingHub }))
+const CreditBuildingHub = safeLazy(
+  () => import("../features/portfolio/CreditBuildingHub"),
+  "CreditBuildingHub"
 );
-const SmallBusinessHub = lazy(() =>
-  import("../features/portfolio/SmallBusinessHub").then((m) => ({ default: m.SmallBusinessHub }))
+const SmallBusinessHub = safeLazy(
+  () => import("../features/portfolio/SmallBusinessHub"),
+  "SmallBusinessHub"
 );
-const YouTubeHub = lazy(() =>
-  import("../features/intelligence/YouTubeHub").then((m) => ({ default: m.YouTubeHub }))
+const YouTubeHub = safeLazy(
+  () => import("../features/intelligence/YouTubeHub"),
+  "YouTubeHub"
 );
-const InvestopediaTab = lazy(() =>
-  import("../features/education/InvestopediaTab").then((m) => ({ default: m.InvestopediaTab }))
+const InvestopediaTab = safeLazy(
+  () => import("../features/education/InvestopediaTab"),
+  "InvestopediaTab"
 );
-const DysonSwarmHub = lazy(() =>
-  import("../features/research/DysonSwarmHub").then((m) => ({ default: m.DysonSwarmHub }))
+const DysonSwarmHub = safeLazy(
+  () => import("../features/research/DysonSwarmHub"),
+  "DysonSwarmHub"
 );
-const WarGovUfoHub = lazy(() =>
-  import("../features/research/WarGovUfoHub").then((m) => ({ default: m.WarGovUfoHub }))
+const WarGovUfoHub = safeLazy(
+  () => import("../features/research/WarGovUfoHub"),
+  "WarGovUfoHub"
 );
-const AiRevolutionHub = lazy(() =>
-  import("../features/research/AiRevolutionHub").then((m) => ({ default: m.AiRevolutionHub }))
+const AiRevolutionHub = safeLazy(
+  () => import("../features/research/AiRevolutionHub"),
+  "AiRevolutionHub"
 );
-const PlaybooksHub = lazy(() =>
-  import("../features/education/PlaybooksHub").then((m) => ({ default: m.PlaybooksHub }))
+const PlaybooksHub = safeLazy(
+  () => import("../features/education/PlaybooksHub"),
+  "PlaybooksHub"
 );
-const ProductStorePricing = lazy(() =>
-  import("../components/ProductStorePricing").then((m) => ({ default: m.ProductStorePricing }))
+const ProductStorePricing = safeLazy(
+  () => import("../components/ProductStorePricing"),
+  "ProductStorePricing"
 );
-const MacroBriefingHub = lazy(() =>
-  import("../features/research/MacroBriefingHub").then((m) => ({ default: m.MacroBriefingHub }))
+const MacroBriefingHub = safeLazy(
+  () => import("../features/research/MacroBriefingHub"),
+  "MacroBriefingHub"
 );
-const MyBlocDashboard = lazy(() =>
-  import("../features/portfolio/MyBlocDashboard").then((m) => ({ default: m.MyBlocDashboard }))
+const MyBlocDashboard = safeLazy(
+  () => import("../features/portfolio/MyBlocDashboard"),
+  "MyBlocDashboard"
 );
-const BrandLandingHub = lazy(() =>
-  import("../components/BrandLandingHub").then((m) => ({ default: m.BrandLandingHub }))
+const BrandLandingHub = safeLazy(
+  () => import("../components/BrandLandingHub"),
+  "BrandLandingHub"
 );
-const DocsHub = lazy(() =>
-  import("../features/education/DocsHub").then((m) => ({ default: m.DocsHub }))
+const DocsHub = safeLazy(
+  () => import("../features/education/DocsHub"),
+  "DocsHub"
 );
-const TerminalGuideHub = lazy(() =>
-  import("../features/education/TerminalGuideHub").then((m) => ({ default: m.TerminalGuideHub }))
+const TerminalGuideHub = safeLazy(
+  () => import("../features/education/TerminalGuideHub"),
+  "TerminalGuideHub"
 );
-const NewsHub = lazy(() =>
-  import("../features/intelligence/NewsHub").then((m) => ({ default: m.NewsHub }))
+const NewsHub = safeLazy(
+  () => import("../features/intelligence/NewsHub"),
+  "NewsHub"
 );
-const CheckoutSuccess = lazy(() =>
-  import("../components/CheckoutSuccess").then((m) => ({ default: m.CheckoutSuccess }))
+const CheckoutSuccess = safeLazy(
+  () => import("../components/CheckoutSuccess"),
+  "CheckoutSuccess"
 );
 
 
@@ -169,6 +232,7 @@ import {
   Zap,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
+import { isAgentOrHeadless } from "../utils/agentDetection";
 
 export function App() {
   const { stocks, setStocks } = useMarketStore();
@@ -348,9 +412,15 @@ export function App() {
   const { isAuthOpen, setIsAuthOpen } = useModalStore();
   const { isDisclaimerOpen, setIsDisclaimerOpen } = useModalStore();
 
-  // Auto-show Onboarding for first-time visitors
+  // Auto-show Onboarding for first-time visitors (auto-skip for agents / headless browsers)
   useEffect(() => {
     try {
+      if (isAgentOrHeadless()) {
+        localStorage.setItem("stock_bloc_onboarding_dismissed", "true");
+        setIsOnboardingOpen(false);
+        return;
+      }
+
       const dismissed = localStorage.getItem("stock_bloc_onboarding_dismissed");
       if (!dismissed) {
         const timer = setTimeout(() => {
@@ -592,8 +662,13 @@ export function App() {
     triggerHaptic("refresh");
 
     try {
-      const res = await fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/market_watchlist_data.json");
-      if (!res.ok) throw new Error("Failed to fetch");
+      let res = await fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/market_watchlist_data.json");
+      let sourceName = "GitHub JSON / Market Watchlist";
+      if (!res.ok) {
+        res = await fetch("/market_watchlist_data.json");
+        sourceName = "Local Proxy / Market Watchlist";
+      }
+      if (!res.ok) throw new Error("Failed to fetch market watchlist");
       const json = await res.json();
       if (json && json.watchlist && Array.isArray(json.watchlist)) {
         const mappedStocks = json.watchlist.map((backendStock: BackendWatchlistStock) => {
@@ -632,10 +707,17 @@ export function App() {
           };
         });
         setStocks(mappedStocks);
-        setLastSyncTime(json.updated_at || new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }));
+
+        // Read updated_at from GitHub JSON and set fetch time
+        const rawUpdatedAt = json.updated_at || new Date().toISOString();
+        const formattedUtc = formatUtcTimestamp(rawUpdatedAt);
+        const stale = isDataStale(rawUpdatedAt);
+
+        const store = useMarketStore.getState();
+        store.setMarketDataUpdatedAt(rawUpdatedAt);
+        store.setMarketDataIsStale(stale);
+        store.setMarketDataSource(json.source || sourceName);
+        setLastSyncTime(formattedUtc);
         triggerHaptic("success");
       }
     } catch (err) {
@@ -725,6 +807,7 @@ export function App() {
         onOpenMusicPlayer={() => setIsMusicPlayerOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenBloombergTerminal={handleOpenBloombergTerminal}
+        onOpenDataStatus={() => setIsDataStatusOpen(true)}
         userPlan={userPlan}
         onSelectTab={handleSelectTab}
         isDayMode={isDayMode}
@@ -1244,9 +1327,6 @@ export function App() {
         onOpenLinktree={() => setIsBrandLinktreeOpen(true)}
         onOpenDataStatus={() => setIsDataStatusOpen(true)}
       />
-
-      {/* Global Disclaimer Bar */}
-      <DisclaimerBar onOpenDisclaimerModal={() => setIsDisclaimerOpen(true)} />
 
       {/* Floating X / Twitter / Community Action Button */}
       <FloatingCommunityButton />

@@ -16,6 +16,12 @@ interface MarketState {
   setIsSyncingLiveQuotes: (is: boolean) => void;
   lastSyncTime: string | null;
   setLastSyncTime: (time: string | null) => void;
+  marketDataUpdatedAt: string | null;
+  setMarketDataUpdatedAt: (time: string | null) => void;
+  marketDataIsStale: boolean;
+  setMarketDataIsStale: (stale: boolean) => void;
+  marketDataSource: string;
+  setMarketDataSource: (src: string) => void;
   selectedStock: StockTicker | null;
   setSelectedStock: (stock: StockTicker | null) => void;
 }
@@ -33,6 +39,12 @@ export const useMarketStore = create<MarketState>((set) => ({
   setIsSyncingLiveQuotes: (isSyncingLiveQuotes) => set({ isSyncingLiveQuotes }),
   lastSyncTime: null,
   setLastSyncTime: (lastSyncTime) => set({ lastSyncTime }),
+  marketDataUpdatedAt: new Date().toISOString(),
+  setMarketDataUpdatedAt: (marketDataUpdatedAt) => set({ marketDataUpdatedAt }),
+  marketDataIsStale: false,
+  setMarketDataIsStale: (marketDataIsStale) => set({ marketDataIsStale }),
+  marketDataSource: "GitHub JSON / Live API",
+  setMarketDataSource: (marketDataSource) => set({ marketDataSource }),
   selectedStock: null,
   setSelectedStock: (selectedStock) => set({ selectedStock }),
 }));

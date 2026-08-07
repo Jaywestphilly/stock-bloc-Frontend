@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { PODCAST_NEWS_ARTICLES } from "../../data/podcasts";
 import { triggerHaptic } from "../../utils/haptics";
+import { formatUtcTimestamp } from "../../utils/timeUtils";
 
 interface MarketPulseData {
   headline: string;
@@ -71,10 +72,7 @@ export const MarketPulseCard: React.FC<MarketPulseCardProps> = ({
           "Autonomous agentic workflows driving 10x software developer leverage.",
         ],
         impactedTickers: ["BE", "PLPC", "SKHY", "TSM", "NVDA", "SPY", "QQQ"],
-        lastUpdated: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
+        lastUpdated: new Date().toISOString(),
       });
     } finally {
       setIsLoading(false);
@@ -146,9 +144,8 @@ export const MarketPulseCard: React.FC<MarketPulseCardProps> = ({
                   [{PODCAST_NEWS_ARTICLES.length} BRIEFS AGGREGATED]
                 </span>
                 {pulseData?.lastUpdated && (
-                  <span className="text-[9px] text-cyan-400/60 font-mono ml-auto">
-                    UPDATED:{" "}
-                    {new Date(pulseData.lastUpdated).toLocaleTimeString()}
+                  <span className="text-[9px] text-cyan-400/80 font-mono ml-auto">
+                    UPDATED: {formatUtcTimestamp(pulseData.lastUpdated)}
                   </span>
                 )}
               </div>

@@ -6,7 +6,7 @@ export interface RouteState {
 }
 
 export const ROUTE_MAP: Record<string, ViewTab> = {
-  "/": "news",
+  "/": "watchlist",
   "/news": "news",
   "/feed": "news",
   "/brand": "brand",
@@ -141,7 +141,7 @@ export const TAB_IMAGES: Partial<Record<ViewTab | "terminal", string>> = {
  */
 export function getRouteFromLocation(): RouteState {
   if (typeof window === "undefined") {
-    return { tab: "news", isTerminalOpen: false };
+    return { tab: "watchlist", isTerminalOpen: false };
   }
   const path = window.location.pathname.toLowerCase().replace(/\/$/, "") || "/";
 
@@ -149,7 +149,7 @@ export function getRouteFromLocation(): RouteState {
     return { tab: "watchlist", isTerminalOpen: true };
   }
 
-  const tab = ROUTE_MAP[path] || "news";
+  const tab = ROUTE_MAP[path] || "watchlist";
   return { tab, isTerminalOpen: false };
 }
 

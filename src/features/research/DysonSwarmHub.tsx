@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { formatUtcTimestamp, isDataStale } from "../../utils/timeUtils";
 import {
   SPACEX_LAUNCHES,
   PLANET_LABS_MISSIONS,
@@ -275,9 +276,19 @@ export const DysonSwarmHub: React.FC<DysonSwarmHubProps> = ({ stocks = [] }) => 
   
   useEffect(() => {
     fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/dyson_swarm_data.json")
+      .then((res) => {
+        if (!res.ok) return fetch("/dyson_swarm_data.json");
+        return res;
+      })
       .then((res) => res.json())
       .then((data) => setDysonLiveData(data))
-      .catch((err) => console.error("Error fetching dyson live data:", err));
+      .catch((err) => {
+        console.error("Error fetching dyson live data, trying local proxy:", err);
+        fetch("/dyson_swarm_data.json")
+          .then((res) => res.json())
+          .then((data) => setDysonLiveData(data))
+          .catch(console.error);
+      });
   }, []);
 
   const [spaceUpdates, setSpaceUpdates] = useState<SpaceUpdatesResponse | null>(
@@ -632,15 +643,27 @@ export const DysonSwarmHub: React.FC<DysonSwarmHubProps> = ({ stocks = [] }) => 
                 <Orbit className="w-6 h-6 animate-spin-slow" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-2xl font-black tracking-tight bg-gradient-to-r from-white via-cyan-100 to-amber-200 bg-clip-text text-transparent animate-periodic-text-glitch">
                     Dyson Swarm
                   </h1>
                   <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 rounded-md border border-amber-500/30">
                     Orbital Hub
                   </span>
+                  {isDataStale(dysonLiveData?.updated_at || spaceUpdates?.lastUpdated) ? (
+                    <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-amber-500/20 text-amber-300 rounded-md border border-amber-500/40">
+                      STALE DATA (&gt;24H)
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 rounded-md border border-emerald-500/30">
+                      LIVE TELEMETRY
+                    </span>
+                  )}
+                  <span className="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-cyan-950/60 text-cyan-300 rounded-md border border-cyan-500/30">
+                    Last updated: {formatUtcTimestamp(dysonLiveData?.updated_at || spaceUpdates?.lastUpdated || new Date().toISOString())}
+                  </span>
                 </div>
-                <p className="text-xs text-neutral-400 font-medium">
+                <p className="text-xs text-neutral-400 font-medium mt-1">
                   SpaceX & Planet Labs Launch Windows, Constellations & Solar
                   Metrology
                 </p>

@@ -127,6 +127,10 @@ export const NewsHub: React.FC = () => {
     };
 
     fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/intel_news_feed.json")
+      .then(res => {
+        if (!res.ok) return fetch("/intel_news_feed.json");
+        return res;
+      })
       .then(res => res.json())
       .then(data => {
         if (data.intel_feed && Array.isArray(data.intel_feed)) {
@@ -138,7 +142,17 @@ export const NewsHub: React.FC = () => {
           setIntelFeed(sorted);
         }
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error("Failed to fetch intel_news_feed.json from github, trying local proxy:", err);
+        fetch("/intel_news_feed.json")
+          .then(res => res.json())
+          .then(data => {
+            if (data.intel_feed && Array.isArray(data.intel_feed)) {
+              setIntelFeed(data.intel_feed);
+            }
+          })
+          .catch(console.error);
+      });
   }, []);
 
   useEffect(() => {

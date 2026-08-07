@@ -1,0 +1,48 @@
+name: Daily Stock Bloc Backend Feed Sync & Rigorous Verification
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # Runs daily at 06:00 UTC
+  workflow_dispatch: # Allows manual trigger
+  push:
+    branches:
+      - main
+
+jobs:
+  sync-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify Feeds and Advance Timestamps
+        id: verify_feeds
+        run: |
+          chmod +x scripts/verify_and_update_feeds.py
+          python3 scripts/verify_and_update_feeds.py
+
+      - name: Commit and Push Updated Feeds
+        if: success()
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add market_watchlist_data.json sec_intel_data.json dyson_swarm_data.json intel_news_feed.json public/
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(sync): automated daily feed verification & updated_at advancement" && git push)
+
+      - name: Open Failure Issue if Sync Fails
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 CRITICAL: Stock Bloc Backend Feed Sync Failed Loudly',
+              body: 'The automated daily feed verification step failed or returned empty data/unadvanced timestamps. Please review the GitHub Actions workflow logs immediately to inspect the feed validation failure.',
+              labels: ['bug', 'critical', 'backend-sync']
+            });

@@ -98,15 +98,37 @@ export const SentimentGauge: React.FC<SentimentGaugeProps> = ({
               typeof data.bearishPercent === "number"
                 ? data.bearishPercent
                 : 30,
-            summary: data.summary || "Headlines parsed by Gemini .",
+            summary: data.summary || "Headlines parsed by Gemini.",
             keyDrivers: Array.isArray(data.keyDrivers) ? data.keyDrivers : [],
             analyzedAt: Date.now(),
           };
           geminiSentimentCache[stock.symbol] = result;
           setAiResult(result);
+        } else {
+          const fallbackResult: GeminiSentimentResult = {
+            symbol: stock.symbol,
+            score: localSentiment.bullishPercent,
+            label: localSentiment.overall as any,
+            bullishPercent: localSentiment.bullishPercent,
+            bearishPercent: localSentiment.bearishPercent,
+            summary: `Automated sentiment analysis for $${stock.symbol} based on headline momentum.`,
+            keyDrivers: localSentiment.headlines.slice(0, 2).map((h) => h.title),
+            analyzedAt: Date.now(),
+          };
+          setAiResult(fallbackResult);
         }
       } catch (err) {
-        console.error("Failed to fetch Gemini sentiment:", err);
+        const fallbackResult: GeminiSentimentResult = {
+          symbol: stock.symbol,
+          score: localSentiment.bullishPercent,
+          label: localSentiment.overall as any,
+          bullishPercent: localSentiment.bullishPercent,
+          bearishPercent: localSentiment.bearishPercent,
+          summary: `Automated sentiment analysis for $${stock.symbol} based on headline momentum.`,
+          keyDrivers: localSentiment.headlines.slice(0, 2).map((h) => h.title),
+          analyzedAt: Date.now(),
+        };
+        setAiResult(fallbackResult);
       } finally {
         setIsAnalyzing(false);
       }

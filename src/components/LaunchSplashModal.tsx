@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { StockBlocLogo } from "./StockBlocLogo";
 import { ShieldAlert, Zap, Activity, ChevronRight } from "lucide-react";
+import { isAgentOrHeadless } from "../utils/agentDetection";
 
 interface LaunchSplashModalProps {
   onDismiss?: () => void;
@@ -10,10 +11,15 @@ interface LaunchSplashModalProps {
 export const LaunchSplashModal: React.FC<LaunchSplashModalProps> = ({
   onDismiss,
 }) => {
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(!isAgentOrHeadless());
   const [loadingProgress, setLoadingProgress] = useState(0);
 
   useEffect(() => {
+    if (isAgentOrHeadless()) {
+      if (onDismiss) onDismiss();
+      return;
+    }
+
     const timer = setInterval(() => {
       setLoadingProgress((prev) => {
         if (prev >= 100) {

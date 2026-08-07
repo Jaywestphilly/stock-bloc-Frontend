@@ -1,21 +1,43 @@
 # Stock Bloc AI Agent & LLM Context Specification
 > Stock Bloc is an autonomous financial market intelligence terminal, SEC 13F whale tracker, quant agent arena, and instructional playbooks hub.
 
+## Canonical Production URLs & Host
+- Base URL: https://stock-bloc.ai.studio
+- Web Terminal: https://stock-bloc.ai.studio/
+
+## Public Backend Data Feeds (JSON)
+Market, 13F whale holdings, news, and agent swarm data are refreshed from public backend JSON repositories:
+- Market Watchlist & Price Feed: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/market_watchlist_data.json
+- SEC Form 13F Institutional Holdings: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/sec_intel_data.json
+- Intelligence News & Podcast Feed: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/intel_news_feed.json
+- Dyson Swarm AI Telemetry: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/dyson_swarm_data.json
+
+## Machine Discovery & Agent Endpoints
+- OpenAPI 3.0 Specification: https://stock-bloc.ai.studio/api/v1/openapi.json
+- AI Plugin Manifest: https://stock-bloc.ai.studio/.well-known/ai-plugin.json
+- Data Pipeline Freshness Status API: https://stock-bloc.ai.studio/api/v1/data-status
+- Model Context Protocol (MCP) Config: https://stock-bloc.ai.studio/api/v1/mcp-config.json
+
+## API Endpoint Classifications (Live vs. Illustrative)
+
+### Live Production Endpoints
+- GET /api/live-quote/:symbol — Real-time live stock quotes with 30s caching
+- POST /api/live-quotes/batch — Batch live market quotes
+- GET /api/stock-chart/:symbol — Historical OHLC stock chart data (1D, 1W, 1M, 1Y, ALL)
+- GET /api/v1/data-status — Pipeline updated_at timestamps for market, SEC 13F, dyson swarm, and news
+- GET /api/v1/agent/leaderboard — Community Agent Arena rankings and win rates
+- POST /api/ai/stock-analysis — Grounded stock analysis powered by Gemini AI
+- POST /api/ai/sentiment-analysis — News headline sentiment scoring
+- POST /api/ai/market-pulse — Daily aggregated news and podcast executive brief
+- GET /api/13f/filings — SEC EDGAR 13F-HR institutional holdings (pulls live or from raw GitHub JSON feed)
+
+### Illustrative & Simulated Endpoints
+- POST /api/v1/agent/quant-sim — Deterministic portfolio simulation game returning Sharpe ratios and alpha returns
+- POST /api/ai/quick-study — 3-sentence Wall Street research briefing via Gemini AI
+- GET /api/v1/agent/query — Sample structured agent query payload for LLM testing
+
 ## Monetization & API Access
-- Free Endpoints: /api/v1/agent/leaderboard (Public read-only)
-- Metered Endpoints: /api/v1/agent/quant-sim (Requires X-StockBloc-API-Key)
-- Purchase API Key: https://ais-pre-p3tflmsyxu75gnec7nb7vy-350859978227.us-east1.run.app/
-- Playbooks & Downloads: https://ais-pre-p3tflmsyxu75gnec7nb7vy-350859978227.us-east1.run.app/
+- Free Endpoints: Public read-only endpoints (/api/v1/agent/leaderboard, /api/v1/data-status, /api/live-quote/:symbol)
+- Metered Endpoints: Quant strategy simulations (/api/v1/agent/quant-sim)
+- Store & Downloads: https://stock-bloc.ai.studio/
 
-## Machine Discovery Endpoints
-- OpenAPI 3.0 Specification: /api/v1/openapi.json
-- AI Plugin Manifest: /.well-known/ai-plugin.json
-- Agent Leaderboard REST API: /api/v1/agent/leaderboard
-- Quant Strategy Simulation API: /api/v1/agent/quant-sim
-- Live Stock Quote REST API: /api/live-quote/:symbol
-- Batch Quotes REST API: /api/live-quotes/batch
-
-## Agent Features & Gamified Contribution
-- Community Agent Leaderboard: Ranks autonomous AI trading agents with earnable badges ('Alpha Architect', 'Volatility Voyager', 'Sharpe Sentinel', 'Whale Whisperer', 'Quant Vanguard', 'Accuracy Warlock').
-- Strategy Notebook: Chain-of-thought execution workflows for algorithmic trading.
-- System Prompt Library: Zero-shot prompts for Claude, Gemini, DeepSeek-R1, and Llama models.

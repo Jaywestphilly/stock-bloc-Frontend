@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { StockBlocLogo } from "./StockBlocLogo";
 import {
@@ -16,6 +16,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
+import { isAgentOrHeadless } from "../utils/agentDetection";
 
 interface OnboardingModalProps {
   isOpen: boolean;
@@ -30,8 +31,6 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 }) => {
   const [step, setStep] = useState<1 | 2>(1);
 
-  if (!isOpen) return null;
-
   const handleFinish = () => {
     triggerHaptic("success");
     try {
@@ -42,14 +41,29 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
     onClose();
   };
 
+  useEffect(() => {
+    if (isOpen && isAgentOrHeadless()) {
+      handleFinish();
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md font-mono select-none overflow-y-auto">
+      <div 
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            handleFinish();
+          }
+        }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 backdrop-blur-md font-mono select-none overflow-y-auto cursor-pointer"
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="relative max-w-2xl w-full bg-[#030d17] border-2 border-cyan-500/50 alien-block-cut p-5 sm:p-7 shadow-2xl text-white space-y-6"
+          className="relative max-w-2xl w-full bg-[#030d17] border-2 border-cyan-500/50 alien-block-cut p-5 sm:p-7 shadow-2xl text-white space-y-6 cursor-default"
         >
           {/* Header Bar */}
           <div className="flex items-center justify-between border-b border-cyan-500/30 pb-4">
@@ -68,10 +82,10 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             <button
               onClick={() => {
                 triggerHaptic("selection");
-                onClose();
+                handleFinish();
               }}
-              className="p-1.5 rounded-xl bg-black/60 border border-cyan-500/30 text-neutral-400 hover:text-white hover:border-cyan-400 transition-all cursor-pointer"
-              title="Close Onboarding"
+              className="p-1.5 rounded-xl bg-black/60 border border-cyan-500/40 text-neutral-300 hover:text-white hover:border-cyan-400 transition-all cursor-pointer"
+              title="Close Onboarding permanently"
             >
               <X className="w-4 h-4" />
             </button>
@@ -248,10 +262,12 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               </button>
             ) : (
               <button
+                type="button"
                 onClick={handleFinish}
-                className="text-xs text-neutral-400 hover:text-white underline cursor-pointer"
+                className="px-3.5 py-2 rounded-xl bg-cyan-950/80 border border-cyan-500/50 text-cyan-300 hover:text-white hover:bg-cyan-900 font-mono text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-950/40"
               >
-                Skip Onboarding
+                <X className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Skip Onboarding</span>
               </button>
             )}
 

@@ -1,5 +1,191 @@
 import { StockTicker, StockNews } from "../types";
-export const INITIAL_STOCKS: StockTicker[] = [];
+
+export const INITIAL_STOCKS: StockTicker[] = [
+  {
+    symbol: "SPCX",
+    name: "Space Exploration Technologies (SPCX Proxy)",
+    price: 125.33,
+    change: 10.26,
+    changePercent: 8.92,
+    category: "tsunami",
+    sparkline: [113.5, 116.41, 112.55, 112.2, 108.37, 114.53, 125.33],
+    history: {
+      "1D": [113.5, 116.41, 112.55, 112.2, 108.37, 114.53, 125.33].map((price, i) => ({ time: `${i}:00`, price })),
+      "1W": [113.5, 116.41, 112.55, 112.2, 108.37, 114.53, 125.33].map((price, i) => ({ time: `Day ${i+1}`, price })),
+      "1M": [113.5, 116.41, 112.55, 112.2, 108.37, 114.53, 125.33].map((price, i) => ({ time: `Week ${i+1}`, price })),
+      "1Y": [113.5, 116.41, 112.55, 112.2, 108.37, 114.53, 125.33].map((price, i) => ({ time: `Month ${i+1}`, price })),
+      "ALL": [113.5, 116.41, 112.55, 112.2, 108.37, 114.53, 125.33].map((price, i) => ({ time: `Year ${i+1}`, price }))
+    },
+    marketCap: "$210B",
+    high52: 135.0,
+    low52: 85.0,
+    volume: "12.4M",
+    description: "Top Conviction: Liquid exposure vehicle to SpaceX orbital launches, Starlink expansion, and pre-IPO AI compute giants.",
+    tags: ["Frontier Space & AI", "SpaceX", "Orbital"],
+    isPinned: true
+  },
+  {
+    symbol: "NVDA",
+    name: "NVIDIA Corporation",
+    price: 211.94,
+    change: 5.1,
+    changePercent: 2.47,
+    category: "tsunami",
+    sparkline: [196.51, 197.01, 190.01, 195.04, 200.75, 206.64, 211.94],
+    history: {
+      "1D": [196.51, 197.01, 190.01, 195.04, 200.75, 206.64, 211.94].map((price, i) => ({ time: `${i}:00`, price })),
+      "1W": [196.51, 197.01, 190.01, 195.04, 200.75, 206.64, 211.94].map((price, i) => ({ time: `Day ${i+1}`, price })),
+      "1M": [196.51, 197.01, 190.01, 195.04, 200.75, 206.64, 211.94].map((price, i) => ({ time: `Week ${i+1}`, price })),
+      "1Y": [196.51, 197.01, 190.01, 195.04, 200.75, 206.64, 211.94].map((price, i) => ({ time: `Month ${i+1}`, price })),
+      "ALL": [196.51, 197.01, 190.01, 195.04, 200.75, 206.64, 211.94].map((price, i) => ({ time: `Year ${i+1}`, price }))
+    },
+    marketCap: "$3.4T",
+    high52: 220.0,
+    low52: 110.0,
+    volume: "48.2M",
+    description: "Core Infrastructure: Primary GPU compute provider powering frontier LLM training and hyperscaler data center buildouts.",
+    tags: ["AI Semiconductors", "GPU", "Datacenter"],
+    isPinned: false
+  },
+  {
+    symbol: "AAPL",
+    name: "Apple Inc.",
+    price: 309.38,
+    change: -23.64,
+    changePercent: -7.1,
+    category: "tsunami",
+    sparkline: [336.91, 340.08, 338.19, 329.85, 321.41, 311.5, 309.38],
+    history: {
+      "1D": [336.91, 340.08, 338.19, 329.85, 321.41, 311.5, 309.38].map((price, i) => ({ time: `${i}:00`, price })),
+      "1W": [336.91, 340.08, 338.19, 329.85, 321.41, 311.5, 309.38].map((price, i) => ({ time: `Day ${i+1}`, price })),
+      "1M": [336.91, 340.08, 338.19, 329.85, 321.41, 311.5, 309.38].map((price, i) => ({ time: `Week ${i+1}`, price })),
+      "1Y": [336.91, 340.08, 338.19, 329.85, 321.41, 311.5, 309.38].map((price, i) => ({ time: `Month ${i+1}`, price })),
+      "ALL": [336.91, 340.08, 338.19, 329.85, 321.41, 311.5, 309.38].map((price, i) => ({ time: `Year ${i+1}`, price }))
+    },
+    marketCap: "$3.5T",
+    high52: 350.0,
+    low52: 210.0,
+    volume: "35.1M",
+    description: "Edge AI Thesis: Apple Intelligence integration driving multi-year hardware refresh cycle across global device ecosystem.",
+    tags: ["Edge AI & Consumer Hardware", "Apple Intelligence"],
+    isPinned: false
+  },
+  {
+    symbol: "TSLA",
+    name: "Tesla, Inc.",
+    price: 312.45,
+    change: 14.8,
+    changePercent: 4.97,
+    category: "tsunami",
+    sparkline: [285.1, 290.4, 298.2, 302.5, 305.0, 310.2, 312.45],
+    history: {
+      "1D": [285.1, 290.4, 298.2, 302.5, 305.0, 310.2, 312.45].map((price, i) => ({ time: `${i}:00`, price })),
+      "1W": [285.1, 290.4, 298.2, 302.5, 305.0, 310.2, 312.45].map((price, i) => ({ time: `Day ${i+1}`, price })),
+      "1M": [285.1, 290.4, 298.2, 302.5, 305.0, 310.2, 312.45].map((price, i) => ({ time: `Week ${i+1}`, price })),
+      "1Y": [285.1, 290.4, 298.2, 302.5, 305.0, 310.2, 312.45].map((price, i) => ({ time: `Month ${i+1}`, price })),
+      "ALL": [285.1, 290.4, 298.2, 302.5, 305.0, 310.2, 312.45].map((price, i) => ({ time: `Year ${i+1}`, price }))
+    },
+    marketCap: "$1.0T",
+    high52: 350.0,
+    low52: 140.0,
+    volume: "62.0M",
+    description: "Autonomous Fleet Thesis: Full Self-Driving v13 deployment and Optimus humanoid robotics scaling across gigafactories.",
+    tags: ["Autonomous & Robotics", "FSD", "Robotaxi"],
+    isPinned: false
+  },
+  {
+    symbol: "PLTR",
+    name: "Palantir Technologies Inc.",
+    price: 78.2,
+    change: 3.45,
+    changePercent: 4.62,
+    category: "tsunami",
+    sparkline: [68.5, 71.2, 73.0, 74.8, 76.1, 77.5, 78.2],
+    history: {
+      "1D": [68.5, 71.2, 73.0, 74.8, 76.1, 77.5, 78.2].map((price, i) => ({ time: `${i}:00`, price })),
+      "1W": [68.5, 71.2, 73.0, 74.8, 76.1, 77.5, 78.2].map((price, i) => ({ time: `Day ${i+1}`, price })),
+      "1M": [68.5, 71.2, 73.0, 74.8, 76.1, 77.5, 78.2].map((price, i) => ({ time: `Week ${i+1}`, price })),
+      "1Y": [68.5, 71.2, 73.0, 74.8, 76.1, 77.5, 78.2].map((price, i) => ({ time: `Month ${i+1}`, price })),
+      "ALL": [68.5, 71.2, 73.0, 74.8, 76.1, 77.5, 78.2].map((price, i) => ({ time: `Year ${i+1}`, price }))
+    },
+    marketCap: "$175B",
+    high52: 85.0,
+    low52: 20.0,
+    volume: "42.1M",
+    description: "AIP Execution: Artificial Intelligence Platform commercial expansion driving exponential revenue growth in US enterprise & defense.",
+    tags: ["Enterprise AI Software", "AIP", "Defense"],
+    isPinned: false
+  },
+  {
+    symbol: "MSFT",
+    name: "Microsoft Corporation",
+    price: 465.12,
+    change: 6.8,
+    changePercent: 1.48,
+    category: "tsunami",
+    sparkline: [448.0, 452.1, 455.0, 458.3, 460.9, 463.2, 465.12],
+    history: {
+      "1D": [448.0, 452.1, 455.0, 458.3, 460.9, 463.2, 465.12].map((price, i) => ({ time: `${i}:00`, price })),
+      "1W": [448.0, 452.1, 455.0, 458.3, 460.9, 463.2, 465.12].map((price, i) => ({ time: `Day ${i+1}`, price })),
+      "1M": [448.0, 452.1, 455.0, 458.3, 460.9, 463.2, 465.12].map((price, i) => ({ time: `Week ${i+1}`, price })),
+      "1Y": [448.0, 452.1, 455.0, 458.3, 460.9, 463.2, 465.12].map((price, i) => ({ time: `Month ${i+1}`, price })),
+      "ALL": [448.0, 452.1, 455.0, 458.3, 460.9, 463.2, 465.12].map((price, i) => ({ time: `Year ${i+1}`, price }))
+    },
+    marketCap: "$3.45T",
+    high52: 480.0,
+    low52: 380.0,
+    volume: "22.5M",
+    description: "Enterprise Monopoly: Azure AI cloud expansion and Copilot integration across Microsoft 365 enterprise installed base.",
+    tags: ["Cloud & Enterprise AI", "Azure", "Copilot"],
+    isPinned: false
+  },
+  {
+    symbol: "VST",
+    name: "Vistra Corp.",
+    price: 148.6,
+    change: 8.25,
+    changePercent: 5.88,
+    category: "tsunami",
+    sparkline: [128.0, 132.5, 136.1, 140.0, 142.8, 145.4, 148.6],
+    history: {
+      "1D": [128.0, 132.5, 136.1, 140.0, 142.8, 145.4, 148.6].map((price, i) => ({ time: `${i}:00`, price })),
+      "1W": [128.0, 132.5, 136.1, 140.0, 142.8, 145.4, 148.6].map((price, i) => ({ time: `Day ${i+1}`, price })),
+      "1M": [128.0, 132.5, 136.1, 140.0, 142.8, 145.4, 148.6].map((price, i) => ({ time: `Week ${i+1}`, price })),
+      "1Y": [128.0, 132.5, 136.1, 140.0, 142.8, 145.4, 148.6].map((price, i) => ({ time: `Month ${i+1}`, price })),
+      "ALL": [128.0, 132.5, 136.1, 140.0, 142.8, 145.4, 148.6].map((price, i) => ({ time: `Year ${i+1}`, price }))
+    },
+    marketCap: "$52B",
+    high52: 160.0,
+    low52: 35.0,
+    volume: "15.3M",
+    description: "Hyperscaler Energy Moat: Nuclear power provider locking in long-term power purchase agreements directly for AI datacenters.",
+    tags: ["Nuclear Power & Utilities", "Grid Power", "Datacenter Energy"],
+    isPinned: false
+  },
+  {
+    symbol: "ASTS",
+    name: "AST SpaceMobile, Inc.",
+    price: 34.5,
+    change: 2.8,
+    changePercent: 8.83,
+    category: "tsunami",
+    sparkline: [26.4, 28.1, 30.0, 31.5, 32.8, 33.9, 34.5],
+    history: {
+      "1D": [26.4, 28.1, 30.0, 31.5, 32.8, 33.9, 34.5].map((price, i) => ({ time: `${i}:00`, price })),
+      "1W": [26.4, 28.1, 30.0, 31.5, 32.8, 33.9, 34.5].map((price, i) => ({ time: `Day ${i+1}`, price })),
+      "1M": [26.4, 28.1, 30.0, 31.5, 32.8, 33.9, 34.5].map((price, i) => ({ time: `Week ${i+1}`, price })),
+      "1Y": [26.4, 28.1, 30.0, 31.5, 32.8, 33.9, 34.5].map((price, i) => ({ time: `Month ${i+1}`, price })),
+      "ALL": [26.4, 28.1, 30.0, 31.5, 32.8, 33.9, 34.5].map((price, i) => ({ time: `Year ${i+1}`, price }))
+    },
+    marketCap: "$9.2B",
+    high52: 39.0,
+    low52: 2.2,
+    volume: "18.6M",
+    description: "Direct-to-Cellular Moat: BlueBird satellite constellation commercial launch providing global cellular broadband.",
+    tags: ["Space Cellular Broadband", "Satellites", "Telecom"],
+    isPinned: false
+  }
+];
 export const STOCK_NEWS_FEED: StockNews[] = [
   {
     id: "yt_stock_allin1",

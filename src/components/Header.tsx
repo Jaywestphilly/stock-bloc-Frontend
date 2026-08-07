@@ -19,8 +19,11 @@ import {
   Contrast,
   BookOpen,
   Youtube,
+  Database,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
+import { useMarketStore } from "../stores/marketStore";
+import { getDataAgeText, isDataStale } from "../utils/timeUtils";
 
 import { ViewTab } from "../types";
 
@@ -36,6 +39,7 @@ interface HeaderProps {
   onOpenBloombergTerminal?: () => void;
   onOpenProSubscription?: () => void;
   onOpenBrokerages?: () => void;
+  onOpenDataStatus?: () => void;
   userPlan?: "free" | "pro" | "institutional";
   onSelectTab?: (tab: ViewTab) => void;
   isDayMode?: boolean;
@@ -54,13 +58,20 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenBloombergTerminal,
   onOpenProSubscription,
   onOpenBrokerages,
+  onOpenDataStatus,
   userPlan = "pro",
   onSelectTab,
   isDayMode = false,
   onToggleDayMode,
 }) => {
-
+  const { marketDataUpdatedAt, marketDataIsStale } = useMarketStore();
   const [timeStr, setTimeStr] = useState("");
+
+  const dataStale = marketDataIsStale || isDataStale(marketDataUpdatedAt);
+  const dataAge = getDataAgeText(marketDataUpdatedAt);
+  const compactStatusText = dataStale
+    ? "Market data · STALE"
+    : `Market data · updated ${dataAge.toLowerCase()}`;
 
   useEffect(() => {
     const updateTime = () => {
@@ -77,17 +88,35 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-30 w-full backdrop-blur-2xl bg-black/95 border-b border-cyan-500/30 text-white transition-colors relative overflow-hidden">
       {/* Top Cyber Telemetry Bar */}
-      <div className="flex items-center justify-between px-5 pt-1.5 pb-1 text-[10px] font-mono tracking-widest text-cyan-400/90 bg-black/60 border-b border-cyan-500/20 select-none">
-        <span className="flex items-center gap-1">
-          <span className="w-1.5 h-1.5 bg-emerald-400 animate-ping inline-block" />
-          SYS.QUANT-88 // {timeStr || "19:42:01"}
-        </span>
-        <div className="flex items-center gap-3">
-          <span className="text-[9px] text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 border border-emerald-400/40 rounded">
-            [QUANT-NODE: ONLINE]
+      <div className="flex items-center justify-between px-3 sm:px-5 pt-1.5 pb-1 text-[10px] font-mono tracking-widest text-cyan-400/90 bg-black/60 border-b border-cyan-500/20 select-none">
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1">
+            <span className="w-1.5 h-1.5 bg-emerald-400 animate-ping inline-block" />
+            SYS.QUANT-88 // {timeStr || "19:42:01"}
           </span>
-          <span className="hidden sm:inline text-cyan-500/80 font-bold">
-            SIGNAL: 99.8%
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Compact Market Data Status Indicator */}
+          <button
+            type="button"
+            onClick={() => {
+              triggerHaptic("selection");
+              if (onOpenDataStatus) onOpenDataStatus();
+            }}
+            className={`px-2 py-0.5 rounded border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
+              dataStale
+                ? "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30"
+                : "bg-emerald-500/20 text-emerald-300 border-emerald-400/40 hover:bg-emerald-500/30"
+            }`}
+            title="Click to view live data feeds and system sync health"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full inline-block ${dataStale ? "bg-amber-400 animate-pulse" : "bg-emerald-400"}`} />
+            <span>{compactStatusText}</span>
+          </button>
+
+          <span className="hidden md:inline text-[9px] text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 border border-emerald-400/40 rounded">
+            [QUANT-NODE: ONLINE]
           </span>
         </div>
       </div>

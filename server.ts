@@ -814,16 +814,71 @@ async function fetchRealStockQuote(symbol: string, forceRefresh = false) {
   return resultQuote;
 }
 
-// 7. Live Real-Time Stock Quote Endpoint
+// 7. Live Real-Time Stock Quote Endpoint (with MARKET_DATA_API_KEY support & Decentralized CDN Proxy fallback)
 app.get('/api/live-quote/:symbol', async (req, res) => {
   const { symbol } = req.params;
+  const symUpper = symbol.toUpperCase();
   const force = req.query.force === 'true';
+
+  // Tier 1: If MARKET_DATA_API_KEY is defined, try a live provider fetch first
+  if (process.env.MARKET_DATA_API_KEY) {
+    try {
+      const fhRes = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symUpper}&token=${process.env.MARKET_DATA_API_KEY}`);
+      if (fhRes.ok) {
+        const fhData: any = await fhRes.json();
+        if (fhData && typeof fhData.c === 'number' && fhData.c > 0) {
+          return res.json({
+            symbol: symUpper,
+            name: symUpper,
+            price: fhData.c,
+            change: fhData.d || 0,
+            changePercent: fhData.dp || 0,
+            high52: fhData.h,
+            low52: fhData.l,
+            volume: fhData.v ? String(fhData.v) : undefined,
+            data_as_of: new Date().toISOString(),
+            source: "live"
+          });
+        }
+      }
+      console.warn(`[Live Quote Notice] Live provider returned non-200 or empty data for $${symUpper}. Falling back to github_baseline.`);
+    } catch (liveErr: any) {
+      console.warn(`[Live Quote Warning] Live provider fetch failed for $${symUpper}: ${liveErr?.message || liveErr}. Falling back to github_baseline.`);
+    }
+  }
+
+  // Tier 2: Fallback to /api/data/market watchlist entry or real stock quote generator
   try {
-    const quote = await fetchRealStockQuote(symbol, force);
-    res.json(quote);
+    const marketData = await fetchAndProcessFeed('market');
+    const watchlist = Array.isArray(marketData?.watchlist) ? marketData.watchlist : [];
+    const item = watchlist.find((s: any) => s.symbol && s.symbol.toUpperCase() === symUpper);
+
+    const dataAsOf = marketData?.updated_at || new Date().toISOString();
+
+    if (item) {
+      return res.json({
+        symbol: symUpper,
+        name: item.name || item.symbol || symUpper,
+        price: Number(item.price),
+        change: Number(item.change) || 0,
+        changePercent: Number(item.percent_change ?? item.changePercent) || 0,
+        sector: item.sector,
+        analysis_summary: item.analysis_summary,
+        sparkline: item.sparkline,
+        data_as_of: dataAsOf,
+        source: "github_baseline"
+      });
+    }
+
+    const fallbackQuote = await fetchRealStockQuote(symbol, force);
+    return res.json({
+      ...fallbackQuote,
+      data_as_of: dataAsOf,
+      source: "github_baseline"
+    });
   } catch (err: any) {
-    console.warn('Live Quote API Notice:', err?.message || err);
-    res.status(500).json({ error: 'Failed to fetch live quote' });
+    console.warn(`[Live Quote Warning] Failed to generate quote for $${symUpper}:`, err?.message || err);
+    return res.status(500).json({ error: 'Failed to fetch live quote' });
   }
 });
 
@@ -1466,40 +1521,231 @@ app.get('/.well-known/ai-plugin.json', (req, res) => {
   });
 });
 
+// ============================================================================
+// DECENTRALIZED CDN PROXY DATA LAYER & CACHE ENGINE (3-Min TTL)
+// ============================================================================
+interface DataFeedCacheItem {
+  data: any;
+  timestamp: number;
+  dateHeader?: string;
+}
+
+const dataFeedCache: Record<string, DataFeedCacheItem> = {};
+const FEED_CACHE_TTL_MS = 180 * 1000; // 3 minutes = 180 seconds
+
+const FEED_URLS: Record<string, string> = {
+  market: "https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/market_watchlist_data.json",
+  sec: "https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/sec_intel_data.json",
+  dyson: "https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/dyson_swarm_data.json",
+  news: "https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/intel_news_feed.json",
+};
+
+async function fetchAndProcessFeed(feedKey: 'market' | 'sec' | 'dyson' | 'news') {
+  const url = FEED_URLS[feedKey];
+  const now = Date.now();
+  const cached = dataFeedCache[feedKey];
+
+  if (cached && (now - cached.timestamp < FEED_CACHE_TTL_MS)) {
+    return cached.data;
+  }
+
+  let rawJson: any = null;
+  let dateHeaderValue: string | null = null;
+
+  try {
+    const res = await fetch(url);
+    if (res.ok) {
+      dateHeaderValue = res.headers.get("date");
+      rawJson = await res.json();
+    } else {
+      console.warn(`[CDN Proxy Notice] Remote fetch returned status HTTP ${res.status} for feed "${feedKey}".`);
+    }
+  } catch (err: any) {
+    console.warn(`[CDN Proxy Warning] Fetch error for feed "${feedKey}":`, err?.message || err);
+  }
+
+  // Fallback to cached data if network fetch failed
+  if (!rawJson && cached) {
+    return cached.data;
+  }
+
+  // Fallback to local files in /public if available
+  if (!rawJson) {
+    try {
+      const localFileNames: Record<string, string> = {
+        market: 'market_watchlist_data.json',
+        sec: 'sec_intel_data.json',
+        dyson: 'dyson_swarm_data.json',
+        news: 'intel_news_feed.json'
+      };
+      const localPath = path.join(process.cwd(), 'public', localFileNames[feedKey]);
+      if (fs.existsSync(localPath)) {
+        const fileContent = fs.readFileSync(localPath, 'utf-8');
+        rawJson = JSON.parse(fileContent);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  if (!rawJson || typeof rawJson !== 'object') {
+    rawJson = {};
+  }
+
+  // Determine updated_at
+  let updatedAt = rawJson.updated_at;
+  if (!updatedAt || typeof updatedAt !== 'string') {
+    if (dateHeaderValue) {
+      try {
+        updatedAt = new Date(dateHeaderValue).toISOString();
+      } catch {
+        updatedAt = new Date().toISOString();
+      }
+    } else {
+      updatedAt = new Date().toISOString();
+    }
+  }
+
+  // Calculate staleness (older than 24 hours = 86400000 ms)
+  let isStale = false;
+  const updatedTime = new Date(updatedAt).getTime();
+  if (isNaN(updatedTime) || (now - updatedTime > 24 * 60 * 60 * 1000)) {
+    isStale = true;
+    console.warn(`[CDN Proxy Notice] Feed "${feedKey}" is stale. Last updated at: ${updatedAt}`);
+  }
+
+  const processedData = {
+    ...rawJson,
+    updated_at: updatedAt,
+    stale: isStale
+  };
+
+  dataFeedCache[feedKey] = {
+    data: processedData,
+    timestamp: now,
+    dateHeader: dateHeaderValue || undefined
+  };
+
+  return processedData;
+}
+
+// Proxy Endpoints
+app.get('/api/data/market', async (req, res) => {
+  const data = await fetchAndProcessFeed('market');
+  res.setHeader('Cache-Control', 'public, max-age=180');
+  res.setHeader('X-Data-As-Of', data.updated_at || 'unknown');
+  return res.json(data);
+});
+
+app.get('/api/data/sec', async (req, res) => {
+  const data = await fetchAndProcessFeed('sec');
+  res.setHeader('Cache-Control', 'public, max-age=180');
+  res.setHeader('X-Data-As-Of', data.updated_at || 'unknown');
+  return res.json(data);
+});
+
+app.get('/api/data/dyson', async (req, res) => {
+  const data = await fetchAndProcessFeed('dyson');
+  res.setHeader('Cache-Control', 'public, max-age=180');
+  res.setHeader('X-Data-As-Of', data.updated_at || 'unknown');
+  return res.json(data);
+});
+
+app.get('/api/data/news', async (req, res) => {
+  const data = await fetchAndProcessFeed('news');
+  res.setHeader('Cache-Control', 'public, max-age=180');
+  res.setHeader('X-Data-As-Of', data.updated_at || 'unknown');
+  return res.json(data);
+});
+
+// Parameterized catch-all proxy route
+app.get('/api/data/:feed', async (req, res) => {
+  const feedKey = req.params.feed as 'market' | 'sec' | 'dyson' | 'news';
+  if (!['market', 'sec', 'dyson', 'news'].includes(feedKey)) {
+    return res.status(404).json({ error: 'Invalid feed key. Valid choices: market, sec, dyson, news' });
+  }
+
+  const data = await fetchAndProcessFeed(feedKey);
+  res.setHeader('Cache-Control', 'public, max-age=180');
+  res.setHeader('X-Data-As-Of', data.updated_at || 'unknown');
+  return res.json(data);
+});
+
+// Data Pipeline Freshness & Status API
+app.get('/api/v1/data-status', async (req, res) => {
+  const [market, sec, dyson, news] = await Promise.all([
+    fetchAndProcessFeed('market'),
+    fetchAndProcessFeed('sec'),
+    fetchAndProcessFeed('dyson'),
+    fetchAndProcessFeed('news')
+  ]);
+
+  const serverTime = new Date().toISOString();
+
+  res.setHeader('Cache-Control', 'public, max-age=60');
+  return res.json({
+    market: {
+      updated_at: market.updated_at,
+      stale: Boolean(market.stale)
+    },
+    sec: {
+      updated_at: sec.updated_at,
+      stale: Boolean(sec.stale)
+    },
+    dyson: {
+      updated_at: dyson.updated_at,
+      stale: Boolean(dyson.stale)
+    },
+    news: {
+      updated_at: news.updated_at,
+      stale: Boolean(news.stale)
+    },
+    server_time: serverTime
+  });
+});
+
 // 19. Machine-Readable Agent Context Specification: /llms.txt
 app.get('/llms.txt', (req, res) => {
-  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-  const host = req.get('host') || 'ais-pre-p3tflmsyxu75gnec7nb7vy-350859978227.us-east1.run.app';
-  const baseUrl = `${protocol}://${host}`;
+  const filePath = path.join(process.cwd(), 'public', 'llms.txt');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return res.sendFile(filePath);
+  }
 
   res.setHeader('Content-Type', 'text/plain; charset=utf-8');
   res.send(`# Stock Bloc AI Agent & LLM Context Specification
 > Stock Bloc is an autonomous financial market intelligence terminal, SEC 13F whale tracker, quant agent arena, and instructional playbooks hub.
 
-## Model Context Protocol (MCP) Server
-- MCP Manifest: ${baseUrl}/mcp.json
-- MCP HTTP Endpoint: ${baseUrl}/api/mcp/rpc
-- Stdio MCP Server Script: mcp-server.js
+## Canonical Production URLs & Host
+- Base URL: https://stock-bloc.ai.studio
+- Web Terminal: https://stock-bloc.ai.studio/
 
-## Monetization & API Access
-- Free Endpoints: ${baseUrl}/api/v1/agent/leaderboard (Public read-only)
-- Metered Endpoints: ${baseUrl}/api/v1/agent/quant-sim (Requires X-StockBloc-API-Key)
-- Purchase API Key: ${baseUrl}/ (Stripe automated checkout in Store)
-- Playbooks & Downloads: ${baseUrl}/
+## Public Backend Data Feeds (JSON)
+- Market Watchlist & Price Feed: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/market_watchlist_data.json
+- SEC Form 13F Institutional Holdings: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/sec_intel_data.json
+- Intelligence News & Podcast Feed: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/intel_news_feed.json
+- Dyson Swarm AI Telemetry: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/dyson_swarm_data.json
 
-## Machine Discovery Endpoints
-- OpenAPI 3.0 Specification: ${baseUrl}/api/v1/openapi.json
-- AI Plugin Manifest: ${baseUrl}/.well-known/ai-plugin.json
-- MCP Config: ${baseUrl}/api/v1/mcp-config.json
-- Agent Leaderboard REST API: ${baseUrl}/api/v1/agent/leaderboard
-- Quant Strategy Simulation API: ${baseUrl}/api/v1/agent/quant-sim
-- Live Stock Quote REST API: ${baseUrl}/api/live-quote/:symbol
-- Batch Quotes REST API: ${baseUrl}/api/live-quotes/batch
+## Machine Discovery & Agent Endpoints
+- OpenAPI 3.0 Specification: https://stock-bloc.ai.studio/api/v1/openapi.json
+- AI Plugin Manifest: https://stock-bloc.ai.studio/.well-known/ai-plugin.json
+- Data Pipeline Freshness Status API: https://stock-bloc.ai.studio/api/v1/data-status
+- Model Context Protocol (MCP) Config: https://stock-bloc.ai.studio/api/v1/mcp-config.json
 
-## Agent Features & Gamified Contribution
-- Community Agent Leaderboard: Ranks autonomous AI trading agents with earnable badges ('Alpha Architect', 'Volatility Voyager', 'Sharpe Sentinel', 'Whale Whisperer', 'Quant Vanguard', 'Accuracy Warlock').
-- Strategy Notebook: Chain-of-thought execution workflows for algorithmic trading.
-- System Prompt Library: Zero-shot prompts for Claude, Gemini, DeepSeek-R1, and Llama models.
+## API Endpoint Classifications (Live vs. Illustrative)
+### Live Production Endpoints
+- GET /api/live-quote/:symbol — Real-time live stock quotes with 30s caching
+- POST /api/live-quotes/batch — Batch live market quotes
+- GET /api/stock-chart/:symbol — Historical OHLC stock chart data
+- GET /api/v1/data-status — Pipeline updated_at timestamps
+- GET /api/v1/agent/leaderboard — Community Agent Arena rankings
+- POST /api/ai/stock-analysis — Grounded stock analysis powered by Gemini AI
+- GET /api/13f/filings — SEC Form 13F-HR institutional holdings
+
+### Illustrative & Simulated Endpoints
+- POST /api/v1/agent/quant-sim — Deterministic portfolio simulation game
+- POST /api/ai/quick-study — 3-sentence sector briefing
+- GET /api/v1/agent/query — Sample agent query payload
 `);
 });
 
@@ -2225,6 +2471,7 @@ function generateValidPdfBuffer(
 function getRealPdfFilePath(id: string): { filePath: string; filename: string } | null {
   const rootDir = process.cwd();
   const publicDir = path.join(rootDir, 'public');
+  const playbooksDir = path.join(publicDir, 'playbooks');
   const lowerId = id.toLowerCase();
 
   let targetFilename = '';
@@ -2244,23 +2491,31 @@ function getRealPdfFilePath(id: string): { filePath: string; filename: string } 
   }
 
   if (targetFilename) {
-    const rootPath = path.join(rootDir, targetFilename);
-    if (fs.existsSync(rootPath)) {
-      return { filePath: rootPath, filename: targetFilename };
+    const playbooksPath = path.join(playbooksDir, targetFilename);
+    if (fs.existsSync(playbooksPath)) {
+      return { filePath: playbooksPath, filename: targetFilename };
     }
     const pubPath = path.join(publicDir, targetFilename);
     if (fs.existsSync(pubPath)) {
       return { filePath: pubPath, filename: targetFilename };
     }
+    const rootPath = path.join(rootDir, targetFilename);
+    if (fs.existsSync(rootPath)) {
+      return { filePath: rootPath, filename: targetFilename };
+    }
   }
 
-  const directRoot = path.join(rootDir, `${id}.pdf`);
-  if (fs.existsSync(directRoot)) {
-    return { filePath: directRoot, filename: `${id}.pdf` };
+  const directPlaybooks = path.join(playbooksDir, `${id}.pdf`);
+  if (fs.existsSync(directPlaybooks)) {
+    return { filePath: directPlaybooks, filename: `${id}.pdf` };
   }
   const directPub = path.join(publicDir, `${id}.pdf`);
   if (fs.existsSync(directPub)) {
     return { filePath: directPub, filename: `${id}.pdf` };
+  }
+  const directRoot = path.join(rootDir, `${id}.pdf`);
+  if (fs.existsSync(directRoot)) {
+    return { filePath: directRoot, filename: `${id}.pdf` };
   }
 
   return null;
@@ -2991,6 +3246,71 @@ app.get('/api/13f/filings', async (req, res) => {
           { sector: "Industrials / Services", percent: 10.0, valueMillions: 1280, color: "#3b82f6" }
         ],
         quarterFlows: { newPositionsCount: 1, increasedCount: 2, decreasedCount: 0, soldOutCount: 0, totalPositions: 8 }
+      },
+      {
+        id: "citadel",
+        fundName: "Citadel Advisors LLC",
+        cik: "0001423053",
+        manager: "Ken Griffin",
+        filingDate: "2026-05-15",
+        quarter: "Q1 13F-HR",
+        aum: "$65.2B",
+        aumRaw: 65200,
+        mandate: "Multi-strategy quantitative market making, tech equities, and systematic macro.",
+        topHoldings: [
+          { symbol: "NVDA", name: "NVIDIA Corporation", shares: "8.5M", valueMillions: 1105.0, portfolioPercent: 8.2, changeType: "INCREASED", changePercent: 12.0, sector: "Technology", thesis: "Systematic tech long position tracking AI infrastructure surge." },
+          { symbol: "MSFT", name: "Microsoft Corporation", shares: "2.1M", valueMillions: 945.0, portfolioPercent: 7.0, changeType: "HOLD", changePercent: 0, sector: "Technology", thesis: "Core enterprise cloud anchor position." }
+        ],
+        sectorAllocation: [
+          { sector: "Technology", percent: 45.0, valueMillions: 29340, color: "#06b6d4" },
+          { sector: "Financials", percent: 30.0, valueMillions: 19560, color: "#3b82f6" },
+          { sector: "Healthcare", percent: 15.0, valueMillions: 9780, color: "#ec4899" },
+          { sector: "Other", percent: 10.0, valueMillions: 6520, color: "#10b981" }
+        ],
+        quarterFlows: { newPositionsCount: 12, increasedCount: 45, decreasedCount: 30, soldOutCount: 8, totalPositions: 120 }
+      },
+      {
+        id: "millennium",
+        fundName: "Millennium Management LLC",
+        cik: "0001273087",
+        manager: "Israel Englander",
+        filingDate: "2026-05-15",
+        quarter: "Q1 13F-HR",
+        aum: "$58.1B",
+        aumRaw: 58100,
+        mandate: "Multi-pod statistical arbitrage and risk-managed equity long/short.",
+        topHoldings: [
+          { symbol: "AMZN", name: "Amazon.com Inc", shares: "4.1M", valueMillions: 820.0, portfolioPercent: 6.5, changeType: "INCREASED", changePercent: 15.0, sector: "Consumer Discretionary", thesis: "AWS cloud re-acceleration and retail margin expansion." },
+          { symbol: "META", name: "Meta Platforms Inc", shares: "1.2M", valueMillions: 720.0, portfolioPercent: 5.7, changeType: "INCREASED", changePercent: 8.0, sector: "Technology", thesis: "Ad monetization efficiency driven by AI recommendation engine." }
+        ],
+        sectorAllocation: [
+          { sector: "Technology", percent: 40.0, valueMillions: 23240, color: "#06b6d4" },
+          { sector: "Consumer", percent: 25.0, valueMillions: 14525, color: "#10b981" },
+          { sector: "Financials", percent: 20.0, valueMillions: 11620, color: "#3b82f6" },
+          { sector: "Healthcare", percent: 15.0, valueMillions: 8715, color: "#ec4899" }
+        ],
+        quarterFlows: { newPositionsCount: 15, increasedCount: 50, decreasedCount: 20, soldOutCount: 10, totalPositions: 150 }
+      },
+      {
+        id: "tiger",
+        fundName: "Tiger Global Management LLC",
+        cik: "0001167483",
+        manager: "Chase Coleman",
+        filingDate: "2026-05-15",
+        quarter: "Q1 13F-HR",
+        aum: "$18.4B",
+        aumRaw: 18400,
+        mandate: "Global internet, enterprise software, consumer tech, and frontier AI platforms.",
+        topHoldings: [
+          { symbol: "META", name: "Meta Platforms Inc", shares: "2.8M", valueMillions: 1680.0, portfolioPercent: 9.1, changeType: "HOLD", changePercent: 0, sector: "Technology", thesis: "Llama open-source AI flywheel and social network monetization." },
+          { symbol: "MSFT", name: "Microsoft Corporation", shares: "3.1M", valueMillions: 1395.0, portfolioPercent: 7.6, changeType: "HOLD", changePercent: 0, sector: "Technology", thesis: "Azure AI enterprise cloud growth momentum." }
+        ],
+        sectorAllocation: [
+          { sector: "Technology", percent: 65.0, valueMillions: 11960, color: "#06b6d4" },
+          { sector: "Consumer Internet", percent: 25.0, valueMillions: 4600, color: "#10b981" },
+          { sector: "Fintech", percent: 10.0, valueMillions: 1840, color: "#3b82f6" }
+        ],
+        quarterFlows: { newPositionsCount: 2, increasedCount: 5, decreasedCount: 3, soldOutCount: 1, totalPositions: 22 }
       }
     ];
 
@@ -3116,6 +3436,34 @@ app.get("/api/ticker-news/:symbol", async (req, res) => {
     console.error("Error fetching RSS feed:", error);
     res.status(500).json({ error: "Failed to fetch news" });
   }
+});
+
+// Explicit Public Static Serving for Raw JSON Backend Feeds
+const publicFolder = path.join(process.cwd(), 'public');
+app.use(express.static(publicFolder));
+
+app.get(['/market_watchlist_data.json', '/api/market-watchlist'], (req, res) => {
+  const filePath = path.join(publicFolder, 'market_watchlist_data.json');
+  if (fs.existsSync(filePath)) return res.sendFile(filePath);
+  return res.status(404).json({ status: "error", message: "market_watchlist_data.json not found" });
+});
+
+app.get(['/sec_intel_data.json', '/api/sec-intel'], (req, res) => {
+  const filePath = path.join(publicFolder, 'sec_intel_data.json');
+  if (fs.existsSync(filePath)) return res.sendFile(filePath);
+  return res.status(404).json({ status: "error", message: "sec_intel_data.json not found" });
+});
+
+app.get(['/dyson_swarm_data.json', '/api/dyson-swarm'], (req, res) => {
+  const filePath = path.join(publicFolder, 'dyson_swarm_data.json');
+  if (fs.existsSync(filePath)) return res.sendFile(filePath);
+  return res.status(404).json({ status: "error", message: "dyson_swarm_data.json not found" });
+});
+
+app.get(['/intel_news_feed.json', '/api/intel-news'], (req, res) => {
+  const filePath = path.join(publicFolder, 'intel_news_feed.json');
+  if (fs.existsSync(filePath)) return res.sendFile(filePath);
+  return res.status(404).json({ status: "error", message: "intel_news_feed.json not found" });
 });
 
 async function startServer() {

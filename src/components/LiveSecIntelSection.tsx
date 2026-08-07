@@ -3,7 +3,7 @@ import { useSecIntelData } from "../hooks/useSecIntelData";
 import { ExternalLink, Database, Loader, Briefcase, FileText } from 'lucide-react';
 
 export const LiveSecIntelSection: React.FC = () => {
-  const { data, loading, error } = useSecIntelData();
+  const { data, loading, error, updatedAtFormatted, isStale, dataSource } = useSecIntelData();
 
   if (loading) {
     return (
@@ -24,9 +24,25 @@ export const LiveSecIntelSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="text-xs text-cyan-400/80 font-mono uppercase tracking-widest flex items-center gap-2">
-        <Database className="w-4 h-4" />
-        Live SEC Edgar Uplink - Last Sync: {data.updated_at}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs text-cyan-400/80 font-mono uppercase tracking-widest bg-black/40 p-3 alien-block-cut border border-cyan-500/20">
+        <div className="flex items-center gap-2">
+          <Database className="w-4 h-4 text-cyan-400" />
+          <span>Source: {dataSource}</span>
+          <span className="text-neutral-500">•</span>
+          <span>Last updated: {updatedAtFormatted || data.updated_at}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {isStale ? (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase">
+              STALE DATA (&gt;24H)
+            </span>
+          ) : (
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase">
+              SEC EDGAR LIVE
+            </span>
+          )}
+        </div>
       </div>
       
       {data.funds.map((fund, idx) => (

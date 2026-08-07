@@ -28,6 +28,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ExternalLink,
+  AlertTriangle,
   Check,
   Activity,
   Award,
@@ -87,6 +88,8 @@ export interface ConsensusHolding {
   topHolders: string[];
 }
 
+import { formatUtcTimestamp, isDataStale } from "../../utils/timeUtils";
+
 export const Intel13FDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [funds, setFunds] = useState<Fund13FItem[]>([]);
@@ -97,6 +100,9 @@ export const Intel13FDashboard: React.FC = () => {
   const [filterAction, setFilterAction] = useState<string>("ALL");
   const [copiedStatus, setCopiedStatus] = useState<boolean>(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [secUpdatedAt, setSecUpdatedAt] = useState<string>(formatUtcTimestamp(new Date()));
+  const [secIsStale, setSecIsStale] = useState<boolean>(false);
+  const [isUsingLocalFallback, setIsUsingLocalFallback] = useState<boolean>(false);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -114,6 +120,9 @@ export const Intel13FDashboard: React.FC = () => {
           setFunds(data.funds);
           setConsensus(data.consensusHoldings || []);
           setMacroSummary(data.macroSummary || "");
+          const rawTime = data.timestamp || data.updated_at || new Date().toISOString();
+          setSecUpdatedAt(formatUtcTimestamp(rawTime));
+          setSecIsStale(isDataStale(rawTime));
           showToast("Live 13F SEC Filings Synchronized!");
           return;
         }
@@ -127,11 +136,32 @@ export const Intel13FDashboard: React.FC = () => {
           setFunds(ghData.funds);
           setConsensus(ghData.consensusHoldings || []);
           setMacroSummary(ghData.macroSummary || "");
+          const rawTime = ghData.updated_at || new Date().toISOString();
+          setSecUpdatedAt(formatUtcTimestamp(rawTime));
+          setSecIsStale(isDataStale(rawTime));
           showToast("Live 13F SEC Intel Synchronized from GitHub!");
+          return;
+        }
+      }
+
+      // Local Proxy Endpoint Fallback
+      const localRes = await fetch("/sec_intel_data.json");
+      if (localRes.ok) {
+        const localData = await localRes.json();
+        if (localData.funds && localData.funds.length > 0) {
+          setFunds(localData.funds);
+          setConsensus(localData.consensusHoldings || []);
+          setMacroSummary(localData.macroSummary || "");
+          const rawTime = localData.updated_at || new Date().toISOString();
+          setSecUpdatedAt(formatUtcTimestamp(rawTime));
+          setSecIsStale(isDataStale(rawTime));
+          setIsUsingLocalFallback(true);
+          showToast("SEC Intel loaded from local backend proxy!");
         }
       }
     } catch (err) {
       console.warn("Failed to fetch 13F filings feed:", err);
+      setIsUsingLocalFallback(true);
     } finally {
       setLoading(false);
     }
@@ -267,8 +297,23 @@ export const Intel13FDashboard: React.FC = () => {
                   <ShieldCheck className="w-3 h-3 text-amber-400" />
                   SEC EDGAR FORM 13F-HR AUTOMATED FEED
                 </span>
-                <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 border border-emerald-500/30 alien-block-cut-sm">
-                  LIVE API SYNC ACTIVE
+                {secIsStale ? (
+                  <span className="text-[10px] text-amber-300 font-bold bg-amber-500/20 px-2 py-0.5 border border-amber-500/40 alien-block-cut-sm uppercase">
+                    STALE DATA (&gt;24H)
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 border border-emerald-500/30 alien-block-cut-sm">
+                    LIVE API SYNC ACTIVE
+                  </span>
+                )}
+                {isUsingLocalFallback && (
+                  <span className="text-[10px] text-amber-300 font-bold bg-amber-500/20 px-2 py-0.5 border border-amber-500/40 alien-block-cut-sm uppercase flex items-center gap-1">
+                    <AlertTriangle className="w-3 h-3 text-amber-400" />
+                    LOCAL BACKEND PROXY (FALLBACK)
+                  </span>
+                )}
+                <span className="text-[10px] text-cyan-300 font-bold bg-cyan-950/60 px-2 py-0.5 border border-cyan-500/30 alien-block-cut-sm">
+                  Last updated: {secUpdatedAt}
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl font-black text-white uppercase tracking-wider">

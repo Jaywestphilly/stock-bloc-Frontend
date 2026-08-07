@@ -33,28 +33,30 @@ export const GlobalDisclaimerBar: React.FC<GlobalDisclaimerBarProps> = ({ onOpen
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 border-t-2 border-amber-500/80 p-2 sm:p-3 shadow-[0_-4px_20px_rgba(245,158,11,0.15)] backdrop-blur-xl">
-      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 px-2">
-        <div className="flex items-start sm:items-center gap-2 flex-1">
-          <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
-          <p className="text-[10px] sm:text-[11px] font-mono text-amber-100 uppercase tracking-wider leading-relaxed">
-            STOCK BLOC is an educational intelligence platform. Nothing on this site is financial advice. Always do your own research.{" "}
+    <div className="fixed bottom-16 sm:bottom-14 left-1/2 -translate-x-1/2 z-30 w-[96%] max-w-4xl pointer-events-none animate-fadeIn">
+      <div className="pointer-events-auto bg-[#080d14]/95 backdrop-blur-md border border-amber-500/50 alien-block-cut-sm p-2 sm:px-4 shadow-2xl shadow-amber-950/50 flex items-center justify-between gap-3 text-amber-200 text-[10px] sm:text-xs font-mono">
+        <div className="flex items-center gap-2 overflow-hidden">
+          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+          <p className="truncate sm:whitespace-normal font-medium leading-tight">
+            <strong className="text-amber-300 uppercase font-black tracking-wider">STOCK BLOC</strong> is an educational intelligence platform. Nothing on this site is financial advice. Always do your own research.{" "}
             <button 
               type="button"
               onClick={handleViewDisclaimer}
-              className="text-amber-400 font-bold hover:text-amber-300 underline underline-offset-2 ml-1"
+              className="text-amber-400 hover:text-white font-bold underline inline-flex items-center gap-0.5 ml-1 transition-colors cursor-pointer"
             >
-              See full disclaimer.
+              See full disclaimer
             </button>
           </p>
         </div>
+
         <button
           type="button"
           onClick={handleDismiss}
-          className="p-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded shrink-0 transition-colors"
+          className="p-1 hover:bg-amber-500/20 text-amber-300 hover:text-white rounded transition-colors cursor-pointer shrink-0"
           aria-label="Dismiss disclaimer"
+          title="Dismiss disclaimer bar"
         >
-          <X className="w-4 h-4" />
+          <X className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>
