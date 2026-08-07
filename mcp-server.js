@@ -91,7 +91,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "search_13f_whale_filings",
-        description: "Search SEC 13F institutional whale holdings for major funds (ARK Invest, Duquesne, Tiger Global, Berkshire Hathaway).",
+        description: "Search SEC 13F institutional whale holdings for major funds (ARK Invest, Duquesne, Berkshire, Scion, Pershing Square, Citadel, Millennium, Tiger Global).",
         inputSchema: {
           type: "object",
           properties: {
@@ -104,7 +104,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: "get_data_status",
-        description: "Get updated_at timestamps, source URLs, and freshness status for all public market, SEC 13F, dyson swarm, and news feeds.",
+        description: "Get updated_at timestamps, stale flags, and freshness status for all public market, SEC 13F, dyson swarm, and news feeds.",
         inputSchema: {
           type: "object",
           properties: {},
@@ -138,7 +138,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const data = await res.json();
       const limit = args?.limit || 10;
       const agents = (data.leaderboard || []).slice(0, limit);
-      const dataAsOf = data.updated_at || data.lastUpdated || nowIso;
+      const dataAsOf = data.updated_at || data.lastUpdated || data.data_as_of || nowIso;
+      const stale = data.stale !== undefined ? Boolean(data.stale) : false;
 
       return {
         content: [
@@ -148,6 +149,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               {
                 summary: `Retrieved ${agents.length} top Stock Bloc AI agents`,
                 data_as_of: dataAsOf,
+                stale,
                 totalAgents: data.totalAgents,
                 topAgents: agents,
               },
@@ -163,7 +165,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const symbol = String(args.symbol).toUpperCase();
       const res = await fetch(`${BASE_URL}/api/live-quote/${symbol}`);
       const data = await res.json();
-      const dataAsOf = data.lastUpdated || data.updated_at || nowIso;
+      const dataAsOf = data.data_as_of || data.lastUpdated || data.updated_at || nowIso;
+      const stale = data.stale !== undefined ? Boolean(data.stale) : false;
 
       return {
         content: [
@@ -172,6 +175,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             text: JSON.stringify({
               ...data,
               data_as_of: dataAsOf,
+              stale,
             }, null, 2),
           },
         ],
@@ -196,7 +200,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             type: "text",
             text: JSON.stringify({
               ...data,
-              data_as_of: nowIso,
+              data_as_of: data.data_as_of || nowIso,
+              stale: false,
               endpoint_type: "illustrative_simulation",
             }, null, 2),
           },
@@ -219,7 +224,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             type: "text",
             text: JSON.stringify({
               symbol,
-              data_as_of: nowIso,
+              data_as_of: data.data_as_of || nowIso,
+              stale: false,
               analysis: data.analysis || "Analysis currently unavailable.",
               sentiment: data.sentiment || "Neutral",
               catalysts: data.catalysts || [],
@@ -233,53 +239,53 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       const manager = args?.manager ? String(args.manager).toLowerCase() : "";
       
       try {
-        // 1. Try Live Endpoint
-        const liveRes = await fetch(`${BASE_URL}/api/13f/filings?fund=${encodeURIComponent(manager)}`);
-        if (liveRes.ok) {
-          const data = await liveRes.json();
-          const timestamp = data.updated_at || data.timestamp || nowIso;
-          return {
-            content: [
-              {
-                type: "text",
-                text: JSON.stringify(
-                  {
-                    source: "SEC EDGAR Form 13F-HR Live API",
-                    data_as_of: timestamp,
-                    updated_at: timestamp,
-                    funds: data.funds || [],
-                    macroSummary: data.macroSummary || "",
-                  },
-                  null,
-                  2
-                ),
-              },
-            ],
-          };
-        }
-
-        // 2. Try CDN Proxy
-        const ghRes = await fetch(`${BASE_URL}/api/data/sec`);
-        if (ghRes.ok) {
-          const ghData = await ghRes.json();
-          let funds = ghData.funds || [];
+        const res = await fetch(`${BASE_URL}/api/data/sec`);
+        if (res.ok) {
+          const secData = await res.json();
+          let funds = Array.isArray(secData.funds) ? secData.funds : [];
           if (manager) {
             funds = funds.filter(f => 
               (f.fund_name || f.fundName || "").toLowerCase().includes(manager) ||
-              (f.manager || "").toLowerCase().includes(manager)
+              (f.manager || "").toLowerCase().includes(manager) ||
+              (f.id || "").toLowerCase().includes(manager)
             );
           }
-          const timestamp = ghData.updated_at || nowIso;
+
+          const updatedAt = secData.updated_at || nowIso;
+          const stale = secData.stale !== undefined ? Boolean(secData.stale) : false;
+
+          const processedFunds = funds.map(f => {
+            const holdings = f.topHoldings || f.holdings || [];
+            const hasHoldings = Array.isArray(holdings) && holdings.length > 0;
+            const holdingsStatus = hasHoldings ? (f.holdings_status || "parsed") : "metadata_only";
+
+            return {
+              id: f.id,
+              fund_name: f.fund_name || f.fundName,
+              manager: f.manager,
+              cik: f.cik,
+              filing_date: f.filing_date || f.filingDate,
+              quarter: f.quarter,
+              aum: f.aum,
+              doc_url: f.doc_url || (f.filings && f.filings[0] ? f.filings[0].doc_url : undefined),
+              holdings_status: holdingsStatus,
+              mandate: f.mandate,
+              filings: f.filings,
+              topHoldings: hasHoldings ? holdings : []
+            };
+          });
+
           return {
             content: [
               {
                 type: "text",
                 text: JSON.stringify(
                   {
-                    source: "SEC EDGAR Form 13F-HR CDN Proxy Feed (/api/data/sec)",
-                    data_as_of: timestamp,
-                    updated_at: timestamp,
-                    funds,
+                    source: `${BASE_URL}/api/data/sec`,
+                    data_as_of: updatedAt,
+                    stale: stale,
+                    funds: processedFunds,
+                    macroSummary: secData.macroSummary || "",
                   },
                   null,
                   2
@@ -289,132 +295,58 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           };
         }
       } catch (e) {
-        console.error("MCP live 13F fetch error:", e);
+        console.error("MCP 13F fetch error:", e);
       }
 
-      // 3. Fallback: Illustrative Sample Data with explicit labeling
       return {
+        isError: true,
         content: [
           {
             type: "text",
-            text: JSON.stringify(
-              {
-                source: "illustrative sample data (not live EDGAR)",
-                note: "Live SEC EDGAR 13F connection currently offline. Sample data displayed.",
-                data_as_of: nowIso,
-                updated_at: nowIso,
-                samples: [
-                  {
-                    manager: "Cathie Wood (ARK Invest)",
-                    topHoldings: [
-                      { ticker: "TSLA", weight: "8.5%", shares: "3.4M", value: "$1.8B" },
-                      { ticker: "COIN", weight: "7.2%", shares: "2.1M", value: "$1.4B" },
-                      { ticker: "ROKU", weight: "6.1%", shares: "4.8M", value: "$1.1B" },
-                      { ticker: "PATH", weight: "5.4%", shares: "12.3M", value: "$950M" },
-                    ],
-                    qChange: "Increased AI compute and autonomous robotics holdings by +14%",
-                  },
-                  {
-                    manager: "Stanley Druckenmiller (Duquesne)",
-                    topHoldings: [
-                      { ticker: "NVDA", weight: "12.4%", shares: "1.8M", value: "$1.6B" },
-                      { ticker: "MSFT", weight: "9.1%", shares: "2.2M", value: "$1.2B" },
-                      { ticker: "AMZN", weight: "7.8%", shares: "3.5M", value: "$980M" },
-                      { ticker: "CEG", weight: "5.9%", shares: "1.4M", value: "$720M" },
-                    ],
-                    qChange: "Heavy accumulation of AI hardware and nuclear energy power suppliers",
-                  },
-                  {
-                    manager: "Warren Buffett (Berkshire Hathaway)",
-                    topHoldings: [
-                      { ticker: "AAPL", weight: "28.5%", shares: "300M", value: "$68B" },
-                      { ticker: "BAC", weight: "9.8%", shares: "800M", value: "$32B" },
-                      { ticker: "AXP", weight: "8.2%", shares: "151M", value: "$28B" },
-                      { ticker: "KO", weight: "7.1%", shares: "400M", value: "$24B" },
-                    ],
-                    qChange: "Built massive $300B+ cash reserve, maintaining durable moat compounders",
-                  },
-                ],
-              },
-              null,
-              2
-            ),
+            text: "Failed to fetch SEC 13F holdings from proxy endpoint.",
           },
         ],
       };
     }
 
     if (name === "get_data_status") {
-      let statusData = null;
       try {
         const res = await fetch(`${BASE_URL}/api/v1/data-status`);
         if (res.ok) {
-          statusData = await res.json();
+          const statusData = await res.json();
+          return {
+            content: [
+              {
+                type: "text",
+                text: JSON.stringify(
+                  {
+                    data_as_of: statusData.server_time || nowIso,
+                    ...statusData,
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
+          };
         }
       } catch (e) {
-        // Fallback to direct raw GitHub checks
+        console.error("Error fetching /api/v1/data-status in MCP:", e);
       }
 
-      if (!statusData) {
-        try {
-          const [mRes, sRes, dRes, nRes] = await Promise.allSettled([
-            fetch(`${BASE_URL}/api/data/market`).then(r => r.json()),
-            fetch(`${BASE_URL}/api/data/sec`).then(r => r.json()),
-            fetch(`${BASE_URL}/api/data/dyson`).then(r => r.json()),
-            fetch(`${BASE_URL}/api/data/news`).then(r => r.json()),
-          ]);
-
-          const mData = mRes.status === "fulfilled" ? mRes.value : {};
-          const sData = sRes.status === "fulfilled" ? sRes.value : {};
-          const dData = dRes.status === "fulfilled" ? dRes.value : {};
-          const nData = nRes.status === "fulfilled" ? nRes.value : {};
-
-          statusData = {
-            data_as_of: nowIso,
-            market: {
-              updated_at: mData.updated_at || nowIso,
-              stale: Boolean(mData.stale),
-              source: "/api/data/market",
-              status: "ONLINE"
-            },
-            sec: {
-              updated_at: sData.updated_at || nowIso,
-              stale: Boolean(sData.stale),
-              source: "/api/data/sec",
-              status: "ONLINE"
-            },
-            dyson: {
-              updated_at: dData.updated_at || nowIso,
-              stale: Boolean(dData.stale),
-              source: "/api/data/dyson",
-              status: "ONLINE"
-            },
-            news: {
-              updated_at: nData.updated_at || nowIso,
-              stale: Boolean(nData.stale),
-              source: "/api/data/news",
-              status: "ONLINE"
-            }
-          };
-        } catch (e) {
-          statusData = {
-            data_as_of: nowIso,
-            market: { updated_at: nowIso, source: "Market Quote Stream", status: "ONLINE" },
-            sec: { updated_at: nowIso, source: "SEC Form 13F-HR EDGAR Feed", status: "ONLINE" },
-            dyson: { updated_at: nowIso, source: "Dyson Swarm Orbital Telemetry", status: "ONLINE" },
-            news: { updated_at: nowIso, source: "Intel News RSS Aggregator", status: "ONLINE" }
-          };
-        }
-      }
-
+      // Fallback
       return {
         content: [
           {
             type: "text",
-            text: JSON.stringify({
-              data_as_of: statusData.data_as_of || nowIso,
-              feeds: statusData,
-            }, null, 2),
+            text: JSON.stringify(
+              {
+                data_as_of: nowIso,
+                error: "Failed to fetch data-status endpoint.",
+              },
+              null,
+              2
+            ),
           },
         ],
       };
@@ -430,6 +362,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
               {
                 ebookId,
                 data_as_of: nowIso,
+                stale: false,
                 title: "Stock Bloc Wealth Operating System",
                 downloadUrl: `${BASE_URL}/api/download/ebook/${ebookId}`,
                 format: "High-Resolution PDF",
