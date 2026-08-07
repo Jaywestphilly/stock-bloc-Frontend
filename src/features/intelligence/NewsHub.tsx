@@ -161,6 +161,21 @@ export const NewsHub: React.FC = () => {
   };
 
   useEffect(() => {
+    // Dynamic loading of Twitter / X widgets.js script
+    const scriptId = "twitter-wjs";
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.src = "https://platform.twitter.com/widgets.js";
+      script.async = true;
+      script.charset = "utf-8";
+      document.body.appendChild(script);
+    } else if ((window as any).twttr?.widgets) {
+      (window as any).twttr.widgets.load();
+    }
+  }, []);
+
+  useEffect(() => {
     const getChannelRank = (channelName: string): number => {
       const c = (channelName || "").toLowerCase();
       if (c.includes("stock bloc")) return 1;
@@ -439,6 +454,27 @@ export const NewsHub: React.FC = () => {
               </a>
             </div>
           ))}
+        </div>
+
+        {/* OFFICIAL LIVE TWITTER / X TIMELINE WIDGET */}
+        <div className="pt-3 border-t border-cyan-500/20">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              Live Twitter / 𝕏 Official Feed (@stockbloc)
+            </span>
+          </div>
+          <div className="w-full rounded-xl bg-black/80 border border-cyan-500/30 p-2 overflow-hidden flex justify-center min-h-[500px]">
+            <a
+              className="twitter-timeline"
+              data-height="500"
+              data-theme="dark"
+              href="https://twitter.com/stockbloc?ref_src=twsrc%5Etfw"
+            >
+              Tweets by stockbloc
+            </a>
+            <script async src="https://platform.twitter.com/widgets.js" charSet="utf-8" />
+          </div>
         </div>
       </div>
 
