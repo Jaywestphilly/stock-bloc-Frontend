@@ -25,8 +25,10 @@ import {
   FileText,
   HelpCircle,
   Laptop,
+  BarChart3,
 } from "lucide-react";
 import { triggerHaptic } from "../../utils/haptics";
+import { AiValueChainHeatmap } from "./AiValueChainHeatmap";
 
 interface ToolItem {
   name: string;
@@ -45,8 +47,8 @@ interface ToolItem {
 
 export const AiRevolutionHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
-    "intent_engine" | "prompting" | "tools" | "build_apps" | "prompt_generator" | "impact"
-  >("intent_engine");
+    "value_chain" | "intent_engine" | "prompting" | "tools" | "build_apps" | "prompt_generator" | "impact"
+  >("value_chain");
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
 
   // Agentic Intent Settlement Engine State
@@ -392,6 +394,21 @@ Instructions:
           <button
             onClick={() => {
               triggerHaptic("selection");
+              setActiveTab("value_chain");
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
+              activeTab === "value_chain"
+                ? "bg-amber-400 text-black font-extrabold shadow-lg shadow-amber-400/30"
+                : "bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
+            }`}
+          >
+            <BarChart3 className="w-3 h-3 text-amber-300" />
+            MS AI Value Chain Heatmap
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
               setActiveTab("intent_engine");
             }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
@@ -481,7 +498,14 @@ Instructions:
         </div>
       </div>
 
-      {/* TAB 0: AGENTIC INTENT SETTLEMENT ENGINE */}
+      {/* TAB 0: MORGAN STANLEY AI VALUE CHAIN HEATMAP */}
+      {activeTab === "value_chain" && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <AiValueChainHeatmap />
+        </div>
+      )}
+
+      {/* TAB 1: AGENTIC INTENT SETTLEMENT ENGINE */}
       {activeTab === "intent_engine" && (
         <div className="space-y-6 animate-in fade-in duration-300">
           <div className="p-6 rounded-3xl bg-neutral-900/90 border border-cyan-500/30 shadow-2xl space-y-6 relative overflow-hidden">
