@@ -258,8 +258,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           };
         }
 
-        // 2. Try GitHub JSON
-        const ghRes = await fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/sec_intel_data.json");
+        // 2. Try CDN Proxy
+        const ghRes = await fetch(`${BASE_URL}/api/data/sec`);
         if (ghRes.ok) {
           const ghData = await ghRes.json();
           let funds = ghData.funds || [];
@@ -276,7 +276,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 type: "text",
                 text: JSON.stringify(
                   {
-                    source: "SEC EDGAR Form 13F-HR GitHub JSON Feed (https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/sec_intel_data.json)",
+                    source: "SEC EDGAR Form 13F-HR CDN Proxy Feed (/api/data/sec)",
                     data_as_of: timestamp,
                     updated_at: timestamp,
                     funds,
@@ -358,10 +358,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       if (!statusData) {
         try {
           const [mRes, sRes, dRes, nRes] = await Promise.allSettled([
-            fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/market_watchlist_data.json").then(r => r.json()),
-            fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/sec_intel_data.json").then(r => r.json()),
-            fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/dyson_swarm_data.json").then(r => r.json()),
-            fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/intel_news_feed.json").then(r => r.json()),
+            fetch(`${BASE_URL}/api/data/market`).then(r => r.json()),
+            fetch(`${BASE_URL}/api/data/sec`).then(r => r.json()),
+            fetch(`${BASE_URL}/api/data/dyson`).then(r => r.json()),
+            fetch(`${BASE_URL}/api/data/news`).then(r => r.json()),
           ]);
 
           const mData = mRes.status === "fulfilled" ? mRes.value : {};
@@ -373,22 +373,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             data_as_of: nowIso,
             market: {
               updated_at: mData.updated_at || nowIso,
-              source: "https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/market_watchlist_data.json",
+              stale: Boolean(mData.stale),
+              source: "/api/data/market",
               status: "ONLINE"
             },
             sec: {
               updated_at: sData.updated_at || nowIso,
-              source: "https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/sec_intel_data.json",
+              stale: Boolean(sData.stale),
+              source: "/api/data/sec",
               status: "ONLINE"
             },
             dyson: {
               updated_at: dData.updated_at || nowIso,
-              source: "https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/dyson_swarm_data.json",
+              stale: Boolean(dData.stale),
+              source: "/api/data/dyson",
               status: "ONLINE"
             },
             news: {
               updated_at: nData.updated_at || nowIso,
-              source: "https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/intel_news_feed.json",
+              stale: Boolean(nData.stale),
+              source: "/api/data/news",
               status: "ONLINE"
             }
           };

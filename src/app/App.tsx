@@ -662,11 +662,11 @@ export function App() {
     triggerHaptic("refresh");
 
     try {
-      let res = await fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/market_watchlist_data.json");
-      let sourceName = "GitHub JSON / Market Watchlist";
+      let res = await fetch("/api/data/market");
+      let sourceName = "CDN Proxy / Market Watchlist";
       if (!res.ok) {
         res = await fetch("/market_watchlist_data.json");
-        sourceName = "Local Proxy / Market Watchlist";
+        sourceName = "Local Proxy Fallback";
       }
       if (!res.ok) throw new Error("Failed to fetch market watchlist");
       const json = await res.json();

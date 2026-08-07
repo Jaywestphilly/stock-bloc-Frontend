@@ -128,8 +128,8 @@ export const Intel13FDashboard: React.FC = () => {
         }
       }
       
-      // Fallback: Direct GitHub automated JSON feed
-      const ghRes = await fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/sec_intel_data.json");
+      // Fallback: CDN Proxy automated JSON feed
+      const ghRes = await fetch("/api/data/sec");
       if (ghRes.ok) {
         const ghData = await ghRes.json();
         if (ghData.funds && ghData.funds.length > 0) {
@@ -138,8 +138,8 @@ export const Intel13FDashboard: React.FC = () => {
           setMacroSummary(ghData.macroSummary || "");
           const rawTime = ghData.updated_at || new Date().toISOString();
           setSecUpdatedAt(formatUtcTimestamp(rawTime));
-          setSecIsStale(isDataStale(rawTime));
-          showToast("Live 13F SEC Intel Synchronized from GitHub!");
+          setSecIsStale(ghData.stale !== undefined ? ghData.stale : isDataStale(rawTime));
+          showToast("Live 13F SEC Intel Synchronized!");
           return;
         }
       }

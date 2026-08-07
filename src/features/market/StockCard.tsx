@@ -24,6 +24,8 @@ import { SentimentGauge } from "../../components/SentimentGauge";
 import { TrendSentimentVisualizer } from "../../components/TrendSentimentVisualizer";
 import { triggerHaptic } from "../../utils/haptics";
 import { useUserStore } from "../../stores/userStore";
+import { useMarketStore } from "../../stores/marketStore";
+import { getDataAgeText } from "../../utils/timeUtils";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -286,6 +288,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
   onRemove,
   isSyncing,
 }) => {
+  const { marketDataUpdatedAt, marketDataIsStale } = useMarketStore();
   const [dragOffset, setDragOffset] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
   const [priceFlashState, setPriceFlashState] = useState<"up" | "down" | null>(
@@ -901,16 +904,25 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                     <BarChart2 className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {marketDataIsStale ? (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase">
+                          STALE
+                        </span>
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase">
+                          LIVE
+                        </span>
+                      )}
                       <span className="text-xs font-black text-cyan-200 tracking-wider uppercase">
-                        LIVE PRICE CHART
+                        PRICE CHART
                       </span>
                       <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
                         {chartTimeframe} TREND
                       </span>
                     </div>
                     <p className="text-[10px] text-cyan-400/70 font-mono">
-                      Real-time price trend • Tap point to inspect price & volume
+                      As of {getDataAgeText(marketDataUpdatedAt)} • Tap point to inspect price & volume
                     </p>
                   </div>
                 </div>

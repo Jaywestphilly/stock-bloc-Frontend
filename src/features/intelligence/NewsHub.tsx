@@ -126,7 +126,7 @@ export const NewsHub: React.FC = () => {
       return 6;
     };
 
-    fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/intel_news_feed.json")
+    fetch("/api/data/news")
       .then(res => {
         if (!res.ok) return fetch("/intel_news_feed.json");
         return res;
@@ -143,7 +143,7 @@ export const NewsHub: React.FC = () => {
         }
       })
       .catch((err) => {
-        console.error("Failed to fetch intel_news_feed.json from github, trying local proxy:", err);
+        console.error("Failed to fetch intel news feed, trying fallback:", err);
         fetch("/intel_news_feed.json")
           .then(res => res.json())
           .then(data => {

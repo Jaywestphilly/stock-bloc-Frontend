@@ -63,10 +63,10 @@ export const useSecIntelData = () => {
         }
 
         if (!fetchedData) {
-          const res = await fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/sec_intel_data.json");
+          const res = await fetch("/api/data/sec");
           if (!res.ok) throw new Error("Failed to fetch SEC Intel data");
           fetchedData = await res.json();
-          sourceName = "GitHub JSON / SEC Edgar";
+          sourceName = "CDN Proxy / SEC Edgar";
         }
 
         if (fetchedData) {

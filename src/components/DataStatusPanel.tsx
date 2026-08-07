@@ -31,37 +31,45 @@ export const DataStatusPanel: React.FC<DataStatusPanelProps> = ({
   useEffect(() => {
     if (!isOpen) return;
 
-    // Dyson Swarm Data Feed
-    fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/dyson_swarm_data.json")
-      .then((res) => {
-        if (!res.ok) return fetch("/dyson_swarm_data.json");
-        return res;
-      })
+    // Fetch unified data freshness status from /api/v1/data-status
+    fetch("/api/v1/data-status")
       .then((res) => res.json())
-      .then((json) => {
-        if (json && json.updated_at) {
-          setDysonUpdatedAt(json.updated_at);
-          setDysonStale(isDataStale(json.updated_at));
-          setDysonSource(json.source || "SpaceX / NASA Telemetry");
+      .then((statusData) => {
+        if (statusData.dyson) {
+          setDysonUpdatedAt(statusData.dyson.updated_at);
+          setDysonStale(Boolean(statusData.dyson.stale));
+          setDysonSource("SpaceX / NASA Telemetry (CDN Proxy)");
+        }
+        if (statusData.news) {
+          setNewsUpdatedAt(statusData.news.updated_at);
+          setNewsStale(Boolean(statusData.news.stale));
+          setNewsSource("Financial News RSS Aggregator (CDN Proxy)");
         }
       })
-      .catch(() => {});
+      .catch(() => {
+        // Fallback to direct proxy endpoints
+        fetch("/api/data/dyson")
+          .then((res) => res.json())
+          .then((json) => {
+            if (json && json.updated_at) {
+              setDysonUpdatedAt(json.updated_at);
+              setDysonStale(json.stale !== undefined ? json.stale : isDataStale(json.updated_at));
+              setDysonSource(json.source || "SpaceX / NASA Telemetry");
+            }
+          })
+          .catch(() => {});
 
-    // Intel News Feed
-    fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/intel_news_feed.json")
-      .then((res) => {
-        if (!res.ok) return fetch("/intel_news_feed.json");
-        return res;
-      })
-      .then((res) => res.json())
-      .then((json) => {
-        if (json && json.updated_at) {
-          setNewsUpdatedAt(json.updated_at);
-          setNewsStale(isDataStale(json.updated_at));
-          setNewsSource(json.source || "Financial News RSS Aggregator");
-        }
-      })
-      .catch(() => {});
+        fetch("/api/data/news")
+          .then((res) => res.json())
+          .then((json) => {
+            if (json && json.updated_at) {
+              setNewsUpdatedAt(json.updated_at);
+              setNewsStale(json.stale !== undefined ? json.stale : isDataStale(json.updated_at));
+              setNewsSource(json.source || "Financial News RSS Aggregator");
+            }
+          })
+          .catch(() => {});
+      });
   }, [isOpen]);
 
   if (!isOpen) return null;

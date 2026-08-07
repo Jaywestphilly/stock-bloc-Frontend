@@ -275,7 +275,7 @@ export const DysonSwarmHub: React.FC<DysonSwarmHubProps> = ({ stocks = [] }) => 
   const [dysonLiveData, setDysonLiveData] = useState<DysonLiveData | null>(null);
   
   useEffect(() => {
-    fetch("https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/dyson_swarm_data.json")
+    fetch("/api/data/dyson")
       .then((res) => {
         if (!res.ok) return fetch("/dyson_swarm_data.json");
         return res;
@@ -283,7 +283,7 @@ export const DysonSwarmHub: React.FC<DysonSwarmHubProps> = ({ stocks = [] }) => 
       .then((res) => res.json())
       .then((data) => setDysonLiveData(data))
       .catch((err) => {
-        console.error("Error fetching dyson live data, trying local proxy:", err);
+        console.error("Error fetching dyson live data, trying fallback:", err);
         fetch("/dyson_swarm_data.json")
           .then((res) => res.json())
           .then((data) => setDysonLiveData(data))
