@@ -1293,7 +1293,9 @@ export function App() {
           </div>
         )}
 
-        {activeTab === "ai_insights" && <AiRevolutionHub />}
+        {(activeTab === "ai_insights" || activeTab === "ai_revolution") && (
+          <AiRevolutionHub />
+        )}
 
         {activeTab === "playbooks" && (
           <PlaybooksHub

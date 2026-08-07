@@ -21,6 +21,8 @@ export const ROUTE_MAP: Record<string, ViewTab> = {
   "/podcasts": "podcasts",
   "/youtube": "youtube",
   "/small-business": "small_business",
+  "/ai": "ai_revolution",
+  "/ai-infra": "ai_revolution",
   "/ai-insights": "ai_insights",
   "/ai-revolution": "ai_revolution",
   "/dyson-swarm": "dyson_swarm",

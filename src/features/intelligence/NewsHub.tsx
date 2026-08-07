@@ -33,30 +33,10 @@ import { PODCAST_NEWS_ARTICLES } from "../../data/podcasts";
 import { YouTubeVideo, IntelFeedItem } from "../../types";
 import { triggerHaptic } from "../../utils/haptics";
 import { getStoredYouTubeVideos, syncYouTubeFeeds, formatTimeSinceSync } from "../../utils/youtubeSync";
+import { TwitterTimelineWidget } from "../../components/TwitterTimelineWidget";
 
 export type CombinedFeedItem =
   | (YouTubeVideo & { itemCategory: "youtube" | "news_video"; type: "youtube_video"; timestamp: string });
-
-const STOCK_BLOC_TWEETS = [
-  {
-    id: "2083776836958372343",
-    date: "Aug 2, 2026",
-    text: "Claude is the king of intelligence its undeniable at this point",
-    url: "https://x.com/TheStockBloc/status/2083776836958372343",
-  },
-  {
-    id: "2083636944999743905",
-    date: "Aug 1, 2026",
-    text: "🚀 Track Super sonic Tsunami & Semiconductor Stocks on Stock Bloc Terminal @thestockbloc #StockMarket #Finance #StockBloc #Trading 🔗 https://linktr.ee/StockBloc",
-    url: "https://x.com/TheStockBloc/status/2083636944999743905",
-  },
-  {
-    id: "2083193375348429080",
-    date: "Jul 31, 2026",
-    text: "😂 what",
-    url: "https://x.com/TheStockBloc/status/2083193375348429080",
-  },
-];
 
 const getItemTags = (item: CombinedFeedItem): string[] => {
   const tags: string[] = [];
@@ -424,57 +404,8 @@ export const NewsHub: React.FC = () => {
           </a>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {STOCK_BLOC_TWEETS.map((tweet) => (
-            <div
-              key={tweet.id}
-              className="bg-black/70 border border-neutral-800 hover:border-cyan-500/40 rounded-xl p-3.5 flex flex-col justify-between gap-3 transition-colors group"
-            >
-              <div className="space-y-2">
-                <div className="flex items-center justify-between gap-2 text-[10px]">
-                  <span className="text-cyan-400 font-bold flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
-                    @TheStockBloc
-                  </span>
-                  <span className="text-neutral-500 font-mono">{tweet.date}</span>
-                </div>
-                <p className="text-xs text-neutral-200 leading-relaxed group-hover:text-white transition-colors">
-                  {tweet.text}
-                </p>
-              </div>
-
-              <a
-                href={tweet.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 text-[10px] font-bold text-cyan-400 hover:text-cyan-300 pt-1 border-t border-neutral-900 group-hover:border-cyan-500/20"
-              >
-                <span>View on 𝕏</span>
-                <ExternalLink className="w-2.5 h-2.5" />
-              </a>
-            </div>
-          ))}
-        </div>
-
-        {/* OFFICIAL LIVE TWITTER / X TIMELINE WIDGET */}
-        <div className="pt-3 border-t border-cyan-500/20">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-mono font-bold text-cyan-300 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              Live Twitter / 𝕏 Official Feed (@stockbloc)
-            </span>
-          </div>
-          <div className="w-full rounded-xl bg-black/80 border border-cyan-500/30 p-2 overflow-hidden flex justify-center min-h-[500px]">
-            <a
-              className="twitter-timeline"
-              data-height="500"
-              data-theme="dark"
-              href="https://twitter.com/stockbloc?ref_src=twsrc%5Etfw"
-            >
-              Tweets by stockbloc
-            </a>
-            <script async src="https://platform.twitter.com/widgets.js" charSet="utf-8" />
-          </div>
+        <div className="pt-1">
+          <TwitterTimelineWidget />
         </div>
       </div>
 

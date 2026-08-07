@@ -18,6 +18,7 @@ import {
   FileText,
   Youtube,
   Globe,
+  BarChart3,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
 
@@ -38,6 +39,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
   ];
 
   const aiMenu = [
+    { id: "ai_revolution", label: "AI Infrastructure & Morgan Stanley Heatmap", icon: BarChart3 },
     { id: "dyson_swarm", label: "Dyson Swarm Compute", icon: Orbit },
     { id: "war_gov_ufo", label: "Defense Tech & Aerospace", icon: ShieldAlert },
     { id: "ai_insights", label: "Autonomous Agent Insights", icon: Cpu },
@@ -106,7 +108,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
   };
 
   const isMarketsActive = ["watchlist", "intelligence", "macro", "brand"].includes(activeTab);
-  const isAiActive = ["dyson_swarm", "war_gov_ufo", "ai_insights"].includes(activeTab);
+  const isAiActive = ["dyson_swarm", "war_gov_ufo", "ai_insights", "ai_revolution"].includes(activeTab);
   const isEducationActive = ["investopedia", "small_business", "youtube", "terminal_guide"].includes(activeTab);
 
   return (

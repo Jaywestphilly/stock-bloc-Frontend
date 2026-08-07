@@ -22,6 +22,7 @@ import {
   FileText,
   Terminal,
   Globe,
+  BarChart3,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
 
@@ -58,7 +59,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     ["watchlist", "brand", "macro", "intelligence"].includes(activeTab);
   const isAiActive =
     !isTerminalOpen &&
-    ["dyson_swarm", "war_gov_ufo", "ai_insights"].includes(activeTab);
+    ["dyson_swarm", "war_gov_ufo", "ai_insights", "ai_revolution"].includes(activeTab);
   const isRealEstateActive = !isTerminalOpen && activeTab === "real_estate";
   const isCreditActive = !isTerminalOpen && activeTab === "credit";
   const isEducationActive =
@@ -302,6 +303,24 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => handleNavigate("ai_revolution")}
+                className="p-3.5 bg-neutral-900/90 border border-amber-500/50 hover:border-amber-400 hover:bg-amber-950/40 rounded-xl text-left transition-all group flex items-start gap-3 cursor-pointer active:scale-95"
+              >
+                <div className="p-2 bg-amber-500/20 rounded-lg text-amber-400 shrink-0">
+                  <BarChart3 className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-white group-hover:text-amber-300 flex items-center justify-between">
+                    AI Infra & MS Value Chain
+                    <ChevronRight className="w-4 h-4 text-amber-400" />
+                  </h4>
+                  <p className="text-[11px] text-amber-300/80 mt-0.5">
+                    Morgan Stanley Heatmap, Power Generation, Data Centers & Chips.
+                  </p>
+                </div>
+              </button>
+
               <button
                 onClick={() => handleNavigate("dyson_swarm")}
                 className="p-3.5 bg-neutral-900/90 border border-purple-500/40 hover:border-purple-400 hover:bg-purple-950/40 rounded-xl text-left transition-all group flex items-start gap-3 cursor-pointer active:scale-95"
