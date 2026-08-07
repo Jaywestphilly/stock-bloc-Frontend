@@ -11,10 +11,70 @@
     }
   ],
   "paths": {
+    "/api/data/market": {
+      "get": {
+        "summary": "Get Watchlist & Market Feed",
+        "description": "Returns market watchlist stocks, prices, sector breakdown, updated_at timestamp, and stale boolean flag.",
+        "operationId": "getMarketDataProxy",
+        "responses": {
+          "200": {
+            "description": "Market watchlist JSON payload with updated_at and stale flag"
+          }
+        }
+      }
+    },
+    "/api/data/sec": {
+      "get": {
+        "summary": "Get SEC 13F Institutional Holdings",
+        "description": "Returns SEC Form 13F institutional whale holdings, quarterly filings, updated_at timestamp, and stale boolean flag. Depth depends on backend JSON payload.",
+        "operationId": "getSecDataProxy",
+        "responses": {
+          "200": {
+            "description": "SEC 13F holdings JSON payload with updated_at and stale flag"
+          }
+        }
+      }
+    },
+    "/api/data/dyson": {
+      "get": {
+        "summary": "Get Dyson Swarm AI Telemetry",
+        "description": "Returns Dyson Swarm AI orbital telemetry data, updated_at timestamp, and stale boolean flag.",
+        "operationId": "getDysonDataProxy",
+        "responses": {
+          "200": {
+            "description": "Dyson Swarm telemetry JSON payload"
+          }
+        }
+      }
+    },
+    "/api/data/news": {
+      "get": {
+        "summary": "Get Intelligence News Feed",
+        "description": "Returns intelligence news feed, podcast summaries, updated_at timestamp, and stale boolean flag.",
+        "operationId": "getNewsDataProxy",
+        "responses": {
+          "200": {
+            "description": "Intel news feed JSON payload"
+          }
+        }
+      }
+    },
+    "/api/v1/data-status": {
+      "get": {
+        "summary": "Get Pipeline Freshness & Status",
+        "description": "Returns pipeline updated_at timestamps and stale flags for market, SEC 13F, Dyson Swarm, and news feeds.",
+        "operationId": "getDataStatus",
+        "responses": {
+          "200": {
+            "description": "Unified pipeline data status object"
+          }
+        }
+      }
+    },
     "/api/live-quote/{symbol}": {
       "get": {
         "summary": "Get Live Real-time Quote",
-        "description": "Returns real-time stock price, 52-week high/low, volume, and updated_at timestamp.",
+        "description": "Returns real-time stock price, 52-week high/low, volume, data_as_of timestamp, and stale flag. Falls back to baseline quote if provider key is unavailable.",
         "operationId": "getLiveQuote",
         "parameters": [
           {
@@ -29,49 +89,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Real-time stock quote object with data_as_of timestamp"
-          }
-        }
-      }
-    },
-    "/api/live-quotes/batch": {
-      "post": {
-        "summary": "Get Batch Real-time Quotes",
-        "description": "Returns multiple stock quotes in a single request.",
-        "operationId": "getBatchLiveQuotes",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "symbols": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Array of stock quotes with timestamps"
-          }
-        }
-      }
-    },
-    "/api/v1/data-status": {
-      "get": {
-        "summary": "Get Data Pipeline Freshness & Updated Timestamps",
-        "description": "Returns pipeline updated_at timestamps for market watchlist, SEC 13F filings, Dyson swarm, and news feeds.",
-        "operationId": "getDataStatus",
-        "responses": {
-          "200": {
-            "description": "Feed freshness status with source URLs and updated_at timestamps"
+            "description": "Real-time stock quote object with data_as_of timestamp and stale flag"
           }
         }
       }
@@ -88,33 +106,10 @@
         }
       }
     },
-    "/api/13f/filings": {
-      "get": {
-        "summary": "Get SEC Form 13F Institutional Whale Holdings",
-        "description": "Returns 13F holdings pulled from SEC EDGAR or public GitHub raw JSON feed.",
-        "operationId": "get13FFilings",
-        "parameters": [
-          {
-            "name": "fund",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Manager or fund name filter (e.g. ARK, Duquesne, Berkshire)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "13F fund holdings with data_as_of timestamp"
-          }
-        }
-      }
-    },
     "/api/v1/agent/quant-sim": {
       "post": {
-        "summary": "Run an AI Agent Trade Simulation Game / Strategy Backtest (Illustrative)",
-        "description": "Evaluates an agent's asset allocation and returns simulated Sharpe ratio and backtest risk metrics.",
+        "summary": "Run an AI Agent Trade Simulation",
+        "description": "Evaluates an agent's asset allocation and returns backtest risk metrics.",
         "operationId": "runQuantSim",
         "requestBody": {
           "required": true,

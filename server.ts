@@ -1349,35 +1349,29 @@ Return ONLY valid JSON matching this schema:
 
 // 13. Agentic Web Discovery Route (/llms.txt)
 app.get('/llms.txt', (req, res) => {
-  const llmsTxt = `# Stock Bloc Web Terminal
-> Quantitative wealth tools, 13F hedge fund analytics, credit score simulators, and financial calculators.
-
-## Core Tools
-- Terminal: https://stock-bloc.ai.studio/terminal (Interactive stock/crypto command terminal)
-- 13F Intel: https://stock-bloc.ai.studio/13f-intel (SEC 13F hedge fund holdings & allocations)
-- Credit Hub: https://stock-bloc.ai.studio/credit-hub (FICO 8.0 simulator & dispute generator)
-- Real Estate: https://stock-bloc.ai.studio/real-estate (Property deal cash flow analyzer)
-- Watchlist: https://stock-bloc.ai.studio/watchlist (Quant momentum tickers & RSI alerts)
-- Playbooks: https://stock-bloc.ai.studio/playbooks (Institutional strategy frameworks)
-- Agent API: https://stock-bloc.ai.studio/api/v1/openapi.json (OpenAPI Agent Schema)
-- Agent Plugin Manifest: https://stock-bloc.ai.studio/.well-known/ai-plugin.json
-`;
-  res.type('text/plain').send(llmsTxt);
+  const filePath = path.join(process.cwd(), 'public', 'llms.txt');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    return res.sendFile(filePath);
+  }
+  res.type('text/plain').send(`https://stock-bloc.ai.studio`);
 });
 
 // 14. OpenAI & LangChain AI Plugin Manifest
 app.get('/.well-known/ai-plugin.json', (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', '.well-known', 'ai-plugin.json');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'application/json');
+    return res.sendFile(filePath);
+  }
   res.json({
     schema_version: "v1",
     name_for_human: "Stock Bloc Quant Wealth Terminal",
     name_for_model: "stock_bloc_quant_terminal",
     description_for_human: "Real-time stock momentum, 13F hedge fund analytics, credit dispute letter generation, and real estate ROI tools.",
-    description_for_model: "Stock Bloc provides AI agents with live market data, SEC 13F filings, FCRA dispute letters, and financial calculators via machine-readable JSON endpoints.",
+    description_for_model: "Stock Bloc provides AI agents with live market data, SEC 13F filings, FCRA dispute letters, and financial calculators via machine-readable Express proxy JSON endpoints.",
     auth: { type: "none" },
-    api: {
-      type: "openapi",
-      url: "https://stock-bloc.ai.studio/api/v1/openapi.json"
-    },
+    api: { type: "openapi", url: "https://stock-bloc.ai.studio/api/v1/openapi.json" },
     logo_url: "https://stock-bloc.ai.studio/favicon.ico",
     contact_email: "realestatejcarter@gmail.com",
     legal_info_url: "https://stock-bloc.ai.studio"
@@ -1386,6 +1380,11 @@ app.get('/.well-known/ai-plugin.json', (req, res) => {
 
 // 15. OpenAPI 3.0 Specification for Autonomous AI Agents
 app.get('/api/v1/openapi.json', (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'api', 'v1', 'openapi.json');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'application/json');
+    return res.sendFile(filePath);
+  }
   res.json({
     openapi: "3.0.1",
     info: {
@@ -1393,43 +1392,7 @@ app.get('/api/v1/openapi.json', (req, res) => {
       description: "Machine-readable quantitative wealth and market intelligence endpoints for AI Agents, Custom GPTs, and LangChain runners.",
       version: "v1.0.0"
     },
-    servers: [{ url: "https://stock-bloc.ai.studio" }],
-    paths: {
-      "/api/v1/agent/query": {
-        get: {
-          summary: "Get quantitative market data, 13F holdings, or credit templates",
-          operationId: "getAgentQueryData",
-          parameters: [
-            { name: "type", in: "query", required: true, schema: { type: "string" }, description: "Data category: 'watchlist', '13f', 'credit', or 'real_estate'" },
-            { name: "ticker", in: "query", required: false, schema: { type: "string" }, description: "Stock symbol (e.g. NVDA, AAPL, TSLA)" }
-          ],
-          responses: { "200": { description: "Structured JSON response tailored for LLM reasoning" } }
-        }
-      },
-      "/api/v1/agent/quant-sim": {
-        post: {
-          summary: "Run an AI Agent Trade Simulation Game / Strategy Backtest",
-          operationId: "runQuantSim",
-          requestBody: {
-            required: true,
-            content: {
-              "application/json": {
-                schema: {
-                  type: "object",
-                  properties: {
-                    agentName: { type: "string", example: "Gemini-Quant-Alpha-V1" },
-                    allocation: { type: "object", example: { NVDA: 0.5, TSLA: 0.3, AAPL: 0.2 } },
-                    riskTolerance: { type: "string", example: "aggressive" },
-                    timeHorizon: { type: "string", example: "30d" }
-                  }
-                }
-              }
-            }
-          },
-          responses: { "200": { description: "Simulated Sharpe ratio, win rate, alpha score, and leaderboard rank" } }
-        }
-      }
-    }
+    servers: [{ url: "https://stock-bloc.ai.studio" }]
   });
 });
 

@@ -56,18 +56,17 @@ node mcp-server.js
 
 ---
 
-## 📡 Public Backend Data Contract & Raw JSON Feeds
+## 📡 Public Backend Data Contract & CDN Proxy Endpoints
 
-Stock Bloc feeds market quotes, 13F whale filings, Dyson swarm orbital telemetry, and intelligence news from public, verified JSON feeds:
+Stock Bloc feeds market quotes, 13F whale filings, Dyson swarm orbital telemetry, and intelligence news through local Express CDN proxy endpoints:
 
-1. **Market Watchlist & Price Feed**:
-   - `https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/market_watchlist_data.json`
-2. **SEC Form 13F Institutional Holdings**:
-   - `https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/sec_intel_data.json`
-3. **Dyson Swarm AI Telemetry**:
-   - `https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/dyson_swarm_data.json`
-4. **Intelligence News & Podcast Feed**:
-   - `https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/intel_news_feed.json`
+1. **Market Watchlist & Price Feed**: `/api/data/market`
+2. **SEC Form 13F Institutional Holdings**: `/api/data/sec`
+3. **Dyson Swarm AI Telemetry**: `/api/data/dyson`
+4. **Intelligence News & Podcast Feed**: `/api/data/news`
+5. **Unified Data Status & Freshness**: `/api/v1/data-status`
+
+All payloads include `updated_at` timestamps and `stale` flags. Note that 13F holdings depth depends on the backend payload, and agents should inspect `data_as_of` / `updated_at`.
 
 ---
 

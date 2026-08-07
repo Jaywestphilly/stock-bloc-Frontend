@@ -5,12 +5,14 @@
 - Base URL: https://stock-bloc.ai.studio
 - Web Terminal: https://stock-bloc.ai.studio/
 
-## Public Backend Data Feeds (JSON)
-Market, 13F whale holdings, news, and agent swarm data are refreshed from public backend JSON repositories:
-- Market Watchlist & Price Feed: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/market_watchlist_data.json
-- SEC Form 13F Institutional Holdings: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/sec_intel_data.json
-- Intelligence News & Podcast Feed: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/intel_news_feed.json
-- Dyson Swarm AI Telemetry: https://raw.githubusercontent.com/Jaywestphilly/stock-bloc-backend/main/dyson_swarm_data.json
+## Public Backend Data Feeds (JSON Express Proxies)
+Market, SEC 13F whale holdings, news, and agent swarm telemetry are served through local Express CDN proxy endpoints:
+- Market Watchlist & Price Feed: https://stock-bloc.ai.studio/api/data/market
+- SEC Form 13F Institutional Holdings: https://stock-bloc.ai.studio/api/data/sec
+- Intelligence News & Podcast Feed: https://stock-bloc.ai.studio/api/data/news
+- Dyson Swarm AI Telemetry: https://stock-bloc.ai.studio/api/data/dyson
+
+Note: 13F holdings depth depends on the backend JSON repository data; AI agents and models should read `data_as_of` (or `updated_at`) and check the `stale` boolean flag.
 
 ## Machine Discovery & Agent Endpoints
 - OpenAPI 3.0 Specification: https://stock-bloc.ai.studio/api/v1/openapi.json
@@ -18,26 +20,24 @@ Market, 13F whale holdings, news, and agent swarm data are refreshed from public
 - Data Pipeline Freshness Status API: https://stock-bloc.ai.studio/api/v1/data-status
 - Model Context Protocol (MCP) Config: https://stock-bloc.ai.studio/api/v1/mcp-config.json
 
-## API Endpoint Classifications (Live vs. Illustrative)
+## API Endpoint Classifications (Live Data vs. Illustrative)
 
-### Live Production Endpoints
-- GET /api/live-quote/:symbol — Real-time live stock quotes with 30s caching
+### Live Data & Proxy Endpoints (Free Public Read-Only)
+- GET /api/data/market — Market watchlist, quotes, and sector breakdown (includes `updated_at` & `stale`)
+- GET /api/data/sec — SEC Form 13F institutional whale holdings & quarter filings (includes `updated_at` & `stale`)
+- GET /api/data/dyson — Dyson Swarm AI telemetry and orbital stats (includes `updated_at` & `stale`)
+- GET /api/data/news — Intelligence news feed and podcast summaries (includes `updated_at` & `stale`)
+- GET /api/v1/data-status — Unified data freshness status for all 4 pipelines (`market`, `sec`, `dyson`, `news`)
+- GET /api/live-quote/:symbol — Real-time stock quotes (uses live provider if key present, falls back to baseline quote)
+
+### Additional Services
 - POST /api/live-quotes/batch — Batch live market quotes
-- GET /api/stock-chart/:symbol — Historical OHLC stock chart data (1D, 1W, 1M, 1Y, ALL)
-- GET /api/v1/data-status — Pipeline updated_at timestamps for market, SEC 13F, dyson swarm, and news
+- GET /api/stock-chart/:symbol — Historical OHLC stock chart data
 - GET /api/v1/agent/leaderboard — Community Agent Arena rankings and win rates
 - POST /api/ai/stock-analysis — Grounded stock analysis powered by Gemini AI
-- POST /api/ai/sentiment-analysis — News headline sentiment scoring
-- POST /api/ai/market-pulse — Daily aggregated news and podcast executive brief
-- GET /api/13f/filings — SEC EDGAR 13F-HR institutional holdings (pulls live or from raw GitHub JSON feed)
-
-### Illustrative & Simulated Endpoints
 - POST /api/v1/agent/quant-sim — Deterministic portfolio simulation game returning Sharpe ratios and alpha returns
-- POST /api/ai/quick-study — 3-sentence Wall Street research briefing via Gemini AI
-- GET /api/v1/agent/query — Sample structured agent query payload for LLM testing
 
-## Monetization & API Access
-- Free Endpoints: Public read-only endpoints (/api/v1/agent/leaderboard, /api/v1/data-status, /api/live-quote/:symbol)
+## Monetization & Access
+- Free Endpoints: Public read-only endpoints (/api/data/*, /api/v1/data-status, /api/v1/agent/leaderboard, /api/live-quote/:symbol)
 - Metered Endpoints: Quant strategy simulations (/api/v1/agent/quant-sim)
 - Store & Downloads: https://stock-bloc.ai.studio/
-

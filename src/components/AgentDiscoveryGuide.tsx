@@ -51,18 +51,25 @@ export const AgentDiscoveryGuide: React.FC = () => {
 
   const discoveryEndpoints = [
     {
-      title: "Model Context Protocol (MCP) Config",
-      path: "/mcp.json",
-      type: "MCP Manifest / JSON",
+      title: "Pipeline Data Status & Freshness",
+      path: "/api/v1/data-status",
+      type: "Status JSON",
       status: "200 OK",
-      description: "Model Context Protocol server configuration for Claude Desktop, Cursor, Windsurf, and custom AI agents.",
+      description: "Unified pipeline updated_at timestamps and stale boolean flags for market, 13F, dyson, and news feeds.",
     },
     {
-      title: "MCP HTTP JSON-RPC 2.0 Endpoint",
-      path: "/api/mcp/rpc",
-      type: "MCP RPC / JSON",
+      title: "Market Watchlist & Price Proxy",
+      path: "/api/data/market",
+      type: "CDN Proxy JSON",
       status: "200 OK",
-      description: "Direct HTTP JSON-RPC 2.0 endpoint for executing MCP tools (get_stock_quote, run_quant_simulation, analyze_stock_ai).",
+      description: "Fast local Express CDN proxy endpoint for market watchlist quotes, sparklines, and sector data.",
+    },
+    {
+      title: "SEC 13F Whale Holdings Proxy",
+      path: "/api/data/sec",
+      type: "CDN Proxy JSON",
+      status: "200 OK",
+      description: "Fast local Express CDN proxy endpoint for SEC Form 13F institutional whale holdings & quarter filings.",
     },
     {
       title: "Agent Plugin Manifest",
@@ -77,13 +84,6 @@ export const AgentDiscoveryGuide: React.FC = () => {
       type: "Markdown / Plaintext",
       status: "200 OK",
       description: "Standard machine context file for Anthropic, Claude Projects, Perplexity, and agent web crawlers.",
-    },
-    {
-      title: "Full LLM Agent Specification",
-      path: "/llms-full.txt",
-      type: "Markdown / Plaintext",
-      status: "200 OK",
-      description: "Complete machine specification covering all API parameters, backtest rules, and badge definitions.",
     },
     {
       title: "OpenAPI 3.0 Specification",
