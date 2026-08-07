@@ -1515,39 +1515,39 @@ async function fetchAndProcessFeed(feedKey: 'market' | 'sec' | 'dyson' | 'news')
   let rawJson: any = null;
   let dateHeaderValue: string | null = null;
 
+  // Tier 1: Check local file in /public or root first
+  const localFileNames: Record<string, string> = {
+    market: 'market_watchlist_data.json',
+    sec: 'sec_intel_data.json',
+    dyson: 'dyson_swarm_data.json',
+    news: 'intel_news_feed.json'
+  };
+
   try {
-    const res = await fetch(url);
-    if (res.ok) {
-      dateHeaderValue = res.headers.get("date");
-      rawJson = await res.json();
-    } else {
-      console.warn(`[CDN Proxy Notice] Remote fetch returned status HTTP ${res.status} for feed "${feedKey}".`);
+    const localPath = path.join(process.cwd(), 'public', localFileNames[feedKey]);
+    const rootPath = path.join(process.cwd(), localFileNames[feedKey]);
+    const targetPath = fs.existsSync(localPath) ? localPath : (fs.existsSync(rootPath) ? rootPath : null);
+
+    if (targetPath) {
+      const fileContent = fs.readFileSync(targetPath, 'utf-8');
+      rawJson = JSON.parse(fileContent);
     }
-  } catch (err: any) {
-    console.warn(`[CDN Proxy Warning] Fetch error for feed "${feedKey}":`, err?.message || err);
+  } catch (e) {
+    // ignore local read error
   }
 
-  // Fallback to cached data if network fetch failed
-  if (!rawJson && cached) {
-    return cached.data;
-  }
-
-  // Fallback to local files in /public if available
+  // Tier 2: Try remote GitHub fetch if local file was missing or failed
   if (!rawJson) {
     try {
-      const localFileNames: Record<string, string> = {
-        market: 'market_watchlist_data.json',
-        sec: 'sec_intel_data.json',
-        dyson: 'dyson_swarm_data.json',
-        news: 'intel_news_feed.json'
-      };
-      const localPath = path.join(process.cwd(), 'public', localFileNames[feedKey]);
-      if (fs.existsSync(localPath)) {
-        const fileContent = fs.readFileSync(localPath, 'utf-8');
-        rawJson = JSON.parse(fileContent);
+      const res = await fetch(url);
+      if (res.ok) {
+        dateHeaderValue = res.headers.get("date");
+        rawJson = await res.json();
+      } else {
+        console.warn(`[CDN Proxy Notice] Remote fetch returned status HTTP ${res.status} for feed "${feedKey}".`);
       }
-    } catch (e) {
-      // ignore
+    } catch (err: any) {
+      console.warn(`[CDN Proxy Warning] Fetch error for feed "${feedKey}":`, err?.message || err);
     }
   }
 

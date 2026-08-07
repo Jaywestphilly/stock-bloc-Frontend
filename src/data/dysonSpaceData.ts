@@ -496,7 +496,7 @@ export const SPACEX_HISTORY_ROADMAP: SpaceXHistoryItem[] = [
     phase: "Phase 4: Global Orbital Infrastructure",
     title: "Starlink Constellation & Megaconstellations",
     milestone:
-      "Deployed over 6,500 active satellites in Low Earth Orbit equipped with inter-satellite laser optical mesh routing.",
+      "Deployed over 10,800 active satellites in Low Earth Orbit equipped with inter-satellite laser optical mesh routing.",
     significance:
       "Created the world’s first space-based broadband network, generating over $6B in annual cash flow to fund Starship and deep space exploration.",
     highSchoolAnalogy:

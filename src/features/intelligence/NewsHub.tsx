@@ -32,10 +32,31 @@ import { FEATURED_YOUTUBE_CHANNEL, INITIAL_YOUTUBE_VIDEOS } from "../../data/you
 import { PODCAST_NEWS_ARTICLES } from "../../data/podcasts";
 import { YouTubeVideo, IntelFeedItem } from "../../types";
 import { triggerHaptic } from "../../utils/haptics";
-import { getStoredYouTubeVideos, syncYouTubeFeeds } from "../../utils/youtubeSync";
+import { getStoredYouTubeVideos, syncYouTubeFeeds, formatTimeSinceSync } from "../../utils/youtubeSync";
 
 export type CombinedFeedItem =
   | (YouTubeVideo & { itemCategory: "youtube" | "news_video"; type: "youtube_video"; timestamp: string });
+
+const STOCK_BLOC_TWEETS = [
+  {
+    id: "2083776836958372343",
+    date: "Aug 2, 2026",
+    text: "Claude is the king of intelligence its undeniable at this point",
+    url: "https://x.com/TheStockBloc/status/2083776836958372343",
+  },
+  {
+    id: "2083636944999743905",
+    date: "Aug 1, 2026",
+    text: "🚀 Track Super sonic Tsunami & Semiconductor Stocks on Stock Bloc Terminal @thestockbloc #StockMarket #Finance #StockBloc #Trading 🔗 https://linktr.ee/StockBloc",
+    url: "https://x.com/TheStockBloc/status/2083636944999743905",
+  },
+  {
+    id: "2083193375348429080",
+    date: "Jul 31, 2026",
+    text: "😂 what",
+    url: "https://x.com/TheStockBloc/status/2083193375348429080",
+  },
+];
 
 const getItemTags = (item: CombinedFeedItem): string[] => {
   const tags: string[] = [];
@@ -113,6 +134,7 @@ export const NewsHub: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeVideoModal, setActiveVideoModal] = useState<YouTubeVideo | null>(null);
   const [feedVideos, setFeedVideos] = useState<YouTubeVideo[]>(() => getStoredYouTubeVideos());
+  const [lastSyncedAt, setLastSyncedAt] = useState<number>(0);
   const [intelFeed, setIntelFeed] = useState<IntelFeedItem[]>([]);
 
   useEffect(() => {
@@ -160,6 +182,9 @@ export const NewsHub: React.FC = () => {
       if (res.videos && res.videos.length > 0) {
         setFeedVideos(res.videos);
       }
+      if (res.syncedAt) {
+        setLastSyncedAt(res.syncedAt);
+      }
     });
   }, []);
 
@@ -167,9 +192,13 @@ export const NewsHub: React.FC = () => {
   const combinedStream: CombinedFeedItem[] = feedVideos.map((v) => ({
     ...v,
     type: "youtube_video" as const,
-    itemCategory: v.channelName === "Stock Bloc" ? ("youtube" as const) : ("news_video" as const),
+    itemCategory: (v.channelName || "").toLowerCase().includes("stock bloc") ? ("youtube" as const) : ("news_video" as const),
     timestamp: "2026-08-01T10:00:00Z",
   }));
+
+  // Count YouTube (Stock Bloc) vs Other News Videos
+  const stockBlocVideosCount = feedVideos.filter(v => (v.channelName || "").toLowerCase().includes("stock bloc")).length;
+  const newsVideosCount = feedVideos.filter(v => !(v.channelName || "").toLowerCase().includes("stock bloc")).length + intelFeed.filter(v => !(v.channel_name || "").toLowerCase().includes("stock bloc")).length;
 
   // Filter Intel Feed
   const filteredIntelFeed = intelFeed.filter((video) => {
@@ -223,10 +252,24 @@ export const NewsHub: React.FC = () => {
                 <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-ping" />
                 LIVE UNIFIED STREAM
               </span>
-              <span className="px-2 py-0.5 bg-rose-950/80 border border-rose-500/40 text-rose-300 text-[10px] font-black rounded tracking-widest flex items-center gap-1">
+              <a
+                href="https://www.youtube.com/@stockbloc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2 py-0.5 bg-rose-950/80 border border-rose-500/40 text-rose-300 text-[10px] font-black rounded tracking-widest flex items-center gap-1 hover:border-rose-400 transition-colors"
+              >
                 <Youtube className="w-3 h-3 text-rose-400" />
-                @thestockbloc
-              </span>
+                @stockbloc
+              </a>
+              <a
+                href="https://x.com/TheStockBloc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2 py-0.5 bg-cyan-950/80 border border-cyan-500/40 text-cyan-300 text-[10px] font-black rounded tracking-widest flex items-center gap-1 hover:border-cyan-400 transition-colors"
+              >
+                <span className="font-bold">𝕏</span>
+                @TheStockBloc
+              </a>
             </div>
             <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2 uppercase">
               <span className="text-rose-400 flex items-center gap-1">
@@ -245,7 +288,7 @@ export const NewsHub: React.FC = () => {
         {/* CHANNEL STATS BAR */}
         <div className="mt-4 pt-4 border-t border-cyan-500/20 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-bold text-neutral-400">
           <a
-            href={FEATURED_YOUTUBE_CHANNEL.channelUrl}
+            href="https://www.youtube.com/@stockbloc"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 p-2 bg-black/60 rounded-lg border border-neutral-800 hover:border-rose-500/40 transition-colors group"
@@ -258,14 +301,14 @@ export const NewsHub: React.FC = () => {
           </a>
 
           <a
-            href="https://x.com/thestockbloc?s=21"
+            href="https://x.com/TheStockBloc"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-2 p-2 bg-black/60 rounded-lg border border-neutral-800 hover:border-cyan-500/40 transition-colors group"
           >
             <span className="font-black text-white text-sm group-hover:scale-110 transition-transform">𝕏</span>
             <div>
-              <span className="text-white block leading-none">@thestockbloc</span>
+              <span className="text-white block leading-none">@TheStockBloc</span>
               <span className="text-[9px] text-neutral-500">Official 𝕏 Account</span>
             </div>
           </a>
@@ -273,18 +316,90 @@ export const NewsHub: React.FC = () => {
           <div className="flex items-center gap-2 p-2 bg-black/60 rounded-lg border border-neutral-800">
             <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
             <div>
-              <span className="text-emerald-300 block leading-none">24HR Grounded</span>
+              <span className="text-emerald-300 block leading-none">{formatTimeSinceSync(lastSyncedAt)}</span>
               <span className="text-[9px] text-neutral-500">Auto-Synced Stream</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 p-2 bg-black/60 rounded-lg border border-neutral-800">
-            <TrendingUp className="w-4 h-4 text-amber-400" />
+          <a
+            href="https://x.com/JayWestPhilly"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 p-2 bg-black/60 rounded-lg border border-neutral-800 hover:border-amber-500/40 transition-colors group"
+          >
+            <TrendingUp className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
             <div>
-              <span className="text-amber-300 block leading-none">Market Alpha</span>
-              <span className="text-[9px] text-neutral-500">13F & Quant Signals</span>
+              <span className="text-amber-300 block leading-none">@JayWestPhilly</span>
+              <span className="text-[9px] text-neutral-500">Founder & Macro Analyst</span>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      {/* LATEST FROM 𝕏 @TheStockBloc SECTION */}
+      <div className="bg-[#020b14]/90 border border-cyan-500/30 rounded-2xl p-4 sm:p-5 shadow-[0_0_20px_rgba(6,182,212,0.08)] space-y-4">
+        <div className="flex items-center justify-between border-b border-cyan-500/20 pb-3 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-black border border-cyan-400/60 flex items-center justify-center font-black text-white text-sm">
+              𝕏
+            </span>
+            <div>
+              <a
+                href="https://x.com/TheStockBloc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-black text-white hover:text-cyan-300 transition-colors flex items-center gap-1.5"
+              >
+                <span>Latest from 𝕏 @TheStockBloc</span>
+                <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
+              </a>
+              <span className="text-[10px] text-neutral-400 block">
+                Official Updates • Founder <a href="https://x.com/JayWestPhilly" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">@JayWestPhilly</a>
+              </span>
             </div>
           </div>
+
+          <a
+            href="https://x.com/TheStockBloc"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 bg-black border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors"
+          >
+            <span>Follow @TheStockBloc</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {STOCK_BLOC_TWEETS.map((tweet) => (
+            <div
+              key={tweet.id}
+              className="bg-black/70 border border-neutral-800 hover:border-cyan-500/40 rounded-xl p-3.5 flex flex-col justify-between gap-3 transition-colors group"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 text-[10px]">
+                  <span className="text-cyan-400 font-bold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full" />
+                    @TheStockBloc
+                  </span>
+                  <span className="text-neutral-500 font-mono">{tweet.date}</span>
+                </div>
+                <p className="text-xs text-neutral-200 leading-relaxed group-hover:text-white transition-colors">
+                  {tweet.text}
+                </p>
+              </div>
+
+              <a
+                href={tweet.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-[10px] font-bold text-cyan-400 hover:text-cyan-300 pt-1 border-t border-neutral-900 group-hover:border-cyan-500/20"
+              >
+                <span>View on 𝕏</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -319,7 +434,7 @@ export const NewsHub: React.FC = () => {
             }`}
           >
             <Youtube className="w-3.5 h-3.5" />
-            <span>YOUTUBE ({INITIAL_YOUTUBE_VIDEOS.length})</span>
+            <span>YOUTUBE ({stockBlocVideosCount})</span>
           </button>
 
           <button
@@ -334,7 +449,7 @@ export const NewsHub: React.FC = () => {
             }`}
           >
             <Radio className="w-3.5 h-3.5" />
-            <span>LATEST NEWS VIDEOS</span>
+            <span>LATEST NEWS VIDEOS ({newsVideosCount})</span>
           </button>
         </div>
 
@@ -638,6 +753,15 @@ export const NewsHub: React.FC = () => {
 
           })
         )}
+      </div>
+
+      {/* EDUCATIONAL DISCLAIMER NOTICE */}
+      <div className="p-4 border border-cyan-500/20 bg-[#020912]/90 rounded-xl text-[11px] text-neutral-400 leading-relaxed flex items-start gap-3">
+        <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+        <div>
+          <span className="font-bold text-white block mb-0.5">Educational Intelligence Notice</span>
+          Content provided across YouTube, 𝕏, and RSS feeds is for informational, quantitative research, and educational purposes only. Stock Bloc does not provide individualized financial or investment advice.
+        </div>
       </div>
 
       {/* EMBEDDED YOUTUBE VIDEO PLAYER MODAL */}

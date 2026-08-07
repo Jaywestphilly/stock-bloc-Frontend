@@ -10,7 +10,7 @@ export const FEATURED_YOUTUBE_CHANNEL: YouTubeChannel = {
     "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=160&q=80",
   bannerUrl:
     "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80",
-  channelUrl: "https://youtube.com/@stockbloc?si=t-CCfX4j7tR38aql",
+  channelUrl: "https://www.youtube.com/@stockbloc",
   description:
     "Official YouTube Channel by Stock Bloc (@stockbloc). Master Real Estate Cash Flow, Stock Market Investing, and Multi-Generational Wealth Creation.",
 };

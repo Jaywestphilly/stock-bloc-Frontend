@@ -77,17 +77,17 @@ export function getLastSyncTimestamp(): number {
 }
 
 export function formatTimeSinceSync(timestamp: number): string {
-  if (!timestamp) return "Never synced";
+  if (!timestamp) return "Using cached official feed";
   const diffMs = Date.now() - timestamp;
   const hours = Math.floor(diffMs / (1000 * 60 * 60));
   const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
   if (hours > 0) {
-    return `${hours}h ${mins}m ago`;
+    return `YouTube synced · ${hours}h ago`;
   }
   if (mins > 0) {
-    return `${mins}m ago`;
+    return `YouTube synced · ${mins}m ago`;
   }
-  return "Just now";
+  return "YouTube synced · Just now";
 }
 
 export async function syncYouTubeFeeds(force: boolean = false): Promise<{
@@ -219,6 +219,15 @@ export async function syncYouTubeFeeds(force: boolean = false): Promise<{
   if (combinedVideos.length === 0) {
     combinedVideos = INITIAL_YOUTUBE_VIDEOS;
   }
+
+  // Ensure Stock Bloc videos are strictly sorted to the top
+  combinedVideos.sort((a, b) => {
+    const aIsSB = (a.channelName || "").toLowerCase().includes("stock bloc");
+    const bIsSB = (b.channelName || "").toLowerCase().includes("stock bloc");
+    if (aIsSB && !bIsSB) return -1;
+    if (!aIsSB && bIsSB) return 1;
+    return 0;
+  });
 
   // Save to localStorage
   try {
