@@ -58,15 +58,20 @@ node mcp-server.js
 
 ## 📡 Public Backend Data Contract & CDN Proxy Endpoints
 
-Stock Bloc feeds market quotes, 13F whale filings, Dyson swarm orbital telemetry, and intelligence news through local Express CDN proxy endpoints:
+Stock Bloc feeds market quotes, 13F whale filings, Dyson swarm orbital telemetry, and intelligence news through local Express CDN proxy endpoints and backend JSON writers (`scripts/fetch_market.py`, `scripts/fetch_sec.py`, `scripts/fetch_dyson.py`, `scripts/fetch_intel_feed.py`):
 
-1. **Market Watchlist & Price Feed**: `/api/data/market`
-2. **SEC Form 13F Institutional Holdings**: `/api/data/sec`
-3. **Dyson Swarm AI Telemetry**: `/api/data/dyson`
-4. **Intelligence News & Podcast Feed**: `/api/data/news`
+1. **Market Watchlist & Price Feed**: `/api/data/market` -> `market_watchlist_data.json`
+   - Fields: `updated_at` (ISO-8601 UTC), `source` ("Polygon.io / Yahoo Finance Quant Watchlist Feed"), `watchlist` (array of ticker quote objects).
+2. **SEC Form 13F Institutional Holdings**: `/api/data/sec` -> `sec_intel_data.json`
+   - Fields: `updated_at` (ISO-8601 UTC), `source` ("U.S. SEC EDGAR System Form 13F-HR"), `funds` (array of fund objects with CIK, official EDGAR filing links, and holdings status).
+3. **Dyson Swarm AI Telemetry**: `/api/data/dyson` -> `dyson_swarm_data.json`
+   - Fields: `updated_at` (ISO-8601 UTC), `source` ("SpaceX / Planet Labs / NASA Orbital Telemetry Feed"), `fleet_metrics`, `orbital_shells`.
+4. **Intelligence News & Podcast Feed**: `/api/data/news` -> `intel_news_feed.json`
+   - Fields: `updated_at` (ISO-8601 UTC), `source` ("Financial News RSS & Podcast Aggregator"), `intel_feed` (array of news/podcast objects).
 5. **Unified Data Status & Freshness**: `/api/v1/data-status`
+   - Fields: `market`, `sec`, `dyson`, `news` status objects containing `updated_at` timestamps and `stale` flags.
 
-All payloads include `updated_at` timestamps and `stale` flags. Note that 13F holdings depth depends on the backend payload, and agents should inspect `data_as_of` / `updated_at`.
+All JSON writers and the GitHub Actions hourly sync workflow (`.github/workflows/daily_sync.yml` & `daily_update.yml`) strictly stamp `updated_at` in ISO-8601 UTC and fail with a non-zero exit code if any required file would be written without `updated_at` or with empty critical arrays. 13F holdings depth depends on the backend payload; AI agents should read `data_as_of` or `updated_at`.
 
 ---
 
