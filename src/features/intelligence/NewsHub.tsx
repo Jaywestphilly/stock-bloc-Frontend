@@ -137,6 +137,29 @@ export const NewsHub: React.FC = () => {
   const [lastSyncedAt, setLastSyncedAt] = useState<number>(0);
   const [intelFeed, setIntelFeed] = useState<IntelFeedItem[]>([]);
 
+  // State for saved/bookmarked news item IDs
+  const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("stock_bloc_bookmarked_news");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleBookmark = (id: string) => {
+    triggerHaptic("selection");
+    setBookmarkedIds((prev) => {
+      const next = prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id];
+      try {
+        localStorage.setItem("stock_bloc_bookmarked_news", JSON.stringify(next));
+      } catch (err) {
+        console.warn("Could not save bookmarks:", err);
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
     const getChannelRank = (channelName: string): number => {
       const c = (channelName || "").toLowerCase();
@@ -149,12 +172,12 @@ export const NewsHub: React.FC = () => {
     };
 
     fetch("/api/data/news")
-      .then(res => {
+      .then((res) => {
         if (!res.ok) return fetch("/intel_news_feed.json");
         return res;
       })
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         if (data.intel_feed && Array.isArray(data.intel_feed)) {
           const sorted = [...data.intel_feed].sort((a: { channel_name?: string }, b: { channel_name?: string }) => {
             const rankA = getChannelRank(a.channel_name || "");
@@ -165,10 +188,10 @@ export const NewsHub: React.FC = () => {
         }
       })
       .catch((err) => {
-        console.error("Failed to fetch intel news feed, trying fallback:", err);
+        console.warn("Failed to fetch intel news feed, using fallback:", err);
         fetch("/intel_news_feed.json")
-          .then(res => res.json())
-          .then(data => {
+          .then((res) => res.json())
+          .then((data) => {
             if (data.intel_feed && Array.isArray(data.intel_feed)) {
               setIntelFeed(data.intel_feed);
             }
@@ -188,20 +211,32 @@ export const NewsHub: React.FC = () => {
     });
   }, []);
 
-  // Build combined items stream
-  const combinedStream: CombinedFeedItem[] = feedVideos.map((v) => ({
-    ...v,
-    type: "youtube_video" as const,
-    itemCategory: (v.channelName || "").toLowerCase().includes("stock bloc") ? ("youtube" as const) : ("news_video" as const),
-    timestamp: "2026-08-01T10:00:00Z",
-  }));
+  // Build combined items stream with deduplication and derived dates
+  const combinedStream: CombinedFeedItem[] = feedVideos.map((v, index) => {
+    const pubDate = v.publishedDate && v.publishedDate.includes("-") ? v.publishedDate : new Date(Date.now() - index * 86400000).toISOString();
+    return {
+      ...v,
+      type: "youtube_video" as const,
+      itemCategory: (v.channelName || "").toLowerCase().includes("stock bloc") ? ("youtube" as const) : ("news_video" as const),
+      timestamp: pubDate,
+    };
+  });
+
+  // Track already rendered video IDs to prevent duplicate rendering
+  const seenVideoIds = new Set<string>();
 
   // Count YouTube (Stock Bloc) vs Other News Videos
-  const stockBlocVideosCount = feedVideos.filter(v => (v.channelName || "").toLowerCase().includes("stock bloc")).length;
-  const newsVideosCount = feedVideos.filter(v => !(v.channelName || "").toLowerCase().includes("stock bloc")).length + intelFeed.filter(v => !(v.channel_name || "").toLowerCase().includes("stock bloc")).length;
+  const stockBlocVideosCount = feedVideos.filter((v) => (v.channelName || "").toLowerCase().includes("stock bloc")).length;
+  const newsVideosCount =
+    feedVideos.filter((v) => !(v.channelName || "").toLowerCase().includes("stock bloc")).length +
+    intelFeed.filter((v) => !(v.channel_name || "").toLowerCase().includes("stock bloc")).length;
 
   // Filter Intel Feed
   const filteredIntelFeed = intelFeed.filter((video) => {
+    const vId = video.video_id || video.embed_url || video.title;
+    if (seenVideoIds.has(vId)) return false;
+    seenVideoIds.add(vId);
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const match =
@@ -214,8 +249,12 @@ export const NewsHub: React.FC = () => {
     return true; // ALL
   });
 
-  // Filter Stream
+  // Filter Stream with deduplication against seen IDs
   const filteredStream = combinedStream.filter((item) => {
+    const sId = item.youtubeId || item.id || item.title;
+    if (seenVideoIds.has(sId)) return false;
+    seenVideoIds.add(sId);
+
     // Sector filter
     if (selectedSector) {
       const tags = getItemTags(item);

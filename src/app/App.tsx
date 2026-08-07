@@ -1040,18 +1040,38 @@ export function App() {
                   onClick={() => {
                     triggerHaptic("selection");
                     setSortField("changePercent");
+                    setSortDirection("desc");
                   }}
                   className={`px-2.5 py-1.5 alien-block-cut-sm font-black text-[11px] font-mono flex items-center gap-1 transition-all active:scale-95 cursor-pointer ${
-                    sortField === "changePercent"
+                    sortField === "changePercent" && sortDirection === "desc"
                       ? "bg-emerald-400 text-black shadow-md shadow-emerald-400/30 border border-emerald-300 font-bold"
                       : "bg-neutral-900/90 text-emerald-300 hover:bg-neutral-800 border border-emerald-500/30"
                   }`}
-                  title="Sort by Price Change %"
+                  title="Sort by Top Gainers (% Change High to Low)"
                 >
                   <TrendingUp
-                    className={`w-3.5 h-3.5 ${sortField === "changePercent" ? "text-black" : "text-emerald-400"}`}
+                    className={`w-3.5 h-3.5 ${sortField === "changePercent" && sortDirection === "desc" ? "text-black" : "text-emerald-400"}`}
                   />
-                  <span>% Change</span>
+                  <span>Gainers</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    triggerHaptic("selection");
+                    setSortField("changePercent");
+                    setSortDirection("asc");
+                  }}
+                  className={`px-2.5 py-1.5 alien-block-cut-sm font-black text-[11px] font-mono flex items-center gap-1 transition-all active:scale-95 cursor-pointer ${
+                    sortField === "changePercent" && sortDirection === "asc"
+                      ? "bg-rose-400 text-black shadow-md shadow-rose-400/30 border border-rose-300 font-bold"
+                      : "bg-neutral-900/90 text-rose-300 hover:bg-neutral-800 border border-rose-500/30"
+                  }`}
+                  title="Sort by Top Losers (% Change Low to High)"
+                >
+                  <TrendingUp
+                    className={`w-3.5 h-3.5 rotate-180 ${sortField === "changePercent" && sortDirection === "asc" ? "text-black" : "text-rose-400"}`}
+                  />
+                  <span>Losers</span>
                 </button>
 
                 <button
