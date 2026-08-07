@@ -10,6 +10,7 @@ import {
 import { StockTicker, TimeFrame, PaperTrade, StockDetailSubProps } from "../../types";
 import { getTickerSentiment } from "../../utils/sentiment";
 import { formatChartTimestamp, calculateCleanYAxisTicks } from "../../utils/chartFormatters";
+import { useUserStore } from "../../stores/userStore";
 import {
   X,
   Sparkles,
@@ -56,6 +57,7 @@ import {
   Newspaper,
   PenTool,
   LineChart,
+  Star,
 } from "lucide-react";
 import { SentimentIndicator } from "../SentimentIndicator";
 import { triggerHaptic } from "../../utils/haptics";
@@ -136,11 +138,57 @@ interface StockDetailModalProps {
 
 export const StockHeader = (props: StockDetailSubProps) => {
   const { stock, onClose, onTogglePin, onShare, onOpenBloombergTerminal, onOpenBrokerages, timeframe, setTimeframe, hoverIndex, setHoverIndex, aiAnalysis, setAiAnalysis, isAiLoading, setIsAiLoading, aiError, setAiError, displayStock, setDisplayStock, activeStock, chartMode, setChartMode, zoomLevel, setZoomLevel, panOffset, setPanOffset, showSMA, setShowSMA, showVWAP, setShowVWAP, showRSI, setShowRSI, touchStartDistRef, touchStartZoomRef, isDraggingPanRef, dragStartXRef, dragStartPanRef, isTrendlineActive, setIsTrendlineActive, isDrawingTrendline, setIsDrawingTrendline, trendline, setTrendline, paperTrades, setPaperTrades, showPaperForm, setShowPaperForm, sharesInput, setSharesInput, entryPriceInput, setEntryPriceInput, tradeType, setTradeType, tradeSuccessMsg, setTradeSuccessMsg, showAllInstitutionalHolders, setShowAllInstitutionalHolders, institutionalData, earningsReminder, setEarningsReminder, showEarningsHistory, setShowEarningsHistory, showAnalystFirms, setShowAnalystFirms, handleToggleEarningsReminder, isPrivateCompany, tickerHeadlines, analystConsensusData, symbolPaperTrades, portfolioAggregates, handleExecutePaperTrade, handleClosePosition, realHistory, setRealHistory, showOverlay, setShowOverlay, benchmarkSymbol, setBenchmarkSymbol, benchmarkHistory, setBenchmarkHistory, rsiData, fullCandleOHLCData, candleOHLCData, fullSmaValues, visibleSmaValues, fullVwapValues, visibleVwapValues, fullMacdData, macdData, fullRsiValues, visibleRsiValues, getChartCoords, startTrendline, updateTrendline, finishTrendline, trendlineMetrics, handleTouchStart, handleTouchMove, handleTouchEnd, handleWheelZoom, handleMouseDown, handleMouseMove, handleMouseUp, history, isPositive, prices, minPrice, maxPrice, priceRange, BENCHMARK_CONFIGS, activeBenchmark, stockBasePrice, stockReturns, benchHistoryPoints, benchBasePrice, benchReturns, svgWidth, svgHeight, rightMargin, plotWidth, plotTop, plotBottom, plotHeight, minVal, maxVal, valRange, zeroY, benchmarkPathD, candleAllPrices, activeCandle, activeSma, activeVwap, activeMacd, activeRsi, activeRsiStatus, macdStatus, hoveredPoint, maxVolume, yAxisTicks, linePathD, areaPathD, smaPathD, vwapPathD, macdSvgHeight, macdMaxAbs, macdY0, getMacdY, macdLinePath, macdSignalPath, timeTicks, handleSubchartHover, rsiSvgHeight, getRsiY, rsiLinePath, pathD, areaD, activeHoverIdx, hoveredStockReturn, hoveredBenchReturn, hoveredAlpha, fetchAiAnalysis } = props;
+  
+  const { starredTickers, toggleStarredTicker } = useUserStore();
+  const isStarred = stock ? starredTickers.includes(stock.symbol) : false;
+
   if (!stock) return null;
+
   return (
     <>
-{/* Price & Change Header */}
-              <div className="flex items-baseline justify-between">
+      {/* Modal Top Header (Symbol, Name, Actions) */}
+      <div className="flex items-center justify-between p-4 sm:p-6 pb-0 border-b border-white/5 mb-4 relative z-10 bg-neutral-900/50 backdrop-blur-md">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleStarredTicker(stock.symbol);
+              triggerHaptic("light");
+            }}
+            className="group p-1.5 -ml-1.5 rounded-full hover:bg-white/10 transition-colors"
+          >
+            <Star
+              className={`w-6 h-6 transition-all duration-300 ${isStarred ? "fill-yellow-400 text-yellow-400 scale-110 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" : "text-neutral-400 group-hover:text-neutral-200"}`}
+            />
+          </button>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-none">
+              {stock.symbol}
+            </h2>
+            <p className="text-xs sm:text-sm text-neutral-400 font-medium mt-1">
+              {stock.name}
+            </p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => onShare(stock)}
+            className="p-2 sm:p-2.5 rounded-full bg-white/5 text-neutral-300 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+          <button
+            onClick={onClose}
+            className="p-2 sm:p-2.5 rounded-full bg-white/5 text-neutral-300 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Price & Change Header */}
+      <div className="flex items-baseline justify-between px-6 pt-2">
                 <div>
                   <div className="text-4xl font-black tracking-tight font-mono text-white">
                     $

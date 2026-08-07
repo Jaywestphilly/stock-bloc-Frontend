@@ -7,6 +7,8 @@ interface UserState {
   setWatchlistSubTab: (tab: "tickers" | "briefs") => void;
   userPlan: "free" | "pro" | "institutional";
   setUserPlan: (plan: "free" | "pro" | "institutional") => void;
+  starredTickers: string[];
+  toggleStarredTicker: (symbol: string) => void;
 }
 
 const getInitialDayMode = () => {
@@ -17,7 +19,19 @@ const getInitialDayMode = () => {
   return false;
 };
 
-export const useUserStore = create<UserState>((set) => ({
+const getInitialStarredTickers = () => {
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem("stock_bloc_saved");
+      if (stored) return JSON.parse(stored) as string[];
+    } catch (e) {
+      console.error("Error parsing stock_bloc_saved from localStorage", e);
+    }
+  }
+  return [];
+};
+
+export const useUserStore = create<UserState>((set, get) => ({
   isDayMode: getInitialDayMode(),
   setIsDayMode: (isDayMode) => {
     if (typeof window !== 'undefined') {
@@ -29,4 +43,17 @@ export const useUserStore = create<UserState>((set) => ({
   setWatchlistSubTab: (watchlistSubTab) => set({ watchlistSubTab }),
   userPlan: "free",
   setUserPlan: (userPlan) => set({ userPlan }),
+  starredTickers: getInitialStarredTickers(),
+  toggleStarredTicker: (symbol) => {
+    const { starredTickers } = get();
+    const isStarred = starredTickers.includes(symbol);
+    const updated = isStarred 
+      ? starredTickers.filter(s => s !== symbol)
+      : [...starredTickers, symbol];
+    
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("stock_bloc_saved", JSON.stringify(updated));
+    }
+    set({ starredTickers: updated });
+  }
 }));

@@ -11,6 +11,7 @@ import {
   LineChart,
   Sparkles,
   Star,
+  Bookmark,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
 
@@ -36,8 +37,9 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
     label: string;
     icon: React.ElementType;
   }[] = [
-    { id: "tsunami", label: "Super sonic Tsunami", icon: Flame },
     { id: "all", label: "All Watchlist", icon: Sparkles },
+    { id: "my_bloc", label: "My Bloc", icon: Bookmark },
+    { id: "tsunami", label: "Super sonic Tsunami", icon: Flame },
     { id: "asymmetry", label: "Max Asymmetry", icon: Star },
     { id: "reits", label: "Real Estate REITs", icon: Building2 },
     { id: "credit_fin", label: "Credit & FinTech", icon: CreditCard },
@@ -52,6 +54,8 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
     switch (selectedCategory) {
       case "all":
         return "All Watchlist Stocks";
+      case "my_bloc":
+        return "My Saved Watchlist";
       case "asymmetry":
         return "Maximum Asymmetry Upside Matrix";
       case "tsunami":

@@ -190,7 +190,7 @@ export function App() {
   }, [initialRoute.isTerminalOpen, setIsBloombergTerminalOpen]);
   const { isDayMode, setIsDayMode } = useUserStore();
 
-  const { watchlistSubTab, setWatchlistSubTab } = useUserStore();
+  const { watchlistSubTab, setWatchlistSubTab, starredTickers, toggleStarredTicker } = useUserStore();
 
   // Helper to close all modal overlays
   const closeAllModals = useCallback(() => {
@@ -428,7 +428,9 @@ export function App() {
   const filteredStocks = useMemo(() => {
     let result = [...stocks];
 
-    if (selectedCategory === "asymmetry") {
+    if (selectedCategory === "my_bloc") {
+      result = result.filter((s) => starredTickers.includes(s.symbol));
+    } else if (selectedCategory === "asymmetry") {
       result = result.filter(
         (s) =>
           s.asymmetryPotentialStars !== undefined ||
@@ -480,7 +482,7 @@ export function App() {
     });
 
     return result;
-  }, [stocks, selectedCategory, searchQuery, sortField, sortDirection]);
+  }, [stocks, selectedCategory, searchQuery, sortField, sortDirection, starredTickers]);
 
   // Export Watchlist as CSV
   const handleExportWatchlistCsv = () => {

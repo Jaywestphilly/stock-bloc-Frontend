@@ -1,6 +1,7 @@
 export type TimeFrame = "1D" | "1W" | "1M" | "1Y" | "ALL";
 
 export type SectorCategory =
+  | "my_bloc" // My Bloc
   | "tsunami" // Super sonic Tsunami
   | "asymmetry" // Maximum Asymmetry
   | "reits" // Real Estate Investment Trusts

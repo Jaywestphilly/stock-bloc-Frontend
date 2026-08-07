@@ -23,6 +23,7 @@ import {
 import { SentimentGauge } from "../../components/SentimentGauge";
 import { TrendSentimentVisualizer } from "../../components/TrendSentimentVisualizer";
 import { triggerHaptic } from "../../utils/haptics";
+import { useUserStore } from "../../stores/userStore";
 import {
   ResponsiveContainer,
   AreaChart,
@@ -295,6 +296,8 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
   const [headlines, setHeadlines] = useState<StockHeadline[]>([]);
   const [isLoadingHeadlines, setIsLoadingHeadlines] = useState(false);
   const prevPriceRef = useRef<number>(stock?.price || 0);
+  const { starredTickers, toggleStarredTicker } = useUserStore();
+  const isStarred = starredTickers.includes(stock.symbol);
 
   const ROBINHOOD_REFERRAL_URL = "https://join.robinhood.com/jumannc3";
 
@@ -783,6 +786,17 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
           {/* Left Ticker & Subtitle/Shares & News Sentiment */}
           <div className="flex flex-col min-w-[120px] max-w-[160px] pr-2">
             <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic("selection");
+                  toggleStarredTicker(stock.symbol);
+                }}
+                className={`flex items-center justify-center transition-all ${isStarred ? "text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" : "text-neutral-600 hover:text-cyan-400"}`}
+                title={isStarred ? "Remove from My Bloc" : "Add to My Bloc"}
+              >
+                <Star className={`w-4 h-4 ${isStarred ? "fill-amber-400" : ""}`} />
+              </button>
               <span
                 className={`font-black text-base tracking-wider ${isSyncing ? "glitch-text-refresh text-cyan-300" : "text-cyan-100"}`}
               >
