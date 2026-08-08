@@ -123,6 +123,7 @@ export type ViewTab =
   | "dyson_swarm"
   | "podcasts"
   | "real_estate"
+  | "vacancy_empire"
   | "small_business"
   | "credit"
   | "youtube"

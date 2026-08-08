@@ -118,6 +118,7 @@ const MarketIntelligenceHub = safeLazy(
   () => import("../features/intelligence/MarketIntelligenceHub"),
   "MarketIntelligenceHub"
 );
+const VacancyEmpireGame = safeLazy(() => import("../features/portfolio/VacancyEmpireGame"), "VacancyEmpireGame");
 const RealEstateHub = safeLazy(
   () => import("../features/portfolio/RealEstateHub"),
   "RealEstateHub"
@@ -1270,9 +1271,16 @@ export function App() {
 
         {activeTab === "dyson_swarm" && <DysonSwarmHub stocks={stocks} />}
 
+        {activeTab === "vacancy_empire" && (
+          <div className="p-2 sm:p-4 w-full">
+            <VacancyEmpireGame />
+          </div>
+        )}
+
         {activeTab === "real_estate" && (
           <RealEstateHub
             reitStocks={reitStocks}
+            onSelectTab={handleSelectTab}
             onSelectStock={setSelectedStock}
           />
         )}

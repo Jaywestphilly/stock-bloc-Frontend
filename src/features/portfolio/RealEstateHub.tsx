@@ -34,11 +34,13 @@ import {
 
 interface RealEstateHubProps {
   reitStocks: StockTicker[];
+  onSelectTab?: (tab: string) => void;
   onSelectStock: (stock: StockTicker) => void;
 }
 
 export const RealEstateHub: React.FC<RealEstateHubProps> = ({
   reitStocks,
+  onSelectTab,
   onSelectStock,
 }) => {
   const [calcInput, setCalcInput] = useState<RealEstateCalcInput>(
@@ -183,6 +185,14 @@ https://stock-bloc.ai.studio/real-estate
 
         {/* Sub-Tabs Selector */}
         <div className="flex items-center gap-2 pt-2 overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => onSelectTab ? onSelectTab("vacancy_empire") : window.open("/vacancy-empire.html", "_blank")}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 bg-[#00ff9d] text-black font-extrabold shadow-lg shadow-[#00ff9d]/30"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            Vacancy Empire Game
+          </button>
+          
           <button
             onClick={() => setActiveTab("calculator")}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
