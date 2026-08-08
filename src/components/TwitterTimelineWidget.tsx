@@ -1,29 +1,26 @@
-import React, { useState } from "react";
+import React from "react";
 import { ExternalLink } from "lucide-react";
 import { TwitterTimelineEmbed } from "react-twitter-embed";
 
 export const TwitterTimelineWidget: React.FC = () => {
-  const [isLoaded, setIsLoaded] = useState(false);
-
   return (
     <div className="w-full flex flex-col items-center justify-center space-y-3">
       <div className="w-full min-h-[500px] flex items-center justify-center rounded-xl bg-black/80 border border-cyan-500/30 p-2 overflow-hidden relative">
-        {!isLoaded && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-cyan-500/70 z-10 pointer-events-none">
-            <div className="w-6 h-6 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mb-3"></div>
-            <span className="text-xs font-mono font-bold animate-pulse uppercase tracking-wider">Loading Live Intel...</span>
-          </div>
-        )}
-        <div className="w-full h-full relative z-20 opacity-0 transition-opacity duration-500" style={{ opacity: isLoaded ? 1 : 0.01 }}>
+        <div className="w-full h-full relative z-20">
           <TwitterTimelineEmbed
             sourceType="profile"
             screenName="thestockbloc"
             options={{ height: 500, theme: "dark" }}
-            onLoad={() => setIsLoaded(true)}
             noHeader
             noFooter
             noBorders
             transparent
+            placeholder={
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-cyan-500/70 z-10 pointer-events-none min-h-[500px]">
+                <div className="w-6 h-6 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mb-3"></div>
+                <span className="text-xs font-mono font-bold animate-pulse uppercase tracking-wider">Loading Live Intel...</span>
+              </div>
+            }
           />
         </div>
       </div>
