@@ -33,7 +33,6 @@ import { PODCAST_NEWS_ARTICLES } from "../../data/podcasts";
 import { YouTubeVideo, IntelFeedItem } from "../../types";
 import { triggerHaptic } from "../../utils/haptics";
 import { getStoredYouTubeVideos, syncYouTubeFeeds, formatTimeSinceSync } from "../../utils/youtubeSync";
-import { TwitterTimelineWidget } from "../../components/TwitterTimelineWidget";
 
 export type CombinedFeedItem =
   | (YouTubeVideo & { itemCategory: "youtube" | "news_video"; type: "youtube_video"; timestamp: string });
@@ -139,21 +138,6 @@ export const NewsHub: React.FC = () => {
       return next;
     });
   };
-
-  useEffect(() => {
-    // Dynamic loading of Twitter / X widgets.js script
-    const scriptId = "twitter-wjs";
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement("script");
-      script.id = scriptId;
-      script.src = "https://platform.twitter.com/widgets.js";
-      script.async = true;
-      script.charset = "utf-8";
-      document.body.appendChild(script);
-    } else if ((window as any).twttr?.widgets) {
-      (window as any).twttr.widgets.load();
-    }
-  }, []);
 
   useEffect(() => {
     const getChannelRank = (channelName: string): number => {
@@ -367,45 +351,6 @@ export const NewsHub: React.FC = () => {
               <span className="text-[9px] text-neutral-500">Founder & Macro Analyst</span>
             </div>
           </a>
-        </div>
-      </div>
-
-      {/* LATEST FROM 𝕏 @TheStockBloc SECTION */}
-      <div className="bg-[#020b14]/90 border border-cyan-500/30 rounded-2xl p-4 sm:p-5 shadow-[0_0_20px_rgba(6,182,212,0.08)] space-y-4">
-        <div className="flex items-center justify-between border-b border-cyan-500/20 pb-3 flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-lg bg-black border border-cyan-400/60 flex items-center justify-center font-black text-white text-sm">
-              𝕏
-            </span>
-            <div>
-              <a
-                href="https://x.com/TheStockBloc"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm font-black text-white hover:text-cyan-300 transition-colors flex items-center gap-1.5"
-              >
-                <span>Latest from 𝕏 @TheStockBloc</span>
-                <ExternalLink className="w-3.5 h-3.5 text-cyan-400" />
-              </a>
-              <span className="text-[10px] text-neutral-400 block">
-                Official Updates • Founder <a href="https://x.com/JayWestPhilly" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">@JayWestPhilly</a>
-              </span>
-            </div>
-          </div>
-
-          <a
-            href="https://x.com/TheStockBloc"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-1.5 bg-black border border-cyan-500/50 hover:border-cyan-400 text-cyan-300 text-xs font-bold rounded-lg flex items-center gap-1.5 transition-colors"
-          >
-            <span>Follow @TheStockBloc</span>
-            <ExternalLink className="w-3 h-3" />
-          </a>
-        </div>
-
-        <div className="pt-1">
-          <TwitterTimelineWidget />
         </div>
       </div>
 
