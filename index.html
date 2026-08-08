@@ -151,61 +151,62 @@
       setInterval(init, 60000);
     })();
     </script>
+
+    <script>
+    (function fixAndPinSpaceXTicker() {
+      const CORRECTED_SPCX = {
+        symbol: "SPCX",
+        displaySymbol: "$SPCX",
+        name: "Space Exploration Technologies Corp",
+        price: 108.80,
+        change: -3.40,
+        changePercent: -3.03,
+        pinned: true,
+        isPinned: true,
+        score: 98,
+        sentiment: "BULLISH 76%"
+      };
+
+      function updateWatchlistState() {
+        // 1. If watchlist is stored in localStorage
+        const storedState = localStorage.getItem('stock_bloc_watchlist') || localStorage.getItem('watchlist');
+        if (storedState) {
+          try {
+            let items = JSON.parse(storedState);
+            // Remove legacy $SPACEX entries
+            items = items.filter(item => item.symbol !== 'SPACEX' && item.displaySymbol !== '$SPACEX');
+            
+            // Add or update $SPCX at the top
+            const existingIdx = items.findIndex(item => item.symbol === 'SPCX');
+            if (existingIdx !== -1) {
+              items[existingIdx] = { ...items[existingIdx], ...CORRECTED_SPCX };
+            } else {
+              items.unshift(CORRECTED_SPCX);
+            }
+            
+            localStorage.setItem('stock_bloc_watchlist', JSON.stringify(items));
+            localStorage.setItem('watchlist', JSON.stringify(items));
+          } catch (e) {
+            console.warn("Could not parse local storage watchlist:", e);
+          }
+        }
+
+        // 2. DOM text update fallback for rendered cards
+        document.querySelectorAll('*').forEach(node => {
+          if (node.children.length === 0 && node.innerText) {
+            if (node.innerText.includes('$SPACEX')) {
+              node.innerText = node.innerText.replace('$SPACEX', '$SPCX');
+            }
+          }
+        });
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', updateWatchlistState);
+      } else {
+        updateWatchlistState();
+      }
+    })();
+    </script>
   </body>
 </html>
-<script>
-(function fixAndPinSpaceXTicker() {
-  const CORRECTED_SPCX = {
-    symbol: "SPCX",
-    displaySymbol: "$SPCX",
-    name: "Space Exploration Technologies Corp",
-    price: 108.80,
-    change: -3.40,
-    changePercent: -3.03,
-    pinned: true,
-    isPinned: true,
-    score: 98,
-    sentiment: "BULLISH 76%"
-  };
-
-  function updateWatchlistState() {
-    // 1. If watchlist is stored in localStorage
-    const storedState = localStorage.getItem('stock_bloc_watchlist') || localStorage.getItem('watchlist');
-    if (storedState) {
-      try {
-        let items = JSON.parse(storedState);
-        // Remove legacy $SPACEX entries
-        items = items.filter(item => item.symbol !== 'SPACEX' && item.displaySymbol !== '$SPACEX');
-        
-        // Add or update $SPCX at the top
-        const existingIdx = items.findIndex(item => item.symbol === 'SPCX');
-        if (existingIdx !== -1) {
-          items[existingIdx] = { ...items[existingIdx], ...CORRECTED_SPCX };
-        } else {
-          items.unshift(CORRECTED_SPCX);
-        }
-        
-        localStorage.setItem('stock_bloc_watchlist', JSON.stringify(items));
-        localStorage.setItem('watchlist', JSON.stringify(items));
-      } catch (e) {
-        console.warn("Could not parse local storage watchlist:", e);
-      }
-    }
-
-    // 2. DOM text update fallback for rendered cards
-    document.querySelectorAll('*').forEach(node => {
-      if (node.children.length === 0 && node.innerText) {
-        if (node.innerText.includes('$SPACEX')) {
-          node.innerText = node.innerText.replace('$SPACEX', '$SPCX');
-        }
-      }
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updateWatchlistState);
-  } else {
-    updateWatchlistState();
-  }
-})();
-</script>

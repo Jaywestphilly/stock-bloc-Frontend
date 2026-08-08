@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Sparkles,
   Bot,
@@ -45,10 +45,20 @@ interface ToolItem {
   isFree?: boolean;
 }
 
-export const AiRevolutionHub: React.FC = () => {
+interface AiRevolutionHubProps {
+  initialTab?: "value_chain" | "intent_engine" | "prompting" | "tools" | "build_apps" | "prompt_generator" | "impact";
+}
+
+export const AiRevolutionHub: React.FC<AiRevolutionHubProps> = ({ initialTab }) => {
   const [activeTab, setActiveTab] = useState<
     "value_chain" | "intent_engine" | "prompting" | "tools" | "build_apps" | "prompt_generator" | "impact"
-  >("value_chain");
+  >(initialTab || "value_chain");
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
 
   // Agentic Intent Settlement Engine State

@@ -301,6 +301,15 @@ export function App() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, [activeTab]);
 
+  // Clear lazy loading script reload attempt flag on successful mount to allow resilient page reloads on next version update
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem("app_script_reload_attempt");
+    } catch (e) {
+      console.warn("Could not clear reload flag:", e);
+    }
+  }, []);
+
   // Global Keyboard Shortcuts ('/', 'Esc', Cmd+K)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1294,7 +1303,7 @@ export function App() {
         )}
 
         {(activeTab === "ai_insights" || activeTab === "ai_revolution") && (
-          <AiRevolutionHub />
+          <AiRevolutionHub initialTab={activeTab === "ai_insights" ? "intent_engine" : "value_chain"} />
         )}
 
         {activeTab === "playbooks" && (
