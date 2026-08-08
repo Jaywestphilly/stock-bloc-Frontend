@@ -8,7 +8,7 @@ import { GoogleGenAI, Modality, ThinkingLevel } from '@google/genai';
 import { createEbookPdf } from './server/pdfGenerator.js';
 
 const app = express();
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const PORT = 3000;
 
 // Set payload limits for base64 image uploads
 app.use(express.json({ limit: '15mb' }));
