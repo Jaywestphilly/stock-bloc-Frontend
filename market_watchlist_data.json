@@ -1,150 +1,603 @@
 {
-  "updated_at": "2026-08-07T19:41:51Z",
-  "source": "Polygon.io / Yahoo Finance Quant Watchlist Feed",
+  "updated_at": "2026-08-09T16:30:25.553Z",
+  "last_successful_update": "2026-08-09T16:30:25.553Z",
+  "source": "Alpha Vantage API",
+  "status_label": "fresh",
+  "data_age_seconds": 1,
   "watchlist": [
     {
       "symbol": "SPCX",
-      "price": 125.33,
-      "change": 10.26,
-      "percent_change": 8.92,
+      "price": 133.11,
+      "change": 18.19,
+      "percent_change": 15.83,
       "sector": "Frontier Space & AI",
       "analysis_summary": "Top Conviction: Liquid exposure vehicle to SpaceX orbital launches, Starlink expansion, and pre-IPO AI compute giants.",
       "sparkline": [
-        113.5,
-        116.41,
-        112.55,
-        112.2,
-        108.37,
-        114.53,
-        125.33
+        133.11
       ],
-      "pinned": true
+      "pinned": true,
+      "name": "Space Exploration Technologies ",
+      "previousClose": 114.92,
+      "volume": 242130745,
+      "avgVolume": 242130745,
+      "high52": 133.48,
+      "low52": 114.53,
+      "last_updated": "2026-08-09T16:30:25.553Z",
+      "source": "Alpha Vantage API",
+      "quant": {
+        "rsi14": null,
+        "sma20": 133.11,
+        "sma50": 133.11,
+        "sma200": 133.11,
+        "priceVsSma20Pct": 0,
+        "priceVsSma50Pct": 0,
+        "priceVsSma200Pct": 0,
+        "volumeVsAvg20Ratio": 1,
+        "percentile52Week": 98.05,
+        "volatility": null
+      },
+      "signal": {
+        "signalScore": 65,
+        "signalLabel": "Bullish",
+        "components": [
+          {
+            "name": "Momentum",
+            "score": 85,
+            "weight": 0.25,
+            "detail": "RSI 14 at 50 with 1-day change of +15.83%"
+          },
+          {
+            "name": "Trend",
+            "score": 45,
+            "weight": 0.25,
+            "detail": "Trading +0% vs 20-day SMA"
+          },
+          {
+            "name": "Volume",
+            "score": 50,
+            "weight": 0.15,
+            "detail": "Volume ratio relative to 20-day avg: 1x"
+          },
+          {
+            "name": "52W Range Positioning",
+            "score": 80,
+            "weight": 0.2,
+            "detail": "Positioned at 98.05% of 52-week price corridor"
+          },
+          {
+            "name": "Volatility Risk",
+            "score": 60,
+            "weight": 0.15,
+            "detail": "Standard volatility band"
+          }
+        ],
+        "summary": "Quant Composite Score 65/100 [Bullish]: Momentum (85/100), Trend (45/100), Volume (50/100)"
+      }
     },
     {
       "symbol": "NVDA",
-      "price": 211.94,
-      "change": 5.1,
-      "percent_change": 2.47,
+      "price": 223.96,
+      "change": 27.03,
+      "percent_change": 13.73,
       "sector": "AI Semiconductors",
       "analysis_summary": "Core Infrastructure: Primary GPU compute provider powering frontier LLM training and hyperscaler data center buildouts.",
       "sparkline": [
-        196.51,
-        197.01,
-        190.01,
         195.04,
         200.75,
         206.64,
-        211.94
+        211.94,
+        219.22,
+        218.99,
+        223.96
       ],
-      "pinned": false
+      "pinned": false,
+      "name": "NVIDIA Corporation",
+      "previousClose": 196.93,
+      "volume": 104730601,
+      "avgVolume": 104730601,
+      "high52": 236.54,
+      "low52": 164.07,
+      "last_updated": "2026-08-09T16:30:25.553Z",
+      "source": "Alpha Vantage API",
+      "quant": {
+        "rsi14": 99.22,
+        "sma20": 210.93,
+        "sma50": 210.93,
+        "sma200": 210.93,
+        "priceVsSma20Pct": 6.18,
+        "priceVsSma50Pct": 6.18,
+        "priceVsSma200Pct": 6.18,
+        "volumeVsAvg20Ratio": 1,
+        "percentile52Week": 82.64,
+        "volatility": 19.99
+      },
+      "signal": {
+        "signalScore": 75,
+        "signalLabel": "Bullish",
+        "components": [
+          {
+            "name": "Momentum",
+            "score": 56,
+            "weight": 0.25,
+            "detail": "RSI 14 at 99.22 with 1-day change of +13.73%"
+          },
+          {
+            "name": "Trend",
+            "score": 91,
+            "weight": 0.25,
+            "detail": "Trading +6.18% vs 20-day SMA"
+          },
+          {
+            "name": "Volume",
+            "score": 50,
+            "weight": 0.15,
+            "detail": "Volume ratio relative to 20-day avg: 1x"
+          },
+          {
+            "name": "52W Range Positioning",
+            "score": 93,
+            "weight": 0.2,
+            "detail": "Positioned at 82.64% of 52-week price corridor"
+          },
+          {
+            "name": "Volatility Risk",
+            "score": 80,
+            "weight": 0.15,
+            "detail": "Annualized historical volatility: 19.99%"
+          }
+        ],
+        "summary": "Quant Composite Score 75/100 [Bullish]: Momentum (56/100), Trend (91/100), Volume (50/100)"
+      }
     },
     {
       "symbol": "AAPL",
-      "price": 309.38,
-      "change": -23.64,
-      "percent_change": -7.1,
+      "price": 313.33,
+      "change": 2.67,
+      "percent_change": 0.86,
       "sector": "Edge AI & Consumer Hardware",
       "analysis_summary": "Edge AI Thesis: Apple Intelligence integration driving multi-year hardware refresh cycle across global device ecosystem.",
       "sparkline": [
-        336.91,
-        340.08,
-        338.19,
-        329.85,
-        321.41,
-        311.5,
-        309.38
+        333.43,
+        308.91,
+        303.42,
+        309.38,
+        311,
+        312.41,
+        313.33
       ],
-      "pinned": false
+      "pinned": false,
+      "name": "Apple Inc.",
+      "previousClose": 310.66,
+      "volume": 34331108,
+      "avgVolume": 34331108,
+      "high52": 344.57,
+      "low52": 223.78,
+      "last_updated": "2026-08-09T16:30:25.553Z",
+      "source": "Alpha Vantage API",
+      "quant": {
+        "rsi14": 24.82,
+        "sma20": 313.13,
+        "sma50": 313.13,
+        "sma200": 313.13,
+        "priceVsSma20Pct": 0.06,
+        "priceVsSma50Pct": 0.06,
+        "priceVsSma200Pct": 0.06,
+        "volumeVsAvg20Ratio": 1,
+        "percentile52Week": 74.14,
+        "volatility": 53.06
+      },
+      "signal": {
+        "signalScore": 62,
+        "signalLabel": "Bullish",
+        "components": [
+          {
+            "name": "Momentum",
+            "score": 32,
+            "weight": 0.25,
+            "detail": "RSI 14 at 24.82 with 1-day change of +0.86%"
+          },
+          {
+            "name": "Trend",
+            "score": 85,
+            "weight": 0.25,
+            "detail": "Trading +0.06% vs 20-day SMA"
+          },
+          {
+            "name": "Volume",
+            "score": 50,
+            "weight": 0.15,
+            "detail": "Volume ratio relative to 20-day avg: 1x"
+          },
+          {
+            "name": "52W Range Positioning",
+            "score": 87,
+            "weight": 0.2,
+            "detail": "Positioned at 74.14% of 52-week price corridor"
+          },
+          {
+            "name": "Volatility Risk",
+            "score": 50,
+            "weight": 0.15,
+            "detail": "Annualized historical volatility: 53.06%"
+          }
+        ],
+        "summary": "Quant Composite Score 62/100 [Bullish]: Momentum (32/100), Trend (85/100), Volume (50/100)"
+      }
     },
     {
       "symbol": "TSLA",
-      "price": 312.45,
-      "change": 14.8,
-      "percent_change": 4.97,
+      "price": 328.58,
+      "change": -74.32,
+      "percent_change": -18.45,
       "sector": "Autonomous & Robotics",
       "analysis_summary": "Autonomous Fleet Thesis: Full Self-Driving v13 deployment and Optimus humanoid robotics scaling across gigafactories.",
       "sparkline": [
-        285.1,
-        290.4,
-        298.2,
-        302.5,
-        305.0,
-        310.2,
-        312.45
+        308.85,
+        311.21,
+        322.08,
+        327.35,
+        321.55,
+        319.53,
+        328.58
       ],
-      "pinned": false
+      "pinned": false,
+      "name": "Tesla, Inc.",
+      "previousClose": 402.9,
+      "volume": 38841743,
+      "avgVolume": 38841743,
+      "high52": 498.83,
+      "low52": 297.38,
+      "last_updated": "2026-08-09T16:30:25.553Z",
+      "source": "Alpha Vantage API",
+      "quant": {
+        "rsi14": 77.89,
+        "sma20": 319.88,
+        "sma50": 319.88,
+        "sma200": 319.88,
+        "priceVsSma20Pct": 2.72,
+        "priceVsSma50Pct": 2.72,
+        "priceVsSma200Pct": 2.72,
+        "volumeVsAvg20Ratio": 1,
+        "percentile52Week": 15.49,
+        "volatility": 32.02
+      },
+      "signal": {
+        "signalScore": 59,
+        "signalLabel": "Neutral",
+        "components": [
+          {
+            "name": "Momentum",
+            "score": 54,
+            "weight": 0.25,
+            "detail": "RSI 14 at 77.89 with 1-day change of -18.45%"
+          },
+          {
+            "name": "Trend",
+            "score": 88,
+            "weight": 0.25,
+            "detail": "Trading +2.72% vs 20-day SMA"
+          },
+          {
+            "name": "Volume",
+            "score": 50,
+            "weight": 0.15,
+            "detail": "Volume ratio relative to 20-day avg: 1x"
+          },
+          {
+            "name": "52W Range Positioning",
+            "score": 30,
+            "weight": 0.2,
+            "detail": "Positioned at 15.49% of 52-week price corridor"
+          },
+          {
+            "name": "Volatility Risk",
+            "score": 65,
+            "weight": 0.15,
+            "detail": "Annualized historical volatility: 32.02%"
+          }
+        ],
+        "summary": "Quant Composite Score 59/100 [Neutral]: Momentum (54/100), Trend (88/100), Volume (50/100)"
+      }
     },
     {
       "symbol": "PLTR",
-      "price": 78.2,
-      "change": 3.45,
-      "percent_change": 4.62,
+      "price": 172.01,
+      "change": 37.64,
+      "percent_change": 28.01,
       "sector": "Enterprise AI Software",
       "analysis_summary": "AIP Execution: Artificial Intelligence Platform commercial expansion driving exponential revenue growth in US enterprise & defense.",
       "sparkline": [
-        68.5,
-        71.2,
-        73.0,
-        74.8,
-        76.1,
-        77.5,
-        78.2
+        122.26,
+        123.06,
+        125.65,
+        162.66,
+        158.43,
+        155.92,
+        172.01
       ],
-      "pinned": false
+      "pinned": false,
+      "name": "Palantir Technologies Inc.",
+      "previousClose": 134.37,
+      "volume": 76171329,
+      "avgVolume": 76171329,
+      "high52": 207.52,
+      "low52": 106.37,
+      "last_updated": "2026-08-09T16:30:25.553Z",
+      "source": "Alpha Vantage API",
+      "quant": {
+        "rsi14": 89.34,
+        "sma20": 145.71,
+        "sma50": 145.71,
+        "sma200": 145.71,
+        "priceVsSma20Pct": 18.05,
+        "priceVsSma50Pct": 18.05,
+        "priceVsSma200Pct": 18.05,
+        "volumeVsAvg20Ratio": 1,
+        "percentile52Week": 64.89,
+        "volatility": 193.53
+      },
+      "signal": {
+        "signalScore": 68,
+        "signalLabel": "Bullish",
+        "components": [
+          {
+            "name": "Momentum",
+            "score": 69,
+            "weight": 0.25,
+            "detail": "RSI 14 at 89.34 with 1-day change of +28.01%"
+          },
+          {
+            "name": "Trend",
+            "score": 100,
+            "weight": 0.25,
+            "detail": "Trading +18.05% vs 20-day SMA"
+          },
+          {
+            "name": "Volume",
+            "score": 50,
+            "weight": 0.15,
+            "detail": "Volume ratio relative to 20-day avg: 1x"
+          },
+          {
+            "name": "52W Range Positioning",
+            "score": 66,
+            "weight": 0.2,
+            "detail": "Positioned at 64.89% of 52-week price corridor"
+          },
+          {
+            "name": "Volatility Risk",
+            "score": 35,
+            "weight": 0.15,
+            "detail": "Annualized historical volatility: 193.53%"
+          }
+        ],
+        "summary": "Quant Composite Score 68/100 [Bullish]: Momentum (69/100), Trend (100/100), Volume (50/100)"
+      }
     },
     {
       "symbol": "MSFT",
-      "price": 465.12,
-      "change": 6.8,
-      "percent_change": 1.48,
+      "price": 499.99,
+      "change": 111.15,
+      "percent_change": 28.59,
       "sector": "Cloud & Enterprise AI",
       "analysis_summary": "Enterprise Monopoly: Azure AI cloud expansion and Copilot integration across Microsoft 365 enterprise installed base.",
       "sparkline": [
-        448.0,
-        452.1,
-        455.0,
-        458.3,
-        460.9,
-        463.2,
-        465.12
+        451.1,
+        464.72,
+        487.65,
+        492.81,
+        487.46,
+        499.86,
+        499.99
       ],
-      "pinned": false
+      "pinned": false,
+      "name": "Microsoft Corporation",
+      "previousClose": 388.84,
+      "volume": 24137816,
+      "avgVolume": 24137816,
+      "high52": 553.72,
+      "low52": 349.2,
+      "last_updated": "2026-08-09T16:30:25.553Z",
+      "source": "Alpha Vantage API",
+      "quant": {
+        "rsi14": 91.02,
+        "sma20": 483.37,
+        "sma50": 483.37,
+        "sma200": 483.37,
+        "priceVsSma20Pct": 3.44,
+        "priceVsSma50Pct": 3.44,
+        "priceVsSma200Pct": 3.44,
+        "volumeVsAvg20Ratio": 1,
+        "percentile52Week": 73.73,
+        "volatility": 34.69
+      },
+      "signal": {
+        "signalScore": 73,
+        "signalLabel": "Bullish",
+        "components": [
+          {
+            "name": "Momentum",
+            "score": 67,
+            "weight": 0.25,
+            "detail": "RSI 14 at 91.02 with 1-day change of +28.59%"
+          },
+          {
+            "name": "Trend",
+            "score": 88,
+            "weight": 0.25,
+            "detail": "Trading +3.44% vs 20-day SMA"
+          },
+          {
+            "name": "Volume",
+            "score": 50,
+            "weight": 0.15,
+            "detail": "Volume ratio relative to 20-day avg: 1x"
+          },
+          {
+            "name": "52W Range Positioning",
+            "score": 87,
+            "weight": 0.2,
+            "detail": "Positioned at 73.73% of 52-week price corridor"
+          },
+          {
+            "name": "Volatility Risk",
+            "score": 65,
+            "weight": 0.15,
+            "detail": "Annualized historical volatility: 34.69%"
+          }
+        ],
+        "summary": "Quant Composite Score 73/100 [Bullish]: Momentum (67/100), Trend (88/100), Volume (50/100)"
+      }
     },
     {
       "symbol": "VST",
-      "price": 148.6,
-      "change": 8.25,
-      "percent_change": 5.88,
+      "price": 140.59,
+      "change": -15.14,
+      "percent_change": -9.72,
       "sector": "Nuclear Power & Utilities",
       "analysis_summary": "Hyperscaler Energy Moat: Nuclear power provider locking in long-term power purchase agreements directly for AI datacenters.",
       "sparkline": [
-        128.0,
-        132.5,
-        136.1,
-        140.0,
-        142.8,
-        145.4,
-        148.6
+        148.62,
+        148.19,
+        155.94,
+        143.23,
+        140.58,
+        141.38,
+        140.59
       ],
-      "pinned": false
+      "pinned": false,
+      "name": "Vistra Corp.",
+      "previousClose": 155.73,
+      "volume": 7364955,
+      "avgVolume": 7364955,
+      "high52": 219.82,
+      "low52": 132.66,
+      "last_updated": "2026-08-09T16:30:25.553Z",
+      "source": "Alpha Vantage API",
+      "quant": {
+        "rsi14": 34.02,
+        "sma20": 145.5,
+        "sma50": 145.5,
+        "sma200": 145.5,
+        "priceVsSma20Pct": -3.37,
+        "priceVsSma50Pct": -3.37,
+        "priceVsSma200Pct": -3.37,
+        "volumeVsAvg20Ratio": 1,
+        "percentile52Week": 9.1,
+        "volatility": 68.71
+      },
+      "signal": {
+        "signalScore": 32,
+        "signalLabel": "Caution",
+        "components": [
+          {
+            "name": "Momentum",
+            "score": 29,
+            "weight": 0.25,
+            "detail": "RSI 14 at 34.02 with 1-day change of -9.72%"
+          },
+          {
+            "name": "Trend",
+            "score": 25,
+            "weight": 0.25,
+            "detail": "Trading -3.37% vs 20-day SMA"
+          },
+          {
+            "name": "Volume",
+            "score": 50,
+            "weight": 0.15,
+            "detail": "Volume ratio relative to 20-day avg: 1x"
+          },
+          {
+            "name": "52W Range Positioning",
+            "score": 30,
+            "weight": 0.2,
+            "detail": "Positioned at 9.1% of 52-week price corridor"
+          },
+          {
+            "name": "Volatility Risk",
+            "score": 35,
+            "weight": 0.15,
+            "detail": "Annualized historical volatility: 68.71%"
+          }
+        ],
+        "summary": "Quant Composite Score 32/100 [Caution]: Momentum (29/100), Trend (25/100), Volume (50/100)"
+      }
     },
     {
       "symbol": "ASTS",
-      "price": 34.5,
-      "change": 2.8,
-      "percent_change": 8.83,
+      "price": 71.94,
+      "change": -2.27,
+      "percent_change": -3.06,
       "sector": "Space Cellular Broadband",
       "analysis_summary": "Direct-to-Cellular Moat: BlueBird satellite constellation commercial launch providing global cellular broadband.",
       "sparkline": [
-        26.4,
-        28.1,
-        30.0,
-        31.5,
-        32.8,
-        33.9,
-        34.5
+        58.44,
+        58.98,
+        63.52,
+        70.31,
+        68.38,
+        67.36,
+        71.94
       ],
-      "pinned": false
+      "pinned": false,
+      "name": "AST SpaceMobile, Inc.",
+      "previousClose": 74.21,
+      "volume": 13411029,
+      "avgVolume": 13411029,
+      "high52": 133.86,
+      "low52": 36.08,
+      "last_updated": "2026-08-09T16:30:25.553Z",
+      "source": "Alpha Vantage API",
+      "quant": {
+        "rsi14": 84.79,
+        "sma20": 65.56,
+        "sma50": 65.56,
+        "sma200": 65.56,
+        "priceVsSma20Pct": 9.73,
+        "priceVsSma50Pct": 9.73,
+        "priceVsSma200Pct": 9.73,
+        "volumeVsAvg20Ratio": 1,
+        "percentile52Week": 36.67,
+        "volatility": 87.13
+      },
+      "signal": {
+        "signalScore": 59,
+        "signalLabel": "Neutral",
+        "components": [
+          {
+            "name": "Momentum",
+            "score": 54,
+            "weight": 0.25,
+            "detail": "RSI 14 at 84.79 with 1-day change of -3.06%"
+          },
+          {
+            "name": "Trend",
+            "score": 95,
+            "weight": 0.25,
+            "detail": "Trading +9.73% vs 20-day SMA"
+          },
+          {
+            "name": "Volume",
+            "score": 50,
+            "weight": 0.15,
+            "detail": "Volume ratio relative to 20-day avg: 1x"
+          },
+          {
+            "name": "52W Range Positioning",
+            "score": 45,
+            "weight": 0.2,
+            "detail": "Positioned at 36.67% of 52-week price corridor"
+          },
+          {
+            "name": "Volatility Risk",
+            "score": 35,
+            "weight": 0.15,
+            "detail": "Annualized historical volatility: 87.13%"
+          }
+        ],
+        "summary": "Quant Composite Score 59/100 [Neutral]: Momentum (54/100), Trend (95/100), Volume (50/100)"
+      }
     }
   ]
 }

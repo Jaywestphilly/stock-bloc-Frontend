@@ -20,6 +20,21 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci || npm install
+
+      - name: Execute Node Market Data Service Refresh & Validate
+        run: |
+          npm run refresh:market
+          npm run validate:market
+        env:
+          MARKET_DATA_API_KEY: ${{ secrets.MARKET_DATA_API_KEY }}
+
       - name: Execute Data Fetchers (Market, SEC 13F, Dyson Swarm, Intel News)
         id: fetch_feeds
         run: |
