@@ -29,7 +29,7 @@ interface MarketState {
 export const useMarketStore = create<MarketState>((set) => ({
   stocks: INITIAL_STOCKS,
   setStocks: (stocks) => set({ stocks }),
-  selectedCategory: "tsunami",
+  selectedCategory: "all",
   setSelectedCategory: (selectedCategory) => set({ selectedCategory }),
   sortField: "changePercent",
   setSortField: (sortField) => set({ sortField }),

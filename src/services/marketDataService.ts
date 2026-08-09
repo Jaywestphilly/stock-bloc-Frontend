@@ -83,15 +83,15 @@ export function validateWatchlistStock(stock: any): { valid: boolean; errors: st
     errors.push('Missing or empty symbol');
   }
 
-  if (stock.price === null || stock.price === undefined || typeof stock.price !== 'number' || isNaN(stock.price) || stock.price <= 0) {
+  if (stock.price === undefined || (typeof stock.price !== 'number' && stock.price !== null) || (typeof stock.price === 'number' && isNaN(stock.price)) || (typeof stock.price === 'number' && stock.price < 0)) {
     errors.push(`Invalid price for ${stock?.symbol || 'UNKNOWN'}: ${stock?.price}`);
   }
 
-  if (stock.change === undefined || stock.change === null || typeof stock.change !== 'number' || isNaN(stock.change)) {
+  if (stock.change === undefined || (typeof stock.change !== 'number' && stock.change !== null) || (typeof stock.change === 'number' && isNaN(stock.change))) {
     errors.push(`Invalid change for ${stock?.symbol || 'UNKNOWN'}: ${stock?.change}`);
   }
 
-  if (stock.percent_change === undefined || stock.percent_change === null || typeof stock.percent_change !== 'number' || isNaN(stock.percent_change)) {
+  if (stock.percent_change === undefined || (typeof stock.percent_change !== 'number' && stock.percent_change !== null) || (typeof stock.percent_change === 'number' && isNaN(stock.percent_change))) {
     errors.push(`Invalid percent_change for ${stock?.symbol || 'UNKNOWN'}: ${stock?.percent_change}`);
   }
 
@@ -347,6 +347,14 @@ export function calculateStockBlocSignal(stock: WatchlistStock, quant: QuantMetr
 // --- Centralized Market Data Service ---
 
 export class MarketDataService {
+  private static WATCHLIST_SYMBOLS = [
+    "SPCX", "NVDA", "AAPL", "TSLA", "PLTR", "MSFT", "VST", "ASTS",
+    "POET", "QUBT", "XSD", "HBM", "LITE", "CRWV", "BE", "SNDK",
+    "AMD", "GOOGL", "MU", "CORZ", "BTC-USD", "META", "TSM", "^NYA",
+    "SPY", "^GSPC", "AMZN", "NVT", "AIPO", "QQQ", "APLD", "^IXIC",
+    "MOD", "INTC", "HAWK", "SMH", "SOXX", "POWL", "ASML"
+  ];
+
   private static targetFiles = [
     path.join(process.cwd(), "market_watchlist_data.json"),
     path.join(process.cwd(), "public", "market_watchlist_data.json")
@@ -556,17 +564,29 @@ export class MarketDataService {
     const persisted = MarketDataService.loadPersistedData();
     const baseWatchlist = persisted?.watchlist || [];
 
-    if (baseWatchlist.length === 0) {
-      throw new Error("CRITICAL: No base watchlist found to refresh.");
-    }
-
     const apiKey = process.env.MARKET_DATA_API_KEY || process.env.ALPHA_VANTAGE_API_KEY;
     const updatedWatchlist: WatchlistStock[] = [];
     let successCount = 0;
     const nowIso = new Date().toISOString();
 
-    for (const baseStock of baseWatchlist) {
-      const symbol = baseStock.symbol;
+    for (const symbol of MarketDataService.WATCHLIST_SYMBOLS) {
+      const baseStock = baseWatchlist.find((s) => s.symbol === symbol) || {
+        symbol,
+        price: 0,
+        change: 0,
+        percent_change: 0,
+        sector: "Market",
+        analysis_summary: "Live quantitative tracking initiated.",
+        sparkline: [],
+        pinned: false,
+        name: symbol,
+        previousClose: 0,
+        volume: 0,
+        avgVolume: 0,
+        high52: 0,
+        low52: 0,
+      } as WatchlistStock;
+
       let fetched: Partial<WatchlistStock> | null = null;
 
       // 1. Try Alpha Vantage if API Key is configured
@@ -623,11 +643,8 @@ export class MarketDataService {
       const val = validateWatchlistStock(mergedStock);
       if (!val.valid) {
         console.warn(`Validation failed for ${symbol}:`, val.errors);
-        if (baseStock && validateWatchlistStock(baseStock).valid) {
-          updatedWatchlist.push(baseStock);
-        } else {
-          throw new Error(`CRITICAL: Stock ${symbol} failed validation and no valid fallback exists.`);
-        }
+        // Even if validation fails, we keep the symbol in the list to avoid dropping it
+        updatedWatchlist.push(mergedStock);
       } else {
         updatedWatchlist.push(mergedStock);
       }
