@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+  issues: write
+
 jobs:
   sync-and-verify:
     runs-on: ubuntu-latest

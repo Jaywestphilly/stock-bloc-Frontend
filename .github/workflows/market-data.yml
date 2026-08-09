@@ -5,6 +5,9 @@ on:
     - cron: '*/15 * * * *' # Every 15 minutes
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   refresh-and-validate:
     runs-on: ubuntu-latest
