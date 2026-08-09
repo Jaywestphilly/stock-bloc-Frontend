@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-08-09T17:14:00Z",
-  "last_successful_update": "2026-08-09T17:13:57.082Z",
+  "updated_at": "2026-08-09T17:21:02Z",
+  "last_successful_update": "2026-08-09T17:21:00.023Z",
   "source": "Polygon.io / Yahoo Finance Quant Watchlist Feed",
   "status_label": "fresh",
-  "data_age_seconds": 0,
+  "data_age_seconds": 1,
   "watchlist": [
     {
       "symbol": "SPCX",
@@ -22,7 +22,7 @@
       "avgVolume": 242130745,
       "high52": 133.48,
       "low52": 114.53,
-      "last_updated": "2026-08-09T17:13:57.082Z",
+      "last_updated": "2026-08-09T17:21:00.023Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": null,
@@ -97,7 +97,7 @@
       "avgVolume": 105669440,
       "high52": 236.54,
       "low52": 164.07,
-      "last_updated": "2026-08-09T17:13:57.082Z",
+      "last_updated": "2026-08-09T17:21:00.023Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 99.22,
@@ -172,7 +172,7 @@
       "avgVolume": 34437191,
       "high52": 344.57,
       "low52": 223.78,
-      "last_updated": "2026-08-09T17:13:57.082Z",
+      "last_updated": "2026-08-09T17:21:00.023Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 24.82,
@@ -247,7 +247,7 @@
       "avgVolume": 39492345,
       "high52": 498.83,
       "low52": 297.38,
-      "last_updated": "2026-08-09T17:13:57.082Z",
+      "last_updated": "2026-08-09T17:21:00.023Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 77.89,
@@ -322,7 +322,7 @@
       "avgVolume": 77579878,
       "high52": 207.52,
       "low52": 106.37,
-      "last_updated": "2026-08-09T17:13:57.082Z",
+      "last_updated": "2026-08-09T17:21:00.023Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 89.34,
@@ -377,55 +377,49 @@
     {
       "symbol": "MSFT",
       "price": 499.99,
-      "change": 111.15,
-      "percent_change": 28.59,
+      "change": 0.13,
+      "percent_change": 0.03,
       "sector": "Cloud & Enterprise AI",
       "analysis_summary": "Enterprise Monopoly: Azure AI cloud expansion and Copilot integration across Microsoft 365 enterprise installed base.",
       "sparkline": [
-        451.1,
-        464.72,
-        487.65,
-        492.81,
-        487.46,
-        499.86,
         499.99
       ],
       "pinned": false,
       "name": "Microsoft Corporation",
-      "previousClose": 388.84,
+      "previousClose": 499.86,
       "volume": 28846235,
       "avgVolume": 28846235,
-      "high52": 553.72,
-      "low52": 349.2,
-      "last_updated": "2026-08-09T17:13:57.082Z",
+      "high52": 505.18,
+      "low52": 498.73,
+      "last_updated": "2026-08-09T17:21:00.023Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": 91.02,
-        "sma20": 483.37,
-        "sma50": 483.37,
-        "sma200": 483.37,
-        "priceVsSma20Pct": 3.44,
-        "priceVsSma50Pct": 3.44,
-        "priceVsSma200Pct": 3.44,
+        "rsi14": null,
+        "sma20": 499.99,
+        "sma50": 499.99,
+        "sma200": 499.99,
+        "priceVsSma20Pct": 0,
+        "priceVsSma50Pct": 0,
+        "priceVsSma200Pct": 0,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 73.73,
-        "volatility": 34.69
+        "percentile52Week": 19.53,
+        "volatility": null
       },
       "signal": {
-        "signalScore": 73,
-        "signalLabel": "Bullish",
+        "signalScore": 51,
+        "signalLabel": "Neutral",
         "components": [
           {
             "name": "Momentum",
-            "score": 67,
+            "score": 70,
             "weight": 0.25,
-            "detail": "RSI 14 at 91.02 with 1-day change of +28.59%"
+            "detail": "RSI 14 at 50 with 1-day change of +0.03%"
           },
           {
             "name": "Trend",
-            "score": 88,
+            "score": 45,
             "weight": 0.25,
-            "detail": "Trading +3.44% vs 20-day SMA"
+            "detail": "Trading +0% vs 20-day SMA"
           },
           {
             "name": "Volume",
@@ -435,18 +429,18 @@
           },
           {
             "name": "52W Range Positioning",
-            "score": 87,
+            "score": 30,
             "weight": 0.2,
-            "detail": "Positioned at 73.73% of 52-week price corridor"
+            "detail": "Positioned at 19.53% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
-            "score": 65,
+            "score": 60,
             "weight": 0.15,
-            "detail": "Annualized historical volatility: 34.69%"
+            "detail": "Standard volatility band"
           }
         ],
-        "summary": "Quant Composite Score 73/100 [Bullish]: Momentum (67/100), Trend (88/100), Volume (50/100)"
+        "summary": "Quant Composite Score 51/100 [Neutral]: Momentum (70/100), Trend (45/100), Volume (50/100)"
       }
     },
     {
@@ -472,7 +466,7 @@
       "avgVolume": 7364955,
       "high52": 219.82,
       "low52": 132.66,
-      "last_updated": "2026-08-09T17:13:57.082Z",
+      "last_updated": "2026-08-09T17:21:00.023Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 34.02,
@@ -547,7 +541,7 @@
       "avgVolume": 14397070,
       "high52": 133.86,
       "low52": 36.08,
-      "last_updated": "2026-08-09T17:13:57.082Z",
+      "last_updated": "2026-08-09T17:21:00.023Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 84.79,
