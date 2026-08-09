@@ -36,6 +36,13 @@ export interface StockTicker {
   rsi?: number;
   isPinned?: boolean;
   tags: string[];
+  signalScore?: number;
+  signalLabel?: string;
+  volumeNum?: number;
+  avgVolumeNum?: number;
+  volumeVsAvgRatio?: number;
+  lastUpdatedIso?: string;
+  quantMetrics?: any;
   asymmetryPotentialStars?: number; // 1.0 to 5.0 rating scale
   targetPrice?: number;
   rating?: string;
@@ -98,6 +105,7 @@ export interface StockNews {
 export type SortField =
   | "price"
   | "changePercent"
+  | "signal"
   | "name"
   | "marketCap"
   | "volatility"

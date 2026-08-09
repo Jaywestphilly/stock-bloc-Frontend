@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { SentimentGauge } from "../../components/SentimentGauge";
 import { TrendSentimentVisualizer } from "../../components/TrendSentimentVisualizer";
+import { StockAiBriefSection } from "../../components/StockAiBriefSection";
+import { computeDeterministicSignal, getStockDataFreshness } from "../../utils/signalCalculator";
 import { triggerHaptic } from "../../utils/haptics";
 import { useUserStore } from "../../stores/userStore";
 import { useMarketStore } from "../../stores/marketStore";
@@ -1030,6 +1032,124 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                   )}
                 </div>
               </div>
+
+              {/* Stock Bloc Signal Breakdown & Data Freshness Dashboard */}
+              {(() => {
+                const sig = computeDeterministicSignal(stock);
+                const fresh = getStockDataFreshness(stock.lastUpdatedIso);
+                const high52 = stock.high52 || stock.price * 1.15;
+                const low52 = stock.low52 || stock.price * 0.85;
+                const pct52 = high52 > low52 ? Math.min(100, Math.max(0, Math.round(((stock.price - low52) / (high52 - low52)) * 100))) : 50;
+
+                return (
+                  <div className="space-y-2.5 font-mono">
+                    {/* Signal Header Pill & Freshness Row */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[#031525] border border-cyan-500/30">
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 font-black text-sm">
+                          {sig.score}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-black text-cyan-200 tracking-wider">
+                              STOCK BLOC SIGNAL
+                            </span>
+                            <span className={`px-1.5 py-0.2 rounded text-[8px] font-black uppercase border ${
+                              sig.label === "BULLISH"
+                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                : sig.label === "BEARISH"
+                                  ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
+                                  : "bg-amber-500/20 text-amber-300 border-amber-500/40"
+                            }`}>
+                              {sig.label}
+                            </span>
+                          </div>
+                          <p className="text-[10px] text-cyan-400/80">
+                            Quant Composite Score · Trend: {sig.trend.detail}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Freshness Badge */}
+                      <div className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1.5 ${fresh.badgeClass}`}>
+                        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                        <span>DATA: {fresh.ageText}</span>
+                      </div>
+                    </div>
+
+                    {/* 5 Quant Signal Component Bars */}
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                      <div className="p-2 rounded-lg bg-[#04192d] border border-cyan-900/50">
+                        <div className="text-[9px] text-cyan-500/80 flex justify-between">
+                          <span>MOMENTUM</span>
+                          <span className="text-cyan-200 font-bold">+{sig.momentum.points}/25</span>
+                        </div>
+                        <div className="w-full bg-neutral-800 h-1 rounded mt-1 overflow-hidden">
+                          <div className="bg-cyan-400 h-full rounded" style={{ width: `${(sig.momentum.points / 25) * 100}%` }} />
+                        </div>
+                      </div>
+
+                      <div className="p-2 rounded-lg bg-[#04192d] border border-cyan-900/50">
+                        <div className="text-[9px] text-cyan-500/80 flex justify-between">
+                          <span>TREND</span>
+                          <span className="text-cyan-200 font-bold">+{sig.trend.points}/25</span>
+                        </div>
+                        <div className="w-full bg-neutral-800 h-1 rounded mt-1 overflow-hidden">
+                          <div className="bg-cyan-400 h-full rounded" style={{ width: `${(sig.trend.points / 25) * 100}%` }} />
+                        </div>
+                      </div>
+
+                      <div className="p-2 rounded-lg bg-[#04192d] border border-cyan-900/50">
+                        <div className="text-[9px] text-cyan-500/80 flex justify-between">
+                          <span>VOLUME</span>
+                          <span className="text-cyan-200 font-bold">+{sig.volume.points}/15</span>
+                        </div>
+                        <div className="w-full bg-neutral-800 h-1 rounded mt-1 overflow-hidden">
+                          <div className="bg-cyan-400 h-full rounded" style={{ width: `${(sig.volume.points / 15) * 100}%` }} />
+                        </div>
+                      </div>
+
+                      <div className="p-2 rounded-lg bg-[#04192d] border border-cyan-900/50">
+                        <div className="text-[9px] text-cyan-500/80 flex justify-between">
+                          <span>REL STRENGTH</span>
+                          <span className="text-cyan-200 font-bold">+{sig.relativeStrength.points}/20</span>
+                        </div>
+                        <div className="w-full bg-neutral-800 h-1 rounded mt-1 overflow-hidden">
+                          <div className="bg-cyan-400 h-full rounded" style={{ width: `${(sig.relativeStrength.points / 20) * 100}%` }} />
+                        </div>
+                      </div>
+
+                      <div className="p-2 rounded-lg bg-[#04192d] border border-cyan-900/50 col-span-2 sm:col-span-1">
+                        <div className="text-[9px] text-cyan-500/80 flex justify-between">
+                          <span>VOLATILITY</span>
+                          <span className="text-cyan-200 font-bold">+{sig.volatility.points}/15</span>
+                        </div>
+                        <div className="w-full bg-neutral-800 h-1 rounded mt-1 overflow-hidden">
+                          <div className="bg-cyan-400 h-full rounded" style={{ width: `${(sig.volatility.points / 15) * 100}%` }} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 52W Position Range & Market Metrics Bar */}
+                    <div className="p-2.5 rounded-xl bg-[#041628] border border-cyan-900/50 space-y-1.5">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="text-cyan-400/80 font-bold">52-WEEK POSITION ({pct52}th Percentile)</span>
+                        <span className="text-neutral-300">Low: ${low52} — High: ${high52}</span>
+                      </div>
+                      <div className="relative w-full h-2 rounded-full bg-neutral-900 border border-neutral-800 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 opacity-80" />
+                        <div
+                          className="absolute top-0 bottom-0 w-2 bg-white rounded-full shadow-md shadow-black -translate-x-1/2"
+                          style={{ left: `${pct52}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* On-Demand AI Intelligence Brief */}
+              <StockAiBriefSection stock={stock} />
 
               {/* Quick Metrics Strip */}
               <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-mono bg-[#041628]/80 p-2 rounded-xl border border-cyan-900/50">

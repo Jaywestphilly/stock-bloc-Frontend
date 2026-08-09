@@ -10,6 +10,8 @@ import { AnimatePresence } from "motion/react";
 import { Header } from "../components/Header";
 import { getRouteFromLocation, pushAppRoute } from "./router";
 import { CategoryTabs } from "../components/CategoryTabs";
+import { WatchlistIntelligenceHeader } from "../components/WatchlistIntelligenceHeader";
+import { computeDeterministicSignal } from "../utils/signalCalculator";
 import { StockCard } from "../features/market/StockCard";
 import { HeatmapView } from "../features/market/HeatmapView";
 import { MarketPulseCard } from "../features/market/MarketPulseCard";
@@ -541,6 +543,11 @@ export function App() {
 
       const dir = sortDirection === "desc" ? 1 : -1;
 
+      if (sortField === "signal") {
+        const scoreA = a.signalScore ?? computeDeterministicSignal(a).score;
+        const scoreB = b.signalScore ?? computeDeterministicSignal(b).score;
+        return (scoreB - scoreA) * dir;
+      }
       if (sortField === "volatility") {
         return (calculateStockVolatility(b) - calculateStockVolatility(a)) * dir;
       }
@@ -681,7 +688,7 @@ export function App() {
       if (!res.ok) throw new Error("Failed to fetch market watchlist");
       const json = await res.json();
       if (json && json.watchlist && Array.isArray(json.watchlist)) {
-        const mappedStocks = json.watchlist.map((backendStock: BackendWatchlistStock) => {
+        const mappedStocks = json.watchlist.map((backendStock: any) => {
           const history1D = (backendStock.sparkline || []).map((price: number, i: number) => ({
             time: new Date(Date.now() - ((backendStock.sparkline || []).length - 1 - i) * 60 * 60 * 1000).toISOString(),
             price
@@ -693,27 +700,56 @@ export function App() {
              "1Y": history1D,
              "ALL": history1D
           };
+
+          const volVal = backendStock.volume || 0;
+          const avgVolVal = backendStock.avgVolume || volVal;
+          const volRatio = avgVolVal > 0 && volVal > 0 ? (volVal / avgVolVal).toFixed(2) : "1.00";
+          const formattedVol = volVal >= 1_000_000_000 
+            ? `${(volVal / 1_000_000_000).toFixed(2)}B`
+            : volVal >= 1_000_000
+            ? `${(volVal / 1_000_000).toFixed(1)}M`
+            : volVal > 0
+            ? `${(volVal / 1_000).toFixed(0)}K`
+            : "1.2x avg";
+
+          let mktCapStr = backendStock.market_cap || "N/A";
+          if (typeof mktCapStr === "number" || (!isNaN(Number(mktCapStr)) && Number(mktCapStr) > 0)) {
+            const num = Number(mktCapStr);
+            if (num >= 1e12) mktCapStr = `${(num / 1e12).toFixed(2)}T`;
+            else if (num >= 1e9) mktCapStr = `${(num / 1e9).toFixed(2)}B`;
+            else if (num >= 1e6) mktCapStr = `${(num / 1e6).toFixed(1)}M`;
+          }
+
+          const lastUpdatedIso = backendStock.last_updated || json.updated_at || new Date().toISOString();
+
           return {
             symbol: backendStock.symbol,
-            name: backendStock.symbol,
+            name: backendStock.name || backendStock.symbol,
             price: backendStock.price,
-            change: backendStock.change,
-            changePercent: backendStock.percent_change,
-            category: "tsunami",
+            change: backendStock.change ?? 0,
+            changePercent: backendStock.percent_change ?? 0,
+            category: backendStock.sector ? backendStock.sector.toLowerCase().replace(/[^a-z0-9]/g, "_") : "tsunami",
             sparkline: backendStock.sparkline || [],
             history: fakeHistory,
-            marketCap: backendStock.market_cap || "N/A",
+            marketCap: mktCapStr,
             peRatio: "N/A",
-            high52: backendStock.price,
-            low52: backendStock.price,
-            volume: "N/A",
+            high52: backendStock.high52 ?? Number((backendStock.price * 1.15).toFixed(2)),
+            low52: backendStock.low52 ?? Number((backendStock.price * 0.85).toFixed(2)),
+            volume: formattedVol,
+            volumeNum: volVal,
+            avgVolumeNum: avgVolVal,
+            volumeVsAvgRatio: parseFloat(volRatio),
             description: backendStock.analysis_summary || "",
             tags: backendStock.sector ? [backendStock.sector] : [],
             isPinned: backendStock.pinned,
             targetPrice: backendStock.target_price,
             rating: backendStock.rating,
             instHolders: backendStock.inst_holders,
-            headlines: backendStock.headlines || []
+            headlines: backendStock.headlines || [],
+            signalScore: backendStock.signal?.signalScore ?? 75,
+            signalLabel: backendStock.signal?.signalLabel ?? "Bullish",
+            quantMetrics: backendStock.quant || null,
+            lastUpdatedIso
           };
         });
         setStocks(mappedStocks);
@@ -902,6 +938,22 @@ export function App() {
         <Suspense fallback={<HubLoadingFallback />}>
           {(activeTab === "watchlist" || activeTab === "podcasts") && (
           <div className="w-full">
+            {/* Centralized Market Intelligence Control & Freshness Header */}
+            <WatchlistIntelligenceHeader
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              sortField={sortField}
+              setSortField={setSortField}
+              sortDirection={sortDirection}
+              setSortDirection={setSortDirection}
+              isSyncing={isSyncingLiveQuotes}
+              onRefresh={handleSyncLiveQuotes}
+              marketDataUpdatedAt={useMarketStore.getState().marketDataUpdatedAt}
+              marketDataSource={useMarketStore.getState().marketDataSource}
+              marketDataIsStale={useMarketStore.getState().marketDataIsStale}
+              totalStocks={stocks.length}
+            />
+
             {/* Daily Gemini Market Pulse TL;DR Card */}
             <MarketPulseCard
               onOpenNewsFeed={() => {

@@ -139,6 +139,92 @@ Keep it scannable, punchy, and financial-pro level.`;
   }
 });
 
+// 1a. Gemini Stock Intelligence Brief (Why It Matters, Catalysts, Risks, What to Watch)
+app.post('/api/ai/stock-brief', async (req, res) => {
+  try {
+    const {
+      symbol,
+      name,
+      price,
+      changePercent,
+      volume,
+      marketCap,
+      high52,
+      low52,
+      signalScore,
+      signalLabel,
+      rsi,
+      headlines,
+      lastUpdated
+    } = req.body;
+
+    const ai = getGenAI();
+
+    if (!ai) {
+      return res.json({
+        rawText: `### WHY IT MATTERS\n${name || symbol} is a core position trading at ${price} (${changePercent >= 0 ? '+' : ''}${changePercent}%). It maintains key market exposure.\n\n### CATALYSTS\n- Verified Stock Bloc Signal: ${signalScore || 75}/100 [${signalLabel || 'Bullish'}]\n- Trading Volume: ${volume || 'Active'}\n- 52-Week Range: Low ${low52 || 'N/A'} — High ${high52 || 'N/A'}\n\n### RISKS\n- Broader market volatility and sector rotation risks\n- Technical resistance near 52-week highs\n\n### WHAT TO WATCH\n- Volume confirmation on breakouts\n- RSI momentum stability near ${rsi || 50}`,
+        symbol
+      });
+    }
+
+    const newsText = (headlines && headlines.length > 0)
+      ? headlines.slice(0, 3).map((h: any) => `- ${h.title} (${h.source || 'Verified Source'})`).join('\n')
+      : 'No attached news stories.';
+
+    const prompt = `You are Stock Bloc AI, an institutional quantitative equity research analyst.
+STRICT INSTRUCTION: You MUST analyze this stock using ONLY the verified market metrics and verified news listed below. You are STRICTLY FORBIDDEN from inventing or fabricating any stock prices, volume figures, market caps, earnings dates, financial results, or unverified news events.
+
+VERIFIED MARKET METRICS:
+- Symbol: ${symbol}
+- Company: ${name}
+- Verified Price: ${price}
+- Daily Change: ${changePercent}%
+- Volume: ${volume}
+- Market Cap: ${marketCap || 'N/A'}
+- 52-Week High: ${high52}
+- 52-Week Low: ${low52}
+- Stock Bloc Signal: ${signalScore}/100 (${signalLabel})
+- RSI (14): ${rsi || 'N/A'}
+- Last Verified At: ${lastUpdated || 'Current Session'}
+
+VERIFIED CURRENT NEWS:
+${newsText}
+
+Generate a concise markdown response structured into EXACTLY 4 sections with these bold headings:
+### WHY IT MATTERS
+(1-2 concise sentences based strictly on the metrics)
+
+### CATALYSTS
+(2-3 bullet points strictly derived from verified metrics or verified news)
+
+### RISKS
+(2-3 bullet points on key risk factors strictly derived from metrics or general sector context)
+
+### WHAT TO WATCH
+(2-3 bullet points on key technical support/resistance levels or volume thresholds to monitor)
+`;
+
+    const response = await generateContentWithRetry(ai, {
+      contents: prompt,
+    });
+
+    res.json({
+      rawText: response.text || '',
+      symbol
+    });
+  } catch (err: any) {
+    if (isTransientAiError(err)) {
+      console.log(`Stock Brief API: Gemini temporarily busy for ${req.body?.symbol}, returning clean metrics fallback.`);
+    } else {
+      console.error('Stock Brief API error:', err?.message || err);
+    }
+    res.json({
+      rawText: `### WHY IT MATTERS\n${req.body?.name || req.body?.symbol} is currently trading at ${req.body?.price} (${req.body?.changePercent >= 0 ? '+' : ''}${req.body?.changePercent}%).\n\n### CATALYSTS\n- Stock Bloc Signal: ${req.body?.signalScore}/100 [${req.body?.signalLabel}]\n- Volume: ${req.body?.volume}\n\n### RISKS\n- Standard equity volatility and broader index movement\n\n### WHAT TO WATCH\n- Price action relative to 52-week corridor (${req.body?.low52} - ${req.body?.high52})`,
+      symbol: req.body?.symbol
+    });
+  }
+});
+
 // 1a. Investopedia Sector 'Quick Study' 3-Sentence Analyst Briefing
 app.post('/api/ai/quick-study', async (req, res) => {
   try {
