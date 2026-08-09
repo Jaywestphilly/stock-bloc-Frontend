@@ -1,0 +1,50 @@
+name: Stock Bloc Market Data Refresh
+
+on:
+  schedule:
+    # Every 15 minutes during typical US market hours
+    - cron: "*/15 13-21 * * 1-5"
+
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-market-data:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Refresh market data
+        env:
+          MARKET_DATA_API_KEY: ${{ secrets.MARKET_DATA_API_KEY }}
+        run: npm run refresh:market
+
+      - name: Validate market data
+        run: npm run validate:market
+
+      - name: Commit updated market data
+        run: |
+          git config user.name "Stock Bloc Market Data Bot"
+          git config user.email "actions@github.com"
+
+          git add market_watchlist_data.json public/market_watchlist_data.json
+
+          if git diff --cached --quiet; then
+            echo "No market data changes."
+          else
+            git commit -m "chore: refresh market data"
+            git push
+          fi
