@@ -6,7 +6,7 @@ import { Server as SocketIOServer } from 'socket.io';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Modality, ThinkingLevel } from '@google/genai';
 import { createEbookPdf } from './server/pdfGenerator.js';
-import { MarketDataService } from './src/services/marketDataService.js';
+import { MarketDataService, computeQuantMetrics, calculateStockBlocSignal } from './src/services/marketDataService.js';
 
 const app = express();
 const PORT = 3000;
@@ -994,59 +994,28 @@ app.get('/api/stock-chart/:symbol', async (req, res) => {
       }
     }
 
-    // Realistic market fallback if Yahoo Finance is empty or unreachable
-    const basePrices: Record<string, number> = {
-      CEG: 258.50, NVDA: 128.50, BTC: 95420.00, SPY: 595.50, QQQ: 518.30, ASML: 712.40, TSM: 188.50, TSLA: 242.50, AAPL: 232.10, MSFT: 418.20, VST: 132.40, BE: 14.85, SPACEX: 135.00
-    };
-    const basePrice = basePrices[symUpper] || 150.00;
-    const pointsCount = 32;
-    const fallbackPoints = [];
-    let current = basePrice * 0.97;
-    const now = new Date();
+    // Fallback to verified dataset snapshot if Yahoo Finance chart endpoint is unavailable
+    const persisted = MarketDataService.loadPersistedData();
+    const verifiedStock = persisted?.watchlist?.find((s) => s.symbol.toUpperCase() === symUpper || (symUpper === 'SPACEX' && s.symbol === 'SPCX'));
 
-    for (let i = 0; i < pointsCount; i++) {
-      let timeStr = '';
-      if (range === '1D') {
-        const minutesBack = (pointsCount - 1 - i) * 12;
-        const d = new Date(now.getTime() - minutesBack * 60000);
-        timeStr = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-      } else {
-        const daysBack = (pointsCount - 1 - i) * (range === '1W' ? 0.25 : range === '1M' ? 1 : range === '1Y' ? 10 : 30);
-        const d = new Date(now.getTime() - daysBack * 86400000);
-        timeStr = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
-      }
-
-      const progress = i / (pointsCount - 1);
-      const wave = Math.sin(progress * Math.PI * 2.5) * (basePrice * 0.012);
-      const trend = (progress * 0.03) * basePrice;
-      const noise = (Math.sin(i * 2.1) * 0.4 + Math.cos(i * 1.5) * 0.3) * (basePrice * 0.004);
-
-      const open = Math.max(1, current);
-      current = basePrice * 0.97 + trend + wave + noise;
-      if (i === pointsCount - 1) current = basePrice;
-      const close = Math.max(1, current);
-
-      const bodyMax = Math.max(open, close);
-      const bodyMin = Math.min(open, close);
-      const bodyHeight = bodyMax - bodyMin;
-      const wick = Math.max(open * 0.0012, bodyHeight * 0.3);
-
-      const high = bodyMax + wick * (0.8 + Math.abs(Math.sin(i * 1.7)) * 0.5);
-      const low = bodyMin - wick * (0.8 + Math.abs(Math.cos(i * 2.1)) * 0.5);
-      const volume = Math.floor(18000 + Math.abs(Math.sin(i * 1.4)) * 60000);
-
-      fallbackPoints.push({
-        time: timeStr,
-        open: Number(open.toFixed(2)),
-        high: Number(high.toFixed(2)),
-        low: Number(low.toFixed(2)),
-        close: Number(close.toFixed(2)),
-        price: Number(close.toFixed(2)),
-        volume
+    if (verifiedStock && Array.isArray(verifiedStock.sparkline) && verifiedStock.sparkline.length > 0) {
+      const spark = verifiedStock.sparkline;
+      const points = spark.map((p, i) => {
+        const timeStr = `Point ${i + 1}`;
+        return {
+          time: timeStr,
+          open: p,
+          high: p,
+          low: p,
+          close: p,
+          price: p,
+          volume: verifiedStock.volume || 0
+        };
       });
+      return res.json({ symbol: symUpper, range, points, isVerifiedSnapshot: true });
     }
 
-    res.json({ symbol: symUpper, range, points: fallbackPoints });
+    return res.status(404).json({ symbol: symUpper, range, points: [], error: "Chart data unavailable" });
   } catch (err: any) {
     res.json({ symbol: symUpper, range, points: [] });
   }
@@ -1348,16 +1317,33 @@ app.get('/api/v1/agent/query', (req, res) => {
     });
   }
 
-  res.json({
-    status: "success",
-    query_type: "watchlist_quant_data",
-    ticker: sym,
-    price: sym === 'NVDA' ? 128.50 : 210.00,
-    rsi_14: 64.2,
-    quant_signal: "BULLISH_MOMENTUM",
-    support_level: 122.00,
-    resistance_level: 135.00,
-    disclaimer: "NOT FINANCIAL ADVICE."
+  const persisted = MarketDataService.loadPersistedData();
+  const stock = persisted?.watchlist?.find((s) => s.symbol.toUpperCase() === sym);
+
+  if (stock) {
+    const quant = computeQuantMetrics(stock);
+    const signal = calculateStockBlocSignal(stock, quant);
+
+    return res.json({
+      status: "success",
+      query_type: "watchlist_quant_data",
+      ticker: stock.symbol,
+      price: stock.price,
+      change: stock.change,
+      percent_change: stock.percent_change,
+      rsi_14: quant.rsi14,
+      quant_signal: signal.signalLabel,
+      signal_score: signal.signalScore,
+      support_level: stock.low52 || stock.price,
+      resistance_level: stock.high52 || stock.price,
+      last_updated: stock.last_updated || persisted?.updated_at,
+      disclaimer: "NOT FINANCIAL ADVICE."
+    });
+  }
+
+  return res.status(404).json({
+    status: "error",
+    message: `Market data for ticker ${sym} is currently unavailable in verified dataset.`
   });
 });
 
@@ -3395,24 +3381,20 @@ async function startServer() {
   io.on('connection', (socket) => {
     console.log('Client connected to market data stream');
     
-    // Simulate real-time market updates
+    // Broadcast verified market updates from persisted dataset
     const interval = setInterval(() => {
-      socket.emit('market_update', {
-        symbol: 'NVDA',
-        price: 120 + Math.random() * 5,
-        timestamp: Date.now()
-      });
-      socket.emit('market_update', {
-        symbol: 'AAPL',
-        price: 190 + Math.random() * 2,
-        timestamp: Date.now()
-      });
-      socket.emit('market_update', {
-        symbol: 'PLTR',
-        price: 25 + Math.random(),
-        timestamp: Date.now()
-      });
-    }, 3000);
+      const persisted = MarketDataService.loadPersistedData();
+      if (persisted && persisted.watchlist) {
+        persisted.watchlist.slice(0, 5).forEach((stock) => {
+          socket.emit('market_update', {
+            symbol: stock.symbol,
+            price: stock.price,
+            percent_change: stock.percent_change,
+            timestamp: new Date(stock.last_updated || persisted.updated_at).getTime()
+          });
+        });
+      }
+    }, 10000);
 
     socket.on('disconnect', () => {
       console.log('Client disconnected');

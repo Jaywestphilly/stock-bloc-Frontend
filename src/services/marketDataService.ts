@@ -193,9 +193,9 @@ export function computeQuantMetrics(stock: Partial<WatchlistStock>): QuantMetric
   const avgVolume = stock.avgVolume || volume;
 
   const rsi14 = calculateRSI(sparkline, 14);
-  const sma20 = calculateSMA(sparkline, 20) || (currentPrice ? Number((currentPrice * 0.98).toFixed(2)) : null);
-  const sma50 = calculateSMA(sparkline, 50) || (currentPrice ? Number((currentPrice * 0.95).toFixed(2)) : null);
-  const sma200 = calculateSMA(sparkline, 200) || (currentPrice ? Number((currentPrice * 0.90).toFixed(2)) : null);
+  const sma20 = calculateSMA(sparkline, 20);
+  const sma50 = calculateSMA(sparkline, 50);
+  const sma200 = calculateSMA(sparkline, 200);
 
   const priceVsSma20Pct = sma20 && currentPrice ? Number((((currentPrice - sma20) / sma20) * 100).toFixed(2)) : null;
   const priceVsSma50Pct = sma50 && currentPrice ? Number((((currentPrice - sma50) / sma50) * 100).toFixed(2)) : null;

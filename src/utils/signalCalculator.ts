@@ -48,23 +48,26 @@ export function computeDeterministicSignal(stock: StockTicker): DeterministicSig
 
   // 2. Trend (Max 25 pts)
   let trendPts = 12.5;
-  const sma20 = stock.quantMetrics?.sma20 ?? (price * 0.96);
-  const sma50 = stock.quantMetrics?.sma50 ?? (price * 0.92);
-  const sma200 = stock.quantMetrics?.sma200 ?? (price * 0.85);
+  const sma20 = stock.quantMetrics?.sma20;
+  const sma50 = stock.quantMetrics?.sma50;
+  const sma200 = stock.quantMetrics?.sma200;
 
-  const above20 = price >= sma20;
-  const above50 = price >= sma50;
-  const above200 = price >= sma200;
+  let trendDetail = "Baseline trend alignment";
+  if (sma20 !== undefined && sma20 !== null) {
+    const above20 = price >= sma20;
+    const above50 = sma50 ? price >= sma50 : above20;
+    const above200 = sma200 ? price >= sma200 : above50;
 
-  if (above20 && above50 && above200) trendPts = 22 + Math.min(3, Math.max(0, changePct * 0.2));
-  else if (above20 && above50) trendPts = 17;
-  else if (above20) trendPts = 13;
-  else trendPts = 6;
+    if (above20 && above50 && above200) trendPts = 22 + Math.min(3, Math.max(0, changePct * 0.2));
+    else if (above20 && above50) trendPts = 17;
+    else if (above20) trendPts = 13;
+    else trendPts = 6;
 
-  let trendDetail = "Below 20D / 50D / 200D";
-  if (above20 && above50 && above200) trendDetail = "Above 20D / 50D / 200D";
-  else if (above20 && above50) trendDetail = "Above 20D / 50D";
-  else if (above20) trendDetail = "Above 20D SMA";
+    if (above20 && above50 && above200) trendDetail = "Above 20D / 50D / 200D";
+    else if (above20 && above50) trendDetail = "Above 20D / 50D";
+    else if (above20) trendDetail = "Above 20D SMA";
+    else trendDetail = "Below 20D / 50D / 200D";
+  }
 
   const trendComp: SignalComponent = {
     name: "Trend",
@@ -96,11 +99,13 @@ export function computeDeterministicSignal(stock: StockTicker): DeterministicSig
   };
 
   // 4. Relative Strength / 52W Range (Max 20 pts)
-  const high52 = stock.high52 || price * 1.15;
-  const low52 = stock.low52 || price * 0.85;
+  const high52 = stock.high52;
+  const low52 = stock.low52;
   let percentile52 = 50;
-  if (high52 > low52) {
+  let rsDetail = "Midband range positioning";
+  if (high52 && low52 && high52 > low52) {
     percentile52 = Math.round(((price - low52) / (high52 - low52)) * 100);
+    rsDetail = `${percentile52}th percentile of 52-week corridor`;
   }
 
   let rsPts = 10;
@@ -113,7 +118,7 @@ export function computeDeterministicSignal(stock: StockTicker): DeterministicSig
     name: "Relative Strength",
     points: Math.round(rsPts),
     maxPoints: 20,
-    detail: `${percentile52}th percentile of 52-week corridor`
+    detail: rsDetail
   };
 
   // 5. Volatility (Max 15 pts)
