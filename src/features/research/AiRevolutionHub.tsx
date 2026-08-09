@@ -26,9 +26,11 @@ import {
   HelpCircle,
   Laptop,
   BarChart3,
+  Car,
 } from "lucide-react";
 import { triggerHaptic } from "../../utils/haptics";
 import { AiValueChainHeatmap } from "./AiValueChainHeatmap";
+import { RobotaxiVsHousingBreakdown } from "./RobotaxiVsHousingBreakdown";
 
 interface ToolItem {
   name: string;
@@ -46,12 +48,12 @@ interface ToolItem {
 }
 
 interface AiRevolutionHubProps {
-  initialTab?: "value_chain" | "intent_engine" | "prompting" | "tools" | "build_apps" | "prompt_generator" | "impact";
+  initialTab?: "value_chain" | "intent_engine" | "prompting" | "tools" | "build_apps" | "prompt_generator" | "impact" | "robotaxi_vs_housing";
 }
 
 export const AiRevolutionHub: React.FC<AiRevolutionHubProps> = ({ initialTab }) => {
   const [activeTab, setActiveTab] = useState<
-    "value_chain" | "intent_engine" | "prompting" | "tools" | "build_apps" | "prompt_generator" | "impact"
+    "value_chain" | "intent_engine" | "prompting" | "tools" | "build_apps" | "prompt_generator" | "impact" | "robotaxi_vs_housing"
   >(initialTab || "value_chain");
 
   useEffect(() => {
@@ -404,12 +406,27 @@ Instructions:
           <button
             onClick={() => {
               triggerHaptic("selection");
+              setActiveTab("robotaxi_vs_housing");
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
+              activeTab === "robotaxi_vs_housing"
+                ? "bg-amber-400 text-black font-extrabold shadow-lg shadow-amber-400/30"
+                : "bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
+            }`}
+          >
+            <Car className="w-3.5 h-3.5 text-amber-300" />
+            Robotaxi vs. Housing ($1M/yr)
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
               setActiveTab("value_chain");
             }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
               activeTab === "value_chain"
                 ? "bg-amber-400 text-black font-extrabold shadow-lg shadow-amber-400/30"
-                : "bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
+                : "bg-white/10 text-neutral-300 hover:bg-white/20"
             }`}
           >
             <BarChart3 className="w-3 h-3 text-amber-300" />
@@ -507,6 +524,11 @@ Instructions:
           </button>
         </div>
       </div>
+
+      {/* TAB: ROBOTAXI VS HOUSING BREAKDOWN */}
+      {activeTab === "robotaxi_vs_housing" && (
+        <RobotaxiVsHousingBreakdown />
+      )}
 
       {/* TAB 0: MORGAN STANLEY AI VALUE CHAIN HEATMAP */}
       {activeTab === "value_chain" && (

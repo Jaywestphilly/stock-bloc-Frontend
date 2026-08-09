@@ -22,6 +22,7 @@ import {
   ArrowUpRight,
   Home,
   Gift,
+  Car,
   ExternalLink,
   CheckCircle2,
   Award,
@@ -191,6 +192,14 @@ https://stock-bloc.ai.studio/real-estate
           >
             <Sparkles className="w-3.5 h-3.5" />
             Vacancy Empire Game
+          </button>
+
+          <button
+            onClick={() => onSelectTab ? onSelectTab("ai_revolution") : null}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-amber-500 text-black font-extrabold shadow-lg shadow-amber-500/20 hover:brightness-110"
+          >
+            <Car className="w-3.5 h-3.5" />
+            Robotaxi vs. Housing ($1M/yr)
           </button>
           
           <button
