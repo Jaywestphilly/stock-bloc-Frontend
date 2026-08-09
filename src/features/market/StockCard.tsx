@@ -293,10 +293,6 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
   const [priceFlashState, setPriceFlashState] = useState<"up" | "down" | null>(
     null,
   );
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [chartTimeframe, setChartTimeframe] = useState<"1D" | "1W">("1D");
-  const [headlines, setHeadlines] = useState<StockHeadline[]>([]);
-  const [isLoadingHeadlines, setIsLoadingHeadlines] = useState(false);
   const prevPriceRef = useRef<number>(stock?.price || 0);
   const { starredTickers, toggleStarredTicker } = useUserStore();
   const isStarred = starredTickers.includes(stock.symbol);
@@ -308,22 +304,6 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     triggerHaptic("success");
     window.open(ROBINHOOD_REFERRAL_URL, "_blank");
   };
-
-  useEffect(() => {
-    if (isExpanded) {
-      setIsLoadingHeadlines(true);
-      let isMounted = true;
-      fetchHeadlines(stock).then((data) => {
-        if (isMounted) {
-          setHeadlines(data);
-          setIsLoadingHeadlines(false);
-        }
-      });
-      return () => {
-        isMounted = false;
-      };
-    }
-  }, [isExpanded, stock.symbol]);
 
   const isPositive = stock.changePercent >= 0;
   const isHighVolatility = Math.abs(stock.changePercent) >= 3;
@@ -380,35 +360,6 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
       relVolValue: relVol,
     };
   }, [stock]);
-
-  // Compute inline candlestick data for Recharts
-  const candleData = useMemo(() => {
-    return generateCandlestickData(stock, chartTimeframe);
-  }, [stock, chartTimeframe]);
-
-  const { minPrice, maxPrice } = useMemo(() => {
-    if (!candleData || candleData.length === 0)
-      return { minPrice: 0, maxPrice: 100 };
-    const lows = candleData.map((d) => d.low);
-    const highs = candleData.map((d) => d.high);
-    const min = Math.min(...lows);
-    const max = Math.max(...highs);
-    const pad = (max - min) * 0.08 || 1;
-    return {
-      minPrice: Math.max(0, min - pad),
-      maxPrice: max + pad,
-    };
-  }, [candleData]);
-
-  const cleanTicks = useMemo(() => {
-    return calculateCleanYAxisTicks({
-      minVal: minPrice,
-      maxVal: maxPrice,
-      plotBottom: 150,
-      plotHeight: 150,
-      targetCount: 4
-    }).map(t => t.val);
-  }, [minPrice, maxPrice]);
 
   // Trigger green/red border flash animation and subtle shake on live price updates
   useEffect(() => {
@@ -479,9 +430,9 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
         onClick={(e) => {
           e.stopPropagation();
           triggerHaptic("selection");
-          setIsExpanded(!isExpanded);
+          onSelect(stock);
         }}
-        title="24H Price Trend • Tap to expand live chart"
+        title="24H Price Trend • Tap to open full chart"
       >
         {/* Dotted 24h Price Baseline */}
         <div className="absolute w-full border-t border-dashed border-cyan-900/60 top-1/2 pointer-events-none z-0" />
@@ -741,12 +692,12 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
           if (dragOffset !== 0) {
             setDragOffset(0);
           } else {
-            setIsExpanded(!isExpanded);
+            onSelect(stock);
           }
         }}
         className={`relative z-10 w-full px-4 py-3 alien-block-cut alien-card my-1 transition-all duration-200 cursor-pointer ${holoGlowClass} ${
           stock.isPinned ? "alien-card-active" : ""
-        } ${isExpanded ? "border-cyan-400/60 shadow-xl shadow-cyan-950/50" : ""} ${
+        } ${
           isShaking ? "ring-2 ring-amber-400 bg-amber-950/20 animate-shake-card" : ""
         } ${
           priceFlashState === "up"
@@ -759,8 +710,6 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
           background: `radial-gradient(circle at 35% 50%, rgba(${volatilityOverlay.overlayColor}, ${volatilityOverlay.overlayOpacity * 1.3}) 0%, rgba(${volatilityOverlay.overlayColor}, 0) 90%), rgba(4, 15, 24, ${0.85 - Math.min(0.4, volatilityOverlay.overlayOpacity * 1.6)})`,
           boxShadow: stock.isPinned
             ? `0 0 25px rgba(${volatilityOverlay.overlayColor}, 0.25), inset 0 0 20px rgba(${volatilityOverlay.overlayColor}, 0.1)`
-            : isExpanded
-            ? `0 10px 25px -5px rgba(${volatilityOverlay.overlayColor}, 0.15), inset 0 0 15px rgba(${volatilityOverlay.overlayColor}, 0.05)`
             : `0 0 20px rgba(${volatilityOverlay.overlayColor}, 0.08), inset 0 0 15px rgba(${volatilityOverlay.overlayColor}, 0.05)`,
         }}
       >
@@ -855,453 +804,8 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                 {stock.changePercent.toFixed(2)}%
               </span>
             </div>
-            <div className="flex items-center gap-1 mt-1 text-[9px] font-mono text-cyan-400/80 font-bold">
-              <span>{isExpanded ? "Hide Chart" : "Tap Chart"}</span>
-              {isExpanded ? (
-                <ChevronUp className="w-3 h-3 text-cyan-300 animate-bounce" />
-              ) : (
-                <ChevronDown className="w-3 h-3 text-cyan-400" />
-              )}
-            </div>
           </div>
         </div>
-
-        {/* Tap-to-Expand Inline Recharts Candlestick Chart Preview */}
-        <AnimatePresence initial={false}>
-          {isExpanded && (
-            <motion.div
-              initial={{ opacity: 0, height: 0, y: -12 }}
-              animate={{ opacity: 1, height: "auto", y: 0 }}
-              exit={{ opacity: 0, height: 0, y: -12 }}
-              transition={{
-                height: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
-                y: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
-                opacity: { duration: 0.25 },
-              }}
-              className="overflow-hidden border-t border-cyan-500/30 bg-[#020d18]/95 p-3 sm:p-4 space-y-3 rounded-b-xl mt-3 origin-top transform-gpu"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header Controls of Inline Live Price Chart Preview */}
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-900/50 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-cyan-950/80 border border-cyan-500/40 text-cyan-300">
-                    <BarChart2 className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      {marketDataIsStale ? (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 uppercase">
-                          STALE
-                        </span>
-                      ) : (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 uppercase">
-                          LIVE
-                        </span>
-                      )}
-                      <span className="text-xs font-black text-cyan-200 tracking-wider uppercase">
-                        PRICE CHART
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                        {chartTimeframe} TREND
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-cyan-400/70 font-mono">
-                      As of {getDataAgeText(marketDataUpdatedAt)} • Tap point to inspect price & volume
-                    </p>
-                  </div>
-                </div>
-
-                {/* Timeframe Selector & Full Detail Trigger */}
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center bg-black/60 p-0.5 rounded-lg border border-cyan-900/60">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setChartTimeframe("1D");
-                      }}
-                      className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded transition-all ${
-                        chartTimeframe === "1D"
-                          ? "bg-cyan-500 text-black shadow"
-                          : "text-cyan-400 hover:text-white"
-                      }`}
-                    >
-                      1D
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setChartTimeframe("1W");
-                      }}
-                      className={`px-2 py-0.5 text-[10px] font-mono font-bold rounded transition-all ${
-                        chartTimeframe === "1W"
-                          ? "bg-cyan-500 text-black shadow"
-                          : "text-cyan-400 hover:text-white"
-                      }`}
-                    >
-                      1W
-                    </button>
-                  </div>
-
-                  <button
-                    onClick={handleQuickTradeRobinhood}
-                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-black font-black text-[10px] font-mono flex items-center gap-1 shadow-md shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
-                    title="Sign up for Robinhood with my link and we'll both pick our own gift stock 🎁 https://join.robinhood.com/jumannc3"
-                  >
-                    <DollarSign className="w-3 h-3 text-black" />
-                    <span>Quick Trade</span>
-                    <ExternalLink className="w-2.5 h-2.5 text-black" />
-                  </button>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      triggerHaptic("selection");
-                      onSelect(stock);
-                    }}
-                    className="px-2.5 py-1 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-[10px] font-mono font-black flex items-center gap-1 shadow-md active:scale-95 transition-all cursor-pointer"
-                  >
-                    <Maximize2 className="w-3 h-3" />
-                    <span>Full Analysis</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Quick Trade Brokerage Action Bar (Robinhood Integrated) */}
-              <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-gradient-to-r from-emerald-950/90 via-[#031c26] to-emerald-950/90 border border-emerald-500/50 shadow-lg shadow-emerald-500/10">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-400/60 flex items-center justify-center text-emerald-300 font-black text-xs shrink-0 font-mono">
-                    RH
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-black text-emerald-200 uppercase tracking-wide font-mono">
-                        QUICK TRADE ${stock.symbol}
-                      </span>
-                      <span className="px-1.5 py-0.2 rounded text-[8px] font-black bg-emerald-400 text-black uppercase">
-                        ROBINHOOD
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-emerald-300/90 font-mono">
-                      Sign up for Robinhood with my link and we'll both pick our
-                      own gift stock 🎁
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
-                  <button
-                    onClick={handleQuickTradeRobinhood}
-                    className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-black flex items-center gap-1.5 active:scale-95 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
-                    title="Sign up for Robinhood with my link and we'll both pick our own gift stock 🎁 https://join.robinhood.com/jumannc3"
-                  >
-                    <DollarSign className="w-3.5 h-3.5 text-black" />
-                    <span>Get Gift Stock on Robinhood 🎁</span>
-                    <ExternalLink className="w-3 h-3 text-black" />
-                  </button>
-
-                  {onOpenBrokerages && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        triggerHaptic("selection");
-                        onOpenBrokerages(stock);
-                      }}
-                      className="px-2.5 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900/80 text-emerald-300 border border-emerald-500/40 text-[10px] font-mono font-bold flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
-                      title="View all Brokerage Referral Partners"
-                    >
-                      <span>More Brokers</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* SB Rating Breakdown & Data Freshness Dashboard */}
-              {(() => {
-                const sig = computeDeterministicSignal(stock);
-                const fresh = getStockDataFreshness(stock.lastUpdatedIso);
-                const high52 = stock.high52 || stock.price * 1.15;
-                const low52 = stock.low52 || stock.price * 0.85;
-                const pct52 = high52 > low52 ? Math.min(100, Math.max(0, Math.round(((stock.price - low52) / (high52 - low52)) * 100))) : 50;
-
-                return (
-                  <div className="space-y-2.5 font-mono">
-                    {/* Signal Header Pill & Freshness Row */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[#031525] border border-cyan-500/30">
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 font-black text-sm">
-                          {sig.score}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-black text-cyan-200 tracking-wider">
-                              SB RATING
-                            </span>
-                            <span className={`px-1.5 py-0.2 rounded text-[8px] font-black uppercase border ${
-                              sig.label === "BULLISH"
-                                ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                                : sig.label === "BEARISH"
-                                  ? "bg-rose-500/20 text-rose-300 border-rose-500/40"
-                                  : "bg-amber-500/20 text-amber-300 border-amber-500/40"
-                            }`}>
-                              {sig.label}
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-cyan-400/80">
-                            Quant Composite Score · Trend: {sig.trend.detail}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Freshness Badge */}
-                      <div className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1.5 ${fresh.badgeClass}`}>
-                        <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-                        <span>DATA: {fresh.ageText}</span>
-                      </div>
-                    </div>
-
-                    {/* 5 Quant Signal Component Bars */}
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-                      <div className="p-2 rounded-lg bg-[#04192d] border border-cyan-900/50">
-                        <div className="text-[9px] text-cyan-500/80 flex justify-between">
-                          <span>MOMENTUM</span>
-                          <span className="text-cyan-200 font-bold">+{sig.momentum.points}/25</span>
-                        </div>
-                        <div className="w-full bg-neutral-800 h-1 rounded mt-1 overflow-hidden">
-                          <div className="bg-cyan-400 h-full rounded" style={{ width: `${(sig.momentum.points / 25) * 100}%` }} />
-                        </div>
-                      </div>
-
-                      <div className="p-2 rounded-lg bg-[#04192d] border border-cyan-900/50">
-                        <div className="text-[9px] text-cyan-500/80 flex justify-between">
-                          <span>TREND</span>
-                          <span className="text-cyan-200 font-bold">+{sig.trend.points}/25</span>
-                        </div>
-                        <div className="w-full bg-neutral-800 h-1 rounded mt-1 overflow-hidden">
-                          <div className="bg-cyan-400 h-full rounded" style={{ width: `${(sig.trend.points / 25) * 100}%` }} />
-                        </div>
-                      </div>
-
-                      <div className="p-2 rounded-lg bg-[#04192d] border border-cyan-900/50">
-                        <div className="text-[9px] text-cyan-500/80 flex justify-between">
-                          <span>VOLUME</span>
-                          <span className="text-cyan-200 font-bold">+{sig.volume.points}/15</span>
-                        </div>
-                        <div className="w-full bg-neutral-800 h-1 rounded mt-1 overflow-hidden">
-                          <div className="bg-cyan-400 h-full rounded" style={{ width: `${(sig.volume.points / 15) * 100}%` }} />
-                        </div>
-                      </div>
-
-                      <div className="p-2 rounded-lg bg-[#04192d] border border-cyan-900/50">
-                        <div className="text-[9px] text-cyan-500/80 flex justify-between">
-                          <span>REL STRENGTH</span>
-                          <span className="text-cyan-200 font-bold">+{sig.relativeStrength.points}/20</span>
-                        </div>
-                        <div className="w-full bg-neutral-800 h-1 rounded mt-1 overflow-hidden">
-                          <div className="bg-cyan-400 h-full rounded" style={{ width: `${(sig.relativeStrength.points / 20) * 100}%` }} />
-                        </div>
-                      </div>
-
-                      <div className="p-2 rounded-lg bg-[#04192d] border border-cyan-900/50 col-span-2 sm:col-span-1">
-                        <div className="text-[9px] text-cyan-500/80 flex justify-between">
-                          <span>VOLATILITY</span>
-                          <span className="text-cyan-200 font-bold">+{sig.volatility.points}/15</span>
-                        </div>
-                        <div className="w-full bg-neutral-800 h-1 rounded mt-1 overflow-hidden">
-                          <div className="bg-cyan-400 h-full rounded" style={{ width: `${(sig.volatility.points / 15) * 100}%` }} />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 52W Position Range & Market Metrics Bar */}
-                    <div className="p-2.5 rounded-xl bg-[#041628] border border-cyan-900/50 space-y-1.5">
-                      <div className="flex items-center justify-between text-[10px]">
-                        <span className="text-cyan-400/80 font-bold">52-WEEK POSITION ({pct52}th Percentile)</span>
-                        <span className="text-neutral-300">Low: ${low52} — High: ${high52}</span>
-                      </div>
-                      <div className="relative w-full h-2 rounded-full bg-neutral-900 border border-neutral-800 overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-rose-500 via-amber-400 to-emerald-400 opacity-80" />
-                        <div
-                          className="absolute top-0 bottom-0 w-2 bg-white rounded-full shadow-md shadow-black -translate-x-1/2"
-                          style={{ left: `${pct52}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* Quick Metrics Strip */}
-              <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-mono bg-[#041628]/80 p-2 rounded-xl border border-cyan-900/50">
-                <div>
-                  <span className="text-cyan-500/80 block text-[9px]">
-                    52W HIGH
-                  </span>
-                  <span className="text-emerald-300 font-bold">
-                    ${stock.high52}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-cyan-500/80 block text-[9px]">
-                    52W LOW
-                  </span>
-                  <span className="text-rose-300 font-bold">
-                    ${stock.low52}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-cyan-500/80 block text-[9px]">
-                    VOLUME
-                  </span>
-                  <span className="text-cyan-200 font-bold">
-                    {stock.volume}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-cyan-500/80 block text-[9px]">
-                    MKT CAP
-                  </span>
-                  <span className="text-cyan-200 font-bold">
-                    {stock.marketCap}
-                  </span>
-                </div>
-              </div>
-
-              {/* Recharts Area Chart Preview */}
-              <div className="w-full h-[150px] pt-1 relative">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={candleData}
-                    margin={{ top: 8, right: 10, left: -15, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient
-                        id={`cardGrad_${stock.symbol}`}
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop
-                          offset="5%"
-                          stopColor={isPositive ? "#10b981" : "#f43f5e"}
-                          stopOpacity={0.4}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor={isPositive ? "#10b981" : "#f43f5e"}
-                          stopOpacity={0.0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="2 2"
-                      stroke="#083344"
-                      opacity={0.4}
-                    />
-                    <XAxis
-                      dataKey="time"
-                      stroke="#22d3ee"
-                      fontSize={9}
-                      tickLine={false}
-                      axisLine={{ stroke: "#083344" }}
-                      tickFormatter={(val) => formatChartTimestamp(val)}
-                      interval="preserveStartEnd"
-                      minTickGap={25}
-                    />
-                    <YAxis
-                      domain={[minPrice, maxPrice]}
-                      ticks={cleanTicks}
-                      stroke="#22d3ee"
-                      fontSize={9}
-                      orientation="right"
-                      axisLine={{ stroke: "#083344" }}
-                      tickFormatter={(val) => formatYAxisTick(val)}
-                    />
-                    <Tooltip content={<CustomCandleTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey="close"
-                      stroke={isPositive ? "#10b981" : "#f43f5e"}
-                      strokeWidth={2.5}
-                      fillOpacity={1}
-                      fill={`url(#cardGrad_${stock.symbol})`}
-                      isAnimationActive={false}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Latest Symbol Headlines Section */}
-              <div className="pt-2.5 border-t border-cyan-900/50 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-[11px] font-black text-cyan-200 uppercase tracking-wider">
-                    <Newspaper className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>LATEST {stock.symbol} HEADLINES</span>
-                  </div>
-                  {headlines.length > 0 && (
-                    <span className="text-[9px] font-mono text-cyan-400/70 font-semibold uppercase">
-                      {headlines.length} NEWS WIRE ALERTS
-                    </span>
-                  )}
-                </div>
-
-                {isLoadingHeadlines ? (
-                  <div className="flex items-center justify-center gap-2 py-3 text-xs font-mono text-cyan-400/80 bg-[#041628]/60 rounded-xl border border-cyan-900/40">
-                    <Loader2 className="w-4 h-4 text-cyan-400 animate-spin" />
-                    <span>Fetching live headlines for {stock.symbol}...</span>
-                  </div>
-                ) : headlines.length > 0 ? (
-                  <div className="space-y-1.5">
-                    {headlines.map((hl) => (
-                      <div
-                        key={hl.id}
-                        className="p-2 rounded-xl bg-[#041628]/90 hover:bg-[#07213a] border border-cyan-900/40 hover:border-cyan-500/40 transition-all text-xs font-mono space-y-1 group/hl cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (hl.url) {
-                            window.open(hl.url, '_blank', 'noopener,noreferrer');
-                          } else if (onOpenNewsFeed) {
-                            onOpenNewsFeed();
-                          }
-                        }}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-[11px] font-sans font-medium text-neutral-200 group-hover/hl:text-cyan-200 leading-snug line-clamp-2">
-                            {hl.title}
-                          </p>
-                          <span
-                            className={`px-1.5 py-0.5 rounded text-[8px] font-bold uppercase shrink-0 border ${
-                              hl.sentiment === "bullish"
-                                ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/40"
-                                : hl.sentiment === "bearish"
-                                  ? "bg-rose-950/80 text-rose-300 border-rose-500/40"
-                                  : "bg-cyan-950/80 text-cyan-300 border-cyan-500/40"
-                            }`}
-                          >
-                            {hl.sentiment}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-[9px] text-neutral-400 pt-0.5 border-t border-cyan-950/60">
-                          <span className="text-cyan-400/80 font-bold">
-                            {hl.source}
-                          </span>
-                          <div className="flex items-center gap-1 text-neutral-400">
-                            <span>{hl.time}</span>
-                            <ExternalLink className="w-2.5 h-2.5 text-cyan-400/60 group-hover/hl:text-cyan-300" />
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-4 text-center text-[10px] font-mono text-cyan-400/50 bg-[#041628]/60 rounded-xl border border-cyan-900/40">
-                    No recent headlines available.
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
     </motion.div>
   );

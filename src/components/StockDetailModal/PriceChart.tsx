@@ -164,40 +164,6 @@ export const PriceChart = (props: StockDetailSubProps) => {
                         ),
                       )}
                     </div>
-
-                    {/* Chart Engine Switcher (Candles vs Line) */}
-                    <div className="flex items-center gap-1 bg-[#121624] p-1 rounded-xl border border-slate-800">
-                      <button
-                        onClick={() => {
-                          triggerHaptic("selection");
-                          setChartMode("candle");
-                        }}
-                        className={`px-2.5 py-1 rounded-lg font-mono text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                          chartMode === "candle"
-                            ? "bg-blue-600/30 text-blue-300 border border-blue-500/50"
-                            : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-                        }`}
-                        title="HD Candlestick Chart"
-                      >
-                        <BarChart3 className="w-3.5 h-3.5 text-blue-400" />
-                        <span>Candles</span>
-                      </button>
-                      <button
-                        onClick={() => {
-                          triggerHaptic("selection");
-                          setChartMode("line");
-                        }}
-                        className={`px-2.5 py-1 rounded-lg font-mono text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                          chartMode === "line"
-                            ? "bg-emerald-600/30 text-emerald-300 border border-emerald-500/50"
-                            : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-                        }`}
-                        title="Line & Gradient Area Chart"
-                      >
-                        <LineChart className="w-3.5 h-3.5 text-emerald-400" />
-                        <span>Line Area</span>
-                      </button>
-                    </div>
                   </div>
 
                   {/* Technical Indicator Toggles */}
@@ -830,154 +796,85 @@ export const PriceChart = (props: StockDetailSubProps) => {
                       </g>
                     )}
 
-                    {/* ROBINHOOD SMOOTH LINE & GRADIENT AREA MODE */}
-                    {chartMode === "line" && (
-                      <g>
-                        {/* Filled Area Gradient */}
-                        {areaPathD && (
-                          <path
-                            d={areaPathD}
-                            fill={
-                              isPositive
-                                ? "url(#rhGradientUp)"
-                                : "url(#rhGradientDown)"
-                            }
-                          />
-                        )}
-                        {/* Crisp Price Line */}
-                        {linePathD && (
-                          <path
-                            d={linePathD}
-                            fill="none"
-                            stroke={isPositive ? "#00c805" : "#ff3b30"}
-                            strokeWidth="2.8"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="drop-shadow-[0_2px_8px_rgba(0,200,5,0.4)]"
-                          />
-                        )}
-                        {/* Live Endpoint Pulsing Dot */}
-                        {candleOHLCData.length > 0 && (
-                          <g
-                            transform={`translate(${plotWidth}, ${plotBottom - ((candleOHLCData[candleOHLCData.length - 1].close - minVal) / valRange) * plotHeight})`}
-                          >
-                            <circle
-                              r="6"
-                              fill={isPositive ? "#00c805" : "#ff3b30"}
-                              opacity="0.4"
-                              className="animate-ping"
-                            />
-                            <circle
-                              r="4"
-                              fill={isPositive ? "#00c805" : "#ff3b30"}
-                              stroke="#ffffff"
-                              strokeWidth="1.5"
-                            />
-                          </g>
-                        )}
-                        {/* Active Hover Point Marker on Line Chart */}
-                        {hoverIndex !== null && activeCandle && (
-                          <g
-                            transform={`translate(${(hoverIndex / Math.max(1, candleOHLCData.length - 1)) * plotWidth}, ${plotBottom - ((activeCandle.close - minVal) / valRange) * plotHeight})`}
-                          >
-                            <circle
-                              r="7"
-                              fill={isPositive ? "#00c805" : "#ff3b30"}
-                              opacity="0.4"
-                              className="animate-ping"
-                            />
-                            <circle
-                              r="5"
-                              fill={isPositive ? "#00c805" : "#ff3b30"}
-                              stroke="#ffffff"
-                              strokeWidth="2"
-                            />
-                          </g>
-                        )}
-                      </g>
-                    )}
+                    {/* TRADINGVIEW HIGH-TECH SVG CANDLESTICK CHART */}
+                    <g>
+                      {/* Candlesticks */}
+                      {candleOHLCData.map((c, idx) => {
+                        const x = (idx / Math.max(1, candleOHLCData.length - 1)) * plotWidth;
+                        const yOpen = plotBottom - ((c.open - minVal) / valRange) * plotHeight;
+                        const yClose = plotBottom - ((c.close - minVal) / valRange) * plotHeight;
+                        const yHigh = plotBottom - ((c.high - minVal) / valRange) * plotHeight;
+                        const yLow = plotBottom - ((c.low - minVal) / valRange) * plotHeight;
+                        
+                        const isUp = c.close >= c.open;
+                        const color = isUp ? "#10b981" : "#ef4444";
 
-                    {/* TRADINGVIEW HIGH-TECH SVG AREA LINE CHART */}
-                    {chartMode === "candle" && (
-                      <g>
-                        {/* Filled Area Gradient */}
-                        {areaPathD && (
-                          <path
-                            d={areaPathD}
-                            fill="url(#chartGradient)"
-                          />
-                        )}
-                        {/* Crisp Price Line */}
-                        {linePathD && (
-                          <path
-                            d={linePathD}
-                            fill="none"
-                            stroke="#06b6d4"
-                            strokeWidth="3"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            className="drop-shadow-[0_2px_10px_rgba(6,182,212,0.5)]"
-                          />
-                        )}
-                        {/* Live Endpoint Pulsing Dot */}
-                        {candleOHLCData.length > 0 && (
-                          <g
-                            transform={`translate(${plotWidth}, ${plotBottom - ((candleOHLCData[candleOHLCData.length - 1].close - minVal) / valRange) * plotHeight})`}
-                          >
-                            <circle
-                              r="8"
-                              fill="#06b6d4"
-                              opacity="0.4"
-                              className="animate-ping"
+                        const rectY = Math.min(yOpen, yClose);
+                        const rectHeight = Math.max(1, Math.abs(yOpen - yClose));
+                        
+                        const pointSpacing = plotWidth / Math.max(1, candleOHLCData.length - 1);
+                        const barW = Math.max(1, pointSpacing * 0.7);
+                        
+                        return (
+                          <g key={`candle-${idx}`}>
+                            {/* Wick */}
+                            <line
+                              x1={x}
+                              y1={yHigh}
+                              x2={x}
+                              y2={yLow}
+                              stroke={color}
+                              strokeWidth={Math.max(1, barW * 0.2)}
                             />
-                            <circle
-                              r="5"
-                              fill="#06b6d4"
-                              stroke="#ffffff"
-                              strokeWidth="1.5"
-                            />
-                          </g>
-                        )}
-                        {/* Active Hover Point Marker */}
-                        {hoverIndex !== null && activeCandle && (
-                          <g
-                            transform={`translate(${(hoverIndex / Math.max(1, candleOHLCData.length - 1)) * plotWidth}, ${plotBottom - ((activeCandle.close - minVal) / valRange) * plotHeight})`}
-                          >
-                            <circle
-                              r="8"
-                              fill="#06b6d4"
-                              opacity="0.4"
-                              className="animate-ping"
-                            />
-                            <circle
-                              r="5"
-                              fill="#06b6d4"
-                              stroke="#ffffff"
-                              strokeWidth="2"
-                            />
-                          </g>
-                        )}
-                        {/* Interactive Scrubbing Columns */}
-                        {candleOHLCData.map((_, idx) => {
-                          const x = (idx / Math.max(1, candleOHLCData.length - 1)) * plotWidth;
-                          const pointSpacing = plotWidth / Math.max(1, candleOHLCData.length - 1);
-                          const rectW = Math.max(4, pointSpacing);
-                          return (
+                            {/* Body */}
                             <rect
-                              key={`scrub-col-${idx}`}
-                              x={x - rectW / 2}
-                              y="0"
-                              width={rectW}
-                              height={plotBottom}
-                              fill="transparent"
-                              className="cursor-crosshair"
-                              onMouseEnter={() => setHoverIndex(idx)}
-                              onTouchStart={() => setHoverIndex(idx)}
+                              x={x - barW / 2}
+                              y={rectY}
+                              width={barW}
+                              height={rectHeight}
+                              fill={isUp ? color : color}
+                              stroke={color}
+                              strokeWidth={1}
+                              rx={barW > 3 ? 1 : 0}
                             />
-                          );
-                        })}
-                      </g>
-                    )}
+                          </g>
+                        );
+                      })}
+                      
+                      {/* Live Current Price Horizontal Line */}
+                      {candleOHLCData.length > 0 && (
+                        <line
+                          x1={0}
+                          y1={plotBottom - ((candleOHLCData[candleOHLCData.length - 1].close - minVal) / valRange) * plotHeight}
+                          x2={plotWidth}
+                          y2={plotBottom - ((candleOHLCData[candleOHLCData.length - 1].close - minVal) / valRange) * plotHeight}
+                          stroke={candleOHLCData[candleOHLCData.length - 1].close >= candleOHLCData[candleOHLCData.length - 1].open ? "#10b981" : "#ef4444"}
+                          strokeDasharray="4 4"
+                          strokeWidth="1"
+                          opacity="0.5"
+                        />
+                      )}
+                      
+                      {/* Interactive Scrubbing Columns */}
+                      {candleOHLCData.map((_, idx) => {
+                        const x = (idx / Math.max(1, candleOHLCData.length - 1)) * plotWidth;
+                        const pointSpacing = plotWidth / Math.max(1, candleOHLCData.length - 1);
+                        const rectW = Math.max(4, pointSpacing);
+                        return (
+                          <rect
+                            key={`scrub-col-${idx}`}
+                            x={x - rectW / 2}
+                            y="0"
+                            width={rectW}
+                            height={plotBottom}
+                            fill="transparent"
+                            className="cursor-crosshair"
+                            onMouseEnter={() => setHoverIndex(idx)}
+                            onTouchStart={() => setHoverIndex(idx)}
+                          />
+                        );
+                      })}
+                    </g>
 
                     {/* Live Current Price Scale Badge */}
                     {activeStock && (

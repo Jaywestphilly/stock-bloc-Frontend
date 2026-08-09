@@ -237,6 +237,7 @@ import {
   ArrowUpDown,
   Download,
   Zap,
+  Clock,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
 import { isAgentOrHeadless } from "../utils/agentDetection";
@@ -250,6 +251,13 @@ export function App() {
   const { isSearchOpen, setIsSearchOpen } = useModalStore();
   const { isSyncingLiveQuotes, setIsSyncingLiveQuotes } = useMarketStore();
   const { lastSyncTime, setLastSyncTime } = useMarketStore();
+  const { marketDataUpdatedAt } = useMarketStore();
+
+  const formattedDataUpdateTime = useMemo(() => {
+    const d = marketDataUpdatedAt ? new Date(marketDataUpdatedAt) : new Date();
+    if (isNaN(d.getTime())) return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }, [marketDataUpdatedAt]);
 
   // Route & High Contrast Initial State
   const initialRoute = useMemo(() => getRouteFromLocation(), []);
@@ -516,7 +524,9 @@ export function App() {
           s.asymmetryPotentialStars !== undefined ||
           s.tags.includes("High Asymmetry"),
       );
-    } else if (selectedCategory !== "all") {
+    } else if (selectedCategory === "tsunami" || selectedCategory === "all") {
+      // Wholesale include all stocks in Super Sonic Tsunami and All Watchlist
+    } else {
       result = result.filter((s) => s.category === selectedCategory);
     }
 
@@ -541,11 +551,6 @@ export function App() {
 
       const dir = sortDirection === "desc" ? 1 : -1;
 
-      if (sortField === "signal") {
-        const scoreA = a.signalScore ?? computeDeterministicSignal(a).score;
-        const scoreB = b.signalScore ?? computeDeterministicSignal(b).score;
-        return (scoreB - scoreA) * dir;
-      }
       if (sortField === "volatility") {
         return (calculateStockVolatility(b) - calculateStockVolatility(a)) * dir;
       }
@@ -873,14 +878,14 @@ export function App() {
           }`}
         >
             <span
-              className={`text-[10px] uppercase font-black bg-cyan-950/95 px-2.5 py-1 border border-cyan-500/50 alien-block-cut-sm shrink-0 flex items-center gap-1.5 tracking-widest z-20 shadow-lg shadow-black/80 ${
+              className={`text-[10px] uppercase font-black bg-cyan-950/95 px-2.5 py-1 border border-cyan-500/50 alien-block-cut-sm shrink-0 flex items-center gap-1.5 tracking-wider z-20 shadow-lg shadow-black/80 ${
                 isSyncingLiveQuotes
                   ? "text-amber-300 glitch-text-refresh border-amber-400"
                   : "text-cyan-300"
               }`}
             >
-              <Radio className="w-2.5 h-2.5 animate-pulse text-cyan-400" />
-              // LIVE
+              <Clock className="w-2.5 h-2.5 text-cyan-400 shrink-0" />
+              <span>UPDATED {formattedDataUpdateTime}</span>
             </span>
 
             <div className="overflow-hidden w-full relative flex items-center py-1 -my-1">

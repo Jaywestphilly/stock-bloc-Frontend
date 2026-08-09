@@ -149,18 +149,6 @@ export const WatchlistIntelligenceHeader: React.FC<WatchlistIntelligenceHeaderPr
           </button>
 
           <button
-            onClick={() => { setSortField("signal"); triggerHaptic("selection"); }}
-            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0 transition-all flex items-center gap-1 border ${
-              sortField === "signal"
-                ? "bg-cyan-500 text-black border-cyan-400 shadow-md"
-                : "bg-black/40 text-cyan-300 border-cyan-900/60 hover:border-cyan-500/40"
-            }`}
-          >
-            <Sparkles className="w-3 h-3" />
-            <span>Signal Score</span>
-          </button>
-
-          <button
             onClick={() => { setSortField("volume"); triggerHaptic("selection"); }}
             className={`px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0 transition-all flex items-center gap-1 border ${
               sortField === "volume"
