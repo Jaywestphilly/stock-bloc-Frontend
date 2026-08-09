@@ -12,7 +12,6 @@ import { getTickerSentiment } from "../../utils/sentiment";
 import { formatChartTimestamp, calculateCleanYAxisTicks } from "../../utils/chartFormatters";
 import {
   X,
-  Sparkles,
   Share2,
   Pin,
   TrendingUp,
@@ -57,7 +56,6 @@ import {
   PenTool,
   LineChart,
 } from "lucide-react";
-import { SentimentIndicator } from "../SentimentIndicator";
 import { triggerHaptic } from "../../utils/haptics";
 import { getInstitutionalDataForStock } from "../../utils/institutionalHelper";
 import { StockHeader } from "./StockHeader";

@@ -464,7 +464,7 @@ export class MarketDataService {
       const currentPrice = meta.regularMarketPrice || (validCloses.length > 0 ? validCloses[validCloses.length - 1] : null);
       if (!currentPrice || typeof currentPrice !== 'number' || currentPrice <= 0) return null;
 
-      const prevClose = meta.chartPreviousClose || meta.previousClose || (validCloses.length > 1 ? validCloses[validCloses.length - 2] : currentPrice);
+      const prevClose = meta.regularMarketPreviousClose || meta.previousClose || (validCloses.length > 1 ? validCloses[validCloses.length - 2] : currentPrice);
       const change = parseFloat((currentPrice - prevClose).toFixed(2));
       const percentChange = parseFloat((((currentPrice - prevClose) / prevClose) * 100).toFixed(2));
 

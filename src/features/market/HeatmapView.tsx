@@ -466,7 +466,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                     {/* Sector Header Banner */}
                     <div className="flex flex-wrap items-center justify-between gap-2 bg-neutral-900/80 p-3 rounded-2xl border border-white/10">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-cyan-400" />
+                        <Activity className="w-4 h-4 text-cyan-400" />
                         <h3 className="font-black text-base text-white">
                           {sectorTitle}
                         </h3>
@@ -584,7 +584,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                               </span>
                               <span className="text-[11px] font-bold text-neutral-300">
                                 {stock.changePercent >= 0 ? "+" : ""}
-                                {stock.changePercent.toFixed(2)}%
+                                1D {stock.changePercent.toFixed(2)}%
                               </span>
                             </div>
                           </div>
@@ -669,7 +669,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                         </span>
                         <span className="text-[11px] font-bold text-neutral-300">
                           {stock.changePercent >= 0 ? "+" : ""}
-                          {stock.changePercent.toFixed(2)}%
+                          1D {stock.changePercent.toFixed(2)}%
                         </span>
                       </div>
                     </div>
@@ -748,7 +748,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                     }`}
                   >
                     {isPositive ? "+" : ""}
-                    {stock.changePercent.toFixed(2)}%
+                    1D {stock.changePercent.toFixed(2)}%
                   </span>
                 </div>
               </div>

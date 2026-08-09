@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  Search,
   RefreshCw,
   SlidersHorizontal,
   ArrowUpDown,
@@ -18,8 +17,8 @@ import { getMarketOpenStatus, getStockDataFreshness } from "../utils/signalCalcu
 import { triggerHaptic } from "../utils/haptics";
 
 interface WatchlistIntelligenceHeaderProps {
-  searchQuery: string;
-  setSearchQuery: (q: string) => void;
+  searchQuery?: string;
+  setSearchQuery?: (q: string) => void;
   sortField: "changePercent" | "signal" | "volume" | "marketCap" | "price" | "name" | "rsi" | "volatility";
   setSortField: (field: any) => void;
   sortDirection: "asc" | "desc";
@@ -33,8 +32,6 @@ interface WatchlistIntelligenceHeaderProps {
 }
 
 export const WatchlistIntelligenceHeader: React.FC<WatchlistIntelligenceHeaderProps> = ({
-  searchQuery,
-  setSearchQuery,
   sortField,
   setSortField,
   sortDirection,
@@ -115,36 +112,16 @@ export const WatchlistIntelligenceHeader: React.FC<WatchlistIntelligenceHeaderPr
         )}
       </div>
 
-      {/* Ticker Search & Sort Controls Bar */}
+      {/* Sort Controls Bar */}
       <div className="p-3 rounded-2xl bg-[#03111f] border border-cyan-900/60 space-y-2.5">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Ticker Search Box */}
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-cyan-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search ticker, company, or sector..."
-              className="w-full pl-9 pr-3 py-2 rounded-xl bg-black/60 border border-cyan-500/30 focus:border-cyan-400 text-white placeholder-cyan-500/50 text-xs focus:outline-none transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-cyan-400 hover:text-white text-xs"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
+        <div className="flex items-center justify-between gap-2">
           {/* Sort Direction Toggle */}
           <button
             onClick={() => {
               triggerHaptic("selection");
               setSortDirection(sortDirection === "desc" ? "asc" : "desc");
             }}
-            className="px-3 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-300 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
+            className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/40 text-cyan-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer ml-auto"
             title="Toggle High-to-Low or Low-to-High"
           >
             <ArrowUpDown className="w-3.5 h-3.5 text-cyan-400" />

@@ -7,7 +7,6 @@ import { formatChartTimestamp, formatYAxisTick, calculateCleanYAxisTicks } from 
 import {
   Pin,
   Share2,
-  Sparkles,
   Zap,
   Trash2,
   ChevronDown,
@@ -20,9 +19,7 @@ import {
   Loader2,
   DollarSign,
 } from "lucide-react";
-import { SentimentGauge } from "../../components/SentimentGauge";
 import { TrendSentimentVisualizer } from "../../components/TrendSentimentVisualizer";
-import { StockAiBriefSection } from "../../components/StockAiBriefSection";
 import { computeDeterministicSignal, getStockDataFreshness } from "../../utils/signalCalculator";
 import { triggerHaptic } from "../../utils/haptics";
 import { useUserStore } from "../../stores/userStore";
@@ -683,18 +680,6 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
           onClick={(e) => {
             e.stopPropagation();
             triggerHaptic("selection");
-            onAiAnalyze(stock);
-            setDragOffset(0);
-          }}
-          className="w-9 h-9 rounded-xl bg-cyan-950/80 text-cyan-300 border border-cyan-500/30 flex items-center justify-center hover:bg-cyan-900 active:scale-95 transition-all"
-          title=" Breakdown"
-        >
-          <Sparkles className="w-4 h-4 text-cyan-400" />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            triggerHaptic("selection");
             onTogglePin(stock.symbol);
             setDragOffset(0);
           }}
@@ -807,7 +792,14 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
               >
                 ${stock.symbol}
               </span>
-              <TrendSentimentVisualizer stock={stock} />
+              <div
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border alien-block-cut-sm transition-all bg-[#020b16] border-cyan-500/40"
+                title={`SB Rating: ${computeDeterministicSignal(stock).score}/100`}
+              >
+                <span className="text-[10px] font-black font-mono tracking-tight text-cyan-300">
+                  SB {computeDeterministicSignal(stock).score}
+                </span>
+              </div>
               {stock.symbol.toUpperCase() === "SPCX" && (
                 <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-black uppercase alien-block-cut-sm flex items-center gap-1 shadow-md shadow-amber-500/10">
                   <Star className="w-3 h-3 fill-amber-300" />
@@ -825,21 +817,10 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                   <Zap className="w-3 h-3 text-amber-300 fill-current" />
                 </span>
               )}
-              {stock.asymmetryPotentialStars !== undefined && (
-                <span
-                  title={`Asymmetry Rating: ${stock.asymmetryPotentialStars} Stars (${stock.probabilityOfSuccess || ""} prob)`}
-                  className="text-[9px] text-amber-300 font-black bg-amber-950/90 px-2 py-1 border border-amber-500/50 alien-block-cut-sm flex items-center gap-0.5"
-                >
-                  ★ {stock.asymmetryPotentialStars}
-                </span>
-              )}
             </div>
             <span className="text-[11px] font-medium text-cyan-400/80 truncate">
               {stock.name}
             </span>
-            <div className="mt-1">
-              <SentimentGauge stock={stock} onOpenNewsFeed={onOpenNewsFeed} />
-            </div>
           </div>
 
           {/* Center Sparkline Chart & 7-Day Variance Bar */}
@@ -868,6 +849,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                   : "bg-rose-950/90 text-rose-300 border-2 border-rose-500 glow-rose"
               } ${isSyncing ? "glitch-text-refresh" : ""}`}
             >
+              <span className="text-[9px] font-bold text-current/80 mr-0.5">1D</span>
               <span>
                 {isPositive ? "+" : ""}
                 {stock.changePercent.toFixed(2)}%
@@ -1033,7 +1015,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                 </div>
               </div>
 
-              {/* Stock Bloc Signal Breakdown & Data Freshness Dashboard */}
+              {/* SB Rating Breakdown & Data Freshness Dashboard */}
               {(() => {
                 const sig = computeDeterministicSignal(stock);
                 const fresh = getStockDataFreshness(stock.lastUpdatedIso);
@@ -1052,7 +1034,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                         <div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-black text-cyan-200 tracking-wider">
-                              STOCK BLOC SIGNAL
+                              SB RATING
                             </span>
                             <span className={`px-1.5 py-0.2 rounded text-[8px] font-black uppercase border ${
                               sig.label === "BULLISH"
@@ -1147,9 +1129,6 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                   </div>
                 );
               })()}
-
-              {/* On-Demand AI Intelligence Brief */}
-              <StockAiBriefSection stock={stock} />
 
               {/* Quick Metrics Strip */}
               <div className="grid grid-cols-4 gap-2 text-center text-[10px] font-mono bg-[#041628]/80 p-2 rounded-xl border border-cyan-900/50">

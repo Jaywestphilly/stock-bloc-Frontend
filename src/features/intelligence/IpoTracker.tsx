@@ -242,7 +242,7 @@ export const IpoTracker: React.FC = () => {
               </div>
               <div className="p-3 rounded-xl bg-neutral-900 border border-neutral-800">
                 <span className="block text-[10px] text-neutral-400 uppercase">
-                  Stock Bloc Signal
+                  SB Rating
                 </span>
                 <span className="font-extrabold text-emerald-400">
                   {selectedIpo.signal}

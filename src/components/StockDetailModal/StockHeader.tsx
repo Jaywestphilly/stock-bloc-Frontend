@@ -13,7 +13,6 @@ import { formatChartTimestamp, calculateCleanYAxisTicks } from "../../utils/char
 import { useUserStore } from "../../stores/userStore";
 import {
   X,
-  Sparkles,
   Share2,
   Pin,
   TrendingUp,
@@ -59,7 +58,6 @@ import {
   LineChart,
   Star,
 } from "lucide-react";
-import { SentimentIndicator } from "../SentimentIndicator";
 import { triggerHaptic } from "../../utils/haptics";
 import { getInstitutionalDataForStock } from "../../utils/institutionalHelper";
 

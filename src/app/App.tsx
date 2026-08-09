@@ -14,7 +14,6 @@ import { WatchlistIntelligenceHeader } from "../components/WatchlistIntelligence
 import { computeDeterministicSignal } from "../utils/signalCalculator";
 import { StockCard } from "../features/market/StockCard";
 import { HeatmapView } from "../features/market/HeatmapView";
-import { MarketPulseCard } from "../features/market/MarketPulseCard";
 import type { IntelligenceSubTab } from "../features/intelligence/MarketIntelligenceHub";
 import { LaunchSplashModal } from "../components/LaunchSplashModal";
 import { AffiliateLink } from "../components/AffiliateLink";
@@ -35,6 +34,7 @@ function safeLazy<T extends React.ComponentType<any>>(
   return lazy(async () => {
     try {
       const module = await importFn();
+      sessionStorage.removeItem("app_script_reload_attempt");
       const Component = exportName ? module[exportName] : (module.default || module);
       return { default: Component };
     } catch (error) {
@@ -42,6 +42,7 @@ function safeLazy<T extends React.ComponentType<any>>(
       await new Promise((resolve) => setTimeout(resolve, 600));
       try {
         const module = await importFn();
+        sessionStorage.removeItem("app_script_reload_attempt");
         const Component = exportName ? module[exportName] : (module.default || module);
         return { default: Component };
       } catch (retryError) {
@@ -50,8 +51,24 @@ function safeLazy<T extends React.ComponentType<any>>(
         if (!hasReloaded) {
           sessionStorage.setItem("app_script_reload_attempt", "true");
           window.location.reload();
+          return new Promise(() => {}); // pause to allow reload without boundary error
         }
-        throw retryError;
+        const FallbackComponent = () => (
+          <div className="p-6 m-4 rounded-xl bg-neutral-900/90 border border-neutral-800 text-neutral-300 font-mono text-xs text-center space-y-2">
+            <p className="text-amber-400 font-bold">Module session update</p>
+            <p>Please click below to refresh the workspace session.</p>
+            <button
+              onClick={() => {
+                sessionStorage.removeItem("app_script_reload_attempt");
+                window.location.reload();
+              }}
+              className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold cursor-pointer transition-all"
+            >
+              Reload Page
+            </button>
+          </div>
+        );
+        return { default: FallbackComponent as unknown as T };
       }
     }
   });
@@ -73,18 +90,6 @@ const BrandLinktreeModal = safeLazy(
 const SocialShareModal = safeLazy(
   () => import("../components/SocialShareModal"),
   "SocialShareModal"
-);
-const ImageAnalyzerModal = safeLazy(
-  () => import("../components/ImageAnalyzerModal"),
-  "ImageAnalyzerModal"
-);
-const LiveSearchGroundingModal = safeLazy(
-  () => import("../components/LiveSearchGroundingModal"),
-  "LiveSearchGroundingModal"
-);
-const FocusMusicPlayerModal = safeLazy(
-  () => import("../components/FocusMusicPlayerModal"),
-  "FocusMusicPlayerModal"
 );
 const AuthModal = safeLazy(
   () => import("../components/AuthModal"),
@@ -211,7 +216,6 @@ import { INITIAL_STOCKS, STOCK_NEWS_FEED } from "../data/stocks";
 import { StockTicker, SectorCategory, SortField, ViewTab } from "../types";
 import {
   Search,
-  Sparkles,
   TrendingUp,
   Radio,
   Globe,
@@ -268,9 +272,6 @@ export function App() {
     setIsAiCopilotOpen(false);
     setIsCommandPaletteOpen(false);
     setIsBrandLinktreeOpen(false);
-    setIsImageScannerOpen(false);
-    setIsGroundingSearchOpen(false);
-    setIsMusicPlayerOpen(false);
     setIsDisclaimerOpen(false);
     setIsBrokerageModalOpen(false);
     setIsShareModalOpen(false);
@@ -418,9 +419,6 @@ export function App() {
 
   // New Feature Modals
   const { isOnboardingOpen, setIsOnboardingOpen } = useModalStore();
-  const { isImageScannerOpen, setIsImageScannerOpen } = useModalStore();
-  const { isGroundingSearchOpen, setIsGroundingSearchOpen } = useModalStore();
-  const { isMusicPlayerOpen, setIsMusicPlayerOpen } = useModalStore();
   const { isAuthOpen, setIsAuthOpen } = useModalStore();
   const { isDisclaimerOpen, setIsDisclaimerOpen } = useModalStore();
 
@@ -848,9 +846,6 @@ export function App() {
           setShareStock(null);
           setIsShareModalOpen(true);
         }}
-        onOpenImageScanner={() => setIsImageScannerOpen(true)}
-        onOpenGroundingSearch={() => setIsGroundingSearchOpen(true)}
-        onOpenMusicPlayer={() => setIsMusicPlayerOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenBloombergTerminal={handleOpenBloombergTerminal}
         onOpenDataStatus={() => setIsDataStatusOpen(true)}
@@ -940,8 +935,6 @@ export function App() {
           <div className="w-full">
             {/* Centralized Market Intelligence Control & Freshness Header */}
             <WatchlistIntelligenceHeader
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
               sortField={sortField}
               setSortField={setSortField}
               sortDirection={sortDirection}
@@ -952,23 +945,6 @@ export function App() {
               marketDataSource={useMarketStore.getState().marketDataSource}
               marketDataIsStale={useMarketStore.getState().marketDataIsStale}
               totalStocks={stocks.length}
-            />
-
-            {/* Daily Gemini Market Pulse TL;DR Card */}
-            <MarketPulseCard
-              onOpenNewsFeed={() => {
-                setActiveTab("youtube");
-              }}
-              onSelectTicker={(symbol) => {
-                const matched = stocks.find(
-                  (s) => s.symbol.toUpperCase() === symbol.toUpperCase(),
-                );
-                if (matched) {
-                  setSelectedStock(matched);
-                } else {
-                  setSearchQuery(symbol);
-                }
-              }}
             />
 
             {/* Category Selector Tabs & Sort Pill */}
@@ -1020,30 +996,6 @@ export function App() {
               </button>
 
               <button
-                onClick={() => setIsImageScannerOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-extrabold shrink-0 flex items-center gap-1.5 cursor-pointer"
-              >
-                <Camera className="w-3.5 h-3.5 text-amber-400" />
-                <span>Gemini Vision Scanner</span>
-              </button>
-
-              <button
-                onClick={() => setIsGroundingSearchOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-extrabold shrink-0 flex items-center gap-1.5 cursor-pointer"
-              >
-                <Globe className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Google Search & Maps</span>
-              </button>
-
-              <button
-                onClick={() => setIsMusicPlayerOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 text-xs font-extrabold shrink-0 flex items-center gap-1.5 cursor-pointer"
-              >
-                <Music className="w-3.5 h-3.5 text-purple-400" />
-                <span>Lyria Focus Beats</span>
-              </button>
-
-              <button
                 onClick={() => setIsAuthOpen(true)}
                 className="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-extrabold shrink-0 flex items-center gap-1.5 cursor-pointer"
               >
@@ -1071,7 +1023,7 @@ export function App() {
                 onClick={() => setActiveTab("intelligence")}
                 className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-extrabold shrink-0 flex items-center gap-1.5 cursor-pointer shadow-lg shadow-cyan-500/10"
               >
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                <Database className="w-3.5 h-3.5 text-cyan-400" />
                 <span>13F & Intel Matrix</span>
               </button>
             </div>
@@ -1525,30 +1477,6 @@ export function App() {
         stock={shareStock}
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
-      />
-
-      {/* Gemini Vision Photo & Document Scanner Modal */}
-      <ImageAnalyzerModal
-        isOpen={isImageScannerOpen}
-        onClose={() => setIsImageScannerOpen(false)}
-      />
-
-      {/* Google Search & Maps Grounding Intelligence Modal */}
-      <LiveSearchGroundingModal
-        isOpen={isGroundingSearchOpen}
-        onClose={() => setIsGroundingSearchOpen(false)}
-        onSelectStockSymbol={(sym) => {
-          const matched = stocks.find(
-            (s) => s.symbol.toLowerCase() === sym.toLowerCase(),
-          );
-          if (matched) setSelectedStock(matched);
-        }}
-      />
-
-      {/* Lyria Ambient Focus Music Player Modal */}
-      <FocusMusicPlayerModal
-        isOpen={isMusicPlayerOpen}
-        onClose={() => setIsMusicPlayerOpen(false)}
       />
 
       {/* Firebase Authentication & Storage Modal */}
