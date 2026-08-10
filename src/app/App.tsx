@@ -749,6 +749,7 @@ export function App() {
             rating: backendStock.rating,
             instHolders: backendStock.inst_holders,
             headlines: backendStock.headlines || [],
+            news: backendStock.news || [],
             signalScore: backendStock.signal?.signalScore ?? 75,
             signalLabel: backendStock.signal?.signalLabel ?? "Bullish",
             quantMetrics: backendStock.quant || null,

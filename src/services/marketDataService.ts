@@ -669,8 +669,15 @@ export class MarketDataService {
       }
 
       if (process.env.FINNHUB_API_KEY) {
-        const querySymbol = symbol === 'SPCX' ? 'DXYZ' : symbol;
-        const news = await MarketDataService.fetchFinnhubNewsForSymbol(querySymbol, process.env.FINNHUB_API_KEY);
+        let querySymbol = symbol;
+        if (symbol === '^IXIC') querySymbol = 'QQQ';
+        else if (symbol === '^GSPC' || symbol === '^NYA') querySymbol = 'SPY';
+
+        let news = await MarketDataService.fetchFinnhubNewsForSymbol(querySymbol, process.env.FINNHUB_API_KEY);
+        if ((!news || news.length === 0) && symbol !== querySymbol) {
+          news = await MarketDataService.fetchFinnhubNewsForSymbol(symbol, process.env.FINNHUB_API_KEY);
+        }
+        
         if (news && news.length > 0) {
           mergedStock.news = news;
         } else if (baseStock.news) {

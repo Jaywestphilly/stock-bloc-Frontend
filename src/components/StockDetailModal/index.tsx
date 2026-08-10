@@ -1808,6 +1808,7 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
           >
             <StockHeader {...propsToPass} />
             <div className="p-6 space-y-6 overflow-y-auto">
+                <NewsPanel {...propsToPass} />
                 <div className="flex flex-col lg:flex-row gap-6">
                   <div className="flex-1 space-y-6">
                     <TradeSimulator {...propsToPass} />
@@ -1815,7 +1816,6 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
                     <FinancialMetrics {...propsToPass} />
                   </div>
                   <div className="w-full lg:w-[400px] space-y-6 shrink-0">
-                    <NewsPanel {...propsToPass} />
                     <InstitutionalData {...propsToPass} />
                     <OptionsPanel {...propsToPass} />
                   </div>
