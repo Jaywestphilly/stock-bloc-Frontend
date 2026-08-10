@@ -211,7 +211,7 @@ export const Footer: React.FC<FooterProps> = ({
         {/* Copyright & Founder Attribution */}
         <div className="pt-4 border-t border-cyan-500/20 flex flex-col sm:flex-row items-center justify-between text-[11px] text-neutral-400 gap-2">
           <div className="flex flex-col sm:flex-row items-center gap-1.5 sm:gap-3 text-center sm:text-left">
-            <span>&copy; {new Date().getFullYear()} STOCK BLOC LLC. All rights reserved.</span>
+            <span>&copy; {new Date().getFullYear()} STOCK BLOC.</span>
             <span className="hidden sm:inline text-neutral-600">•</span>
             <span className="text-amber-400/90 font-mono font-bold">
               Stock Bloc — Founded & Curated by Jumanne Carter (Jay West Philly). Wall Street Smarts, Blockchain Hearts.
