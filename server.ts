@@ -1775,6 +1775,23 @@ app.get('/api/defense/watchlist', async (req, res) => {
   try {
     const defenseWatchlist = [
       {
+        ticker: "ANDURIL",
+        name: "Anduril Industries",
+        price: 0,
+        changePercent: 0,
+        marketCap: "$14.0B (Private)",
+        peRatio: 0,
+        dividendYield: 0,
+        dodBacklogBillions: 1.5,
+        ytdContractAwardsMillions: 1200,
+        primaryBranch: "US SOCOM / INDOPACOM",
+        clearanceLevel: "TOP SECRET // SCI",
+        domain: "Autonomous Swarms",
+        uapTechRole: "Lattice OS C2 software, Ghost Shark AUVs, Roadrunner autonomous interceptors.",
+        investmentThesis: "Silicon Valley-backed disruptor fundamentally changing DoD procurement from hardware platforms to software-defined autonomous attritable mass.",
+        analystRating: "Private (Series F)"
+      },
+      {
         ticker: "LMT",
         name: "Lockheed Martin Corp",
         price: 468.20,

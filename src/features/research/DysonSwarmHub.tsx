@@ -5,7 +5,6 @@ import { Starlink3DGlobe } from "../../components/Starlink3DGlobe";
 import {
   SPACEX_LAUNCHES,
   PLANET_LABS_MISSIONS,
-  STARLINK_SHELLS,
   DYSON_POWER_METRICS,
   SPACEX_HISTORY_ROADMAP,
   SPACE_DOCUMENTARIES,
@@ -155,21 +154,11 @@ export const DysonSwarmHub: React.FC = () => {
   const [dysonLiveData, setDysonLiveData] = useState<DysonLiveData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Grounded Search State
-  const [missionSearchQuery, setMissionSearchQuery] = useState("");
-  const [isSearchingMission, setIsSearchingMission] = useState(false);
-  const [missionSearchResult, setMissionSearchResult] = useState<{
-    query: string;
-    result: string;
-    sources?: Array<{ title: string; url: string }>;
-  } | null>(null);
-
-  // Active Video Modal State
-  
   const [spaceNews, setSpaceNews] = useState<any[]>([]);
   const [isSpaceNewsLoading, setIsSpaceNewsLoading] = useState(false);
   const [liveLaunches, setLiveLaunches] = useState<any>(null);
   const [isLaunchesLoading, setIsLaunchesLoading] = useState(false);
+  const [activeVideo, setActiveVideo] = useState<(typeof SPACE_DOCUMENTARIES)[0] | null>(null);
 
   useEffect(() => {
     if (activeSubTab === "space_news" && spaceNews.length === 0) {
@@ -203,9 +192,6 @@ export const DysonSwarmHub: React.FC = () => {
     }
   }, [activeSubTab]);
 
-  const [activeVideo, setActiveVideo] = useState<(typeof SPACE_DOCUMENTARIES)[0] | null>(null);
-
-  // Fetch Dyson JSON Data
   const fetchDysonData = async () => {
     setIsLoading(true);
     try {
@@ -225,39 +211,7 @@ export const DysonSwarmHub: React.FC = () => {
     fetchDysonData();
   }, []);
 
-  const handleSearchMission = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!missionSearchQuery.trim()) return;
-
-    setIsSearchingMission(true);
-    triggerHaptic("selection");
-
-    try {
-      const res = await fetch("/api/v1/gemini/grounded-search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: `Provide real-time 2026 status, orbital specs, launch date, and verification for: ${missionSearchQuery}`,
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setMissionSearchResult({
-          query: missionSearchQuery,
-          result: data.text || "No grounded result returned.",
-          sources: data.sources || [],
-        });
-      }
-    } catch {
-      setMissionSearchResult({
-        query: missionSearchQuery,
-        result: `Verified telemetry search completed for "${missionSearchQuery}". Cross-referenced against FAA manifests & CelesTrak TLE catalog.`,
-      });
-    } finally {
-      setIsSearchingMission(false);
-    }
-  };
+  
 
   const starlinkActiveCount =
     dysonLiveData?.fleet_metrics?.active_satellites || 10840;
@@ -353,193 +307,6 @@ export const DysonSwarmHub: React.FC = () => {
               </span>
               <span className="text-[9px] text-neutral-400">Unassailable launch moat</span>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* SPACEX STACK DIAGRAM */}
-      <div className="p-5 rounded-3xl bg-[#07111e]/90 border border-cyan-500/30 backdrop-blur-xl shadow-xl space-y-3">
-        <div className="flex items-center justify-between border-b border-white/10 pb-2">
-          <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-cyan-400" />
-            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cyan-300">
-              The SpaceX Integrated Stack (Falcon 9 → Starlink → Starship → Starshield)
-            </h3>
-          </div>
-          <span className="text-[10px] font-mono text-neutral-400">Commercial Architecture</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
-          {/* Step 1: Falcon 9 */}
-          <div className="p-3.5 rounded-2xl bg-black/60 border border-amber-500/30 flex flex-col justify-between space-y-2 relative group hover:border-amber-400 transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/30">
-                Step 1: Launch Engine
-              </span>
-              <Flame className="w-4 h-4 text-amber-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-black text-white">Falcon 9</h4>
-              <p className="text-[11px] text-neutral-300 mt-1 leading-snug">
-                Reusable first-stage workhorse driving frequent, low-cost access to LEO.
-              </p>
-            </div>
-          </div>
-
-          {/* Step 2: Starlink */}
-          <div className="p-3.5 rounded-2xl bg-black/60 border border-cyan-500/30 flex flex-col justify-between space-y-2 relative group hover:border-cyan-400 transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">
-                Step 2: Cash Engine
-              </span>
-              <Wifi className="w-4 h-4 text-cyan-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-black text-white">Starlink</h4>
-              <p className="text-[11px] text-neutral-300 mt-1 leading-snug">
-                Global satellite internet constellation generating high-margin recurring cash flow.
-              </p>
-            </div>
-          </div>
-
-          {/* Step 3: Starship */}
-          <div className="p-3.5 rounded-2xl bg-black/60 border border-emerald-500/30 flex flex-col justify-between space-y-2 relative group hover:border-emerald-400 transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
-                Step 3: Scale Engine
-              </span>
-              <Rocket className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-black text-white">Starship</h4>
-              <p className="text-[11px] text-neutral-300 mt-1 leading-snug">
-                Next-gen super-heavy lift rocket lowering cost-per-kg to under $100/kg.
-              </p>
-            </div>
-          </div>
-
-          {/* Step 4: Starshield */}
-          <div className="p-3.5 rounded-2xl bg-black/60 border border-purple-500/30 flex flex-col justify-between space-y-2 relative group hover:border-purple-400 transition-all">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-500/30">
-                Step 4: Defense Layer
-              </span>
-              <Shield className="w-4 h-4 text-purple-400" />
-            </div>
-            <div>
-              <h4 className="text-sm font-black text-white">Starshield</h4>
-              <p className="text-[11px] text-neutral-300 mt-1 leading-snug">
-                Secured government & defense satellite layer built on commercial mass production lines.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. LIVE 3D SATELLITE CONSTELLATION GLOBE */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Globe className="w-5 h-5 text-cyan-400 animate-pulse" />
-            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cyan-300">
-              Interactive 3D Starlink Constellation Globe
-            </h2>
-          </div>
-          <span className="text-[11px] font-mono text-neutral-400">
-            Drag to Rotate · Scroll to Zoom
-          </span>
-        </div>
-
-        <Starlink3DGlobe
-          activeSatellitesCount={starlinkActiveCount}
-          lastUpdatedIso={dysonLiveData?.updated_at}
-          isStale={isDataStale(dysonLiveData?.updated_at)}
-        />
-      </div>
-
-      {/* 3. HERO STORY: WHY SPACEX MATTERS */}
-      <div className="p-5 sm:p-6 rounded-3xl bg-[#060c18]/90 border border-cyan-500/30 backdrop-blur-xl shadow-2xl space-y-4">
-        <div className="flex items-start justify-between gap-3 border-b border-white/10 pb-3">
-          <div>
-            <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-950/80 px-2.5 py-1 rounded-md border border-cyan-500/30">
-              Strategic Market Intelligence
-            </span>
-            <h2 className="text-lg sm:text-xl font-black text-white mt-1.5 leading-snug">
-              SpaceX is building the infrastructure layer of the 21st century
-            </h2>
-          </div>
-          <Rocket className="w-6 h-6 text-cyan-400 shrink-0 mt-1" />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
-          {/* A. Starlink */}
-          <div className="p-4 rounded-2xl bg-black/60 border border-cyan-500/20 hover:border-cyan-500/40 transition-all space-y-2">
-            <div className="flex items-center gap-2 text-cyan-300 font-extrabold text-sm">
-              <Wifi className="w-4 h-4 text-cyan-400" />
-              <span>A. Starlink (The Network in Sky)</span>
-            </div>
-            <p className="text-neutral-300 leading-relaxed">
-              <strong>~10,700+ working satellites</strong> in orbit — roughly 2 out of every 3 active satellites belong to Starlink.
-            </p>
-            <p className="text-neutral-400 leading-relaxed">
-              Delivers high-speed global broadband for residential, maritime, aviation, disaster response, and direct-to-cell smartphones. The largest satellite constellation in human history by a wide margin.
-            </p>
-          </div>
-
-          {/* B. Falcon 9 */}
-          <div className="p-4 rounded-2xl bg-black/60 border border-amber-500/20 hover:border-amber-500/40 transition-all space-y-2">
-            <div className="flex items-center gap-2 text-amber-300 font-extrabold text-sm">
-              <Flame className="w-4 h-4 text-amber-400" />
-              <span>B. Falcon 9 (The Workhorse)</span>
-            </div>
-            <p className="text-neutral-300 leading-relaxed">
-              <strong>Reusable first stage booster</strong> that lands vertically on autonomous drone ships and flies 20+ times.
-            </p>
-            <p className="text-neutral-400 leading-relaxed">
-              Made frequent, low-cost access to space real. The vast majority of the world’s commercial launch payloads now fly on Falcon-class vehicles.
-            </p>
-          </div>
-
-          {/* C. Starship */}
-          <div className="p-4 rounded-2xl bg-black/60 border border-emerald-500/20 hover:border-emerald-500/40 transition-all space-y-2">
-            <div className="flex items-center gap-2 text-emerald-300 font-extrabold text-sm">
-              <Rocket className="w-4 h-4 text-emerald-400" />
-              <span>C. Starship (Heavy Lift & Next Horizon)</span>
-            </div>
-            <p className="text-neutral-300 leading-relaxed">
-              <strong>Full reusability goal</strong>, 150+ metric ton payload capacity, and Starlink V3 deployment engine.
-            </p>
-            <p className="text-neutral-400 leading-relaxed">
-              Flight 13 deployed first Starlink V3 test sats; Flight 14 targets first operational orbital V3 deployment. One Starship carries more bandwidth capacity than multiple Falcon 9 launches.
-            </p>
-          </div>
-
-          {/* D. Starshield */}
-          <div className="p-4 rounded-2xl bg-black/60 border border-purple-500/20 hover:border-purple-500/40 transition-all space-y-2">
-            <div className="flex items-center gap-2 text-purple-300 font-extrabold text-sm">
-              <Shield className="w-4 h-4 text-purple-400" />
-              <span>D. Starshield & Rideshare</span>
-            </div>
-            <p className="text-neutral-300 leading-relaxed">
-              Government and defense satellite layer built on the same industrial manufacturing line for the U.S. Space Force.
-            </p>
-            <p className="text-neutral-400 leading-relaxed">
-              Transporter rideshare missions open low-cost space access for hundreds of satellite companies (Planet Labs, Carbon Mapper, earth observation).
-            </p>
-          </div>
-
-          {/* E. Economic Point */}
-          <div className="p-4 rounded-2xl bg-black/60 border border-rose-500/20 hover:border-rose-500/40 transition-all md:col-span-2 lg:col-span-2 space-y-2">
-            <div className="flex items-center gap-2 text-rose-300 font-extrabold text-sm">
-              <TrendingUp className="w-4 h-4 text-rose-400" />
-              <span>E. The Economic Point (Investor Intelligence)</span>
-            </div>
-            <p className="text-neutral-300 leading-relaxed">
-              SpaceX is not just "rockets." It is a vertically integrated space logistics + telecom powerhouse. Starlink is the high-margin recurring cash flow engine ($6B+ annual revenue); Starship is the scale engine; the relentless launch cadence forms an unassailable moat.
-            </p>
-            <p className="text-neutral-400 leading-relaxed italic text-[11px]">
-              Note: SpaceX remains a private company. Public equity exposure is available via partner ecosystem stocks (RKLB, ASTS, PL) or private equity funds (DXYZ). Treat as high-conviction thematic intelligence, not direct financial advice.
-            </p>
           </div>
         </div>
       </div>
@@ -700,42 +467,7 @@ export const DysonSwarmHub: React.FC = () => {
               </div>
             </div>
 
-            {/* Orbital Shells Table */}
-            <div className="p-4 rounded-2xl bg-black/60 border border-white/10 space-y-3">
-              <h3 className="text-xs font-extrabold uppercase tracking-wider text-neutral-300">
-                Starlink Shell Architecture Breakdown
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead>
-                    <tr className="border-b border-white/10 text-neutral-400 text-[10px] uppercase">
-                      <th className="py-2 px-3">Shell Name</th>
-                      <th className="py-2 px-3">Altitude</th>
-                      <th className="py-2 px-3">Inclination</th>
-                      <th className="py-2 px-3">Active Sats</th>
-                      <th className="py-2 px-3">Version</th>
-                      <th className="py-2 px-3">Latency</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5 text-neutral-200">
-                    {STARLINK_SHELLS.map((shell) => (
-                      <tr key={shell.id} className="hover:bg-white/5 transition-colors">
-                        <td className="py-2.5 px-3 font-bold text-cyan-300">{shell.shellName}</td>
-                        <td className="py-2.5 px-3">{shell.altitudeKm} km</td>
-                        <td className="py-2.5 px-3">{shell.inclinationDeg}°</td>
-                        <td className="py-2.5 px-3 font-bold text-white">{shell.activeSatellitesCount.toLocaleString()}</td>
-                        <td className="py-2.5 px-3">
-                          <span className="px-2 py-0.5 bg-cyan-950 text-cyan-300 rounded border border-cyan-500/30 text-[10px]">
-                            {shell.version}
-                          </span>
-                        </td>
-                        <td className="py-2.5 px-3 text-emerald-400">{shell.latencyMs}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            
           </div>
         )}
 
@@ -1064,68 +796,191 @@ export const DysonSwarmHub: React.FC = () => {
         )}
       </div>
 
-      {/* 5. GROUNDED SEARCH MISSION VERIFICATION FORM */}
-      <div className="p-4 rounded-2xl bg-[#09111e]/90 border border-cyan-500/30 backdrop-blur-md space-y-3 shadow-lg">
+      {/* 2. LIVE 3D SATELLITE CONSTELLATION GLOBE */}
+      <div className="space-y-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-cyan-400" />
-            <h3 className="text-xs font-black uppercase tracking-wider text-cyan-300">
-              Verify Launch Manifests with Google Search Grounding
-            </h3>
+            <Globe className="w-5 h-5 text-cyan-400 animate-pulse" />
+            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cyan-300">
+              Interactive 3D Starlink Constellation Globe
+            </h2>
           </div>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30">
-            Realtime Verification
+          <span className="text-[11px] font-mono text-neutral-400">
+            Drag to Rotate · Scroll to Zoom
           </span>
         </div>
 
-        <p className="text-xs text-neutral-300 leading-relaxed">
-          Cross-examine any SpaceX launch, Planet Labs satellite fleet, or Starlink shell against live web intelligence.
-        </p>
+        <Starlink3DGlobe
+          activeSatellitesCount={starlinkActiveCount}
+          lastUpdatedIso={dysonLiveData?.updated_at}
+          isStale={isDataStale(dysonLiveData?.updated_at)}
+        />
+      </div>
 
-        <form onSubmit={handleSearchMission} className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-            <input
-              type="text"
-              value={missionSearchQuery}
-              onChange={(e) => setMissionSearchQuery(e.target.value)}
-              placeholder="e.g. SpaceX Starship Flight 14, Starlink Group 12-4, Planet Labs Pelican..."
-              className="w-full pl-9 pr-3 py-2.5 bg-black/60 border border-white/15 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/50 transition-all"
-            />
+      {/* SPACEX STACK DIAGRAM */}
+      <div className="p-5 rounded-3xl bg-[#07111e]/90 border border-cyan-500/30 backdrop-blur-xl shadow-xl space-y-3">
+        <div className="flex items-center justify-between border-b border-white/10 pb-2">
+          <div className="flex items-center gap-2">
+            <Layers className="w-5 h-5 text-cyan-400" />
+            <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-cyan-300">
+              The SpaceX Integrated Stack (Falcon 9 → Starlink → Starship → Starshield)
+            </h3>
           </div>
+          <span className="text-[10px] font-mono text-neutral-400">Commercial Architecture</span>
+        </div>
 
-          <button
-            type="submit"
-            disabled={isSearchingMission || !missionSearchQuery.trim()}
-            className="px-4 py-2.5 rounded-xl bg-cyan-400 hover:bg-cyan-300 disabled:opacity-50 text-black font-extrabold text-xs transition-all active:scale-95 flex items-center gap-1.5 shrink-0 cursor-pointer shadow-md"
-          >
-            {isSearchingMission ? (
-              <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-black" />
-                <span>Verifying...</span>
-              </>
-            ) : (
-              <>
-                <Sparkles className="w-3.5 h-3.5 text-black" />
-                <span>Verify Live</span>
-              </>
-            )}
-          </button>
-        </form>
-
-        {missionSearchResult && (
-          <div className="mt-3 p-3.5 rounded-xl bg-black/70 border border-cyan-500/30 space-y-2.5 animate-fadeIn">
-            <div className="flex items-center justify-between text-xs font-bold text-cyan-300 border-b border-white/10 pb-2">
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                Grounding Results for "{missionSearchResult.query}"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+          {/* Step 1: Falcon 9 */}
+          <div className="p-3.5 rounded-2xl bg-black/60 border border-amber-500/30 flex flex-col justify-between space-y-2 relative group hover:border-amber-400 transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-amber-400 bg-amber-950/80 px-2 py-0.5 rounded border border-amber-500/30">
+                Step 1: Launch Engine
               </span>
+              <Flame className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-xs text-neutral-200 leading-relaxed whitespace-pre-line font-medium">
-              {missionSearchResult.result}
+            <div>
+              <h4 className="text-sm font-black text-white">Falcon 9</h4>
+              <p className="text-[11px] text-neutral-300 mt-1 leading-snug">
+                Reusable first-stage workhorse driving frequent, low-cost access to LEO.
+              </p>
             </div>
           </div>
-        )}
+
+          {/* Step 2: Starlink */}
+          <div className="p-3.5 rounded-2xl bg-black/60 border border-cyan-500/30 flex flex-col justify-between space-y-2 relative group hover:border-cyan-400 transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded border border-cyan-500/30">
+                Step 2: Cash Engine
+              </span>
+              <Wifi className="w-4 h-4 text-cyan-400" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-white">Starlink</h4>
+              <p className="text-[11px] text-neutral-300 mt-1 leading-snug">
+                Global satellite internet constellation generating high-margin recurring cash flow.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 3: Starship */}
+          <div className="p-3.5 rounded-2xl bg-black/60 border border-emerald-500/30 flex flex-col justify-between space-y-2 relative group hover:border-emerald-400 transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/30">
+                Step 3: Scale Engine
+              </span>
+              <Rocket className="w-4 h-4 text-emerald-400" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-white">Starship</h4>
+              <p className="text-[11px] text-neutral-300 mt-1 leading-snug">
+                Next-gen super-heavy lift rocket lowering cost-per-kg to under $100/kg.
+              </p>
+            </div>
+          </div>
+
+          {/* Step 4: Starshield */}
+          <div className="p-3.5 rounded-2xl bg-black/60 border border-purple-500/30 flex flex-col justify-between space-y-2 relative group hover:border-purple-400 transition-all">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-purple-400 bg-purple-950/80 px-2 py-0.5 rounded border border-purple-500/30">
+                Step 4: Defense Layer
+              </span>
+              <Shield className="w-4 h-4 text-purple-400" />
+            </div>
+            <div>
+              <h4 className="text-sm font-black text-white">Starshield</h4>
+              <p className="text-[11px] text-neutral-300 mt-1 leading-snug">
+                Secured government & defense satellite layer built on commercial mass production lines.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. HERO STORY: WHY SPACEX MATTERS */}
+      <div className="p-5 sm:p-6 rounded-3xl bg-[#060c18]/90 border border-cyan-500/30 backdrop-blur-xl shadow-2xl space-y-4">
+        <div className="flex items-start justify-between gap-3 border-b border-white/10 pb-3">
+          <div>
+            <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 bg-cyan-950/80 px-2.5 py-1 rounded-md border border-cyan-500/30">
+              Strategic Market Intelligence
+            </span>
+            <h2 className="text-lg sm:text-xl font-black text-white mt-1.5 leading-snug">
+              SpaceX is building the infrastructure layer of the 21st century
+            </h2>
+          </div>
+          <Rocket className="w-6 h-6 text-cyan-400 shrink-0 mt-1" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs">
+          {/* A. Starlink */}
+          <div className="p-4 rounded-2xl bg-black/60 border border-cyan-500/20 hover:border-cyan-500/40 transition-all space-y-2">
+            <div className="flex items-center gap-2 text-cyan-300 font-extrabold text-sm">
+              <Wifi className="w-4 h-4 text-cyan-400" />
+              <span>A. Starlink (The Network in Sky)</span>
+            </div>
+            <p className="text-neutral-300 leading-relaxed">
+              <strong>~10,700+ working satellites</strong> in orbit — roughly 2 out of every 3 active satellites belong to Starlink.
+            </p>
+            <p className="text-neutral-400 leading-relaxed">
+              Delivers high-speed global broadband for residential, maritime, aviation, disaster response, and direct-to-cell smartphones. The largest satellite constellation in human history by a wide margin.
+            </p>
+          </div>
+
+          {/* B. Falcon 9 */}
+          <div className="p-4 rounded-2xl bg-black/60 border border-amber-500/20 hover:border-amber-500/40 transition-all space-y-2">
+            <div className="flex items-center gap-2 text-amber-300 font-extrabold text-sm">
+              <Flame className="w-4 h-4 text-amber-400" />
+              <span>B. Falcon 9 (The Workhorse)</span>
+            </div>
+            <p className="text-neutral-300 leading-relaxed">
+              <strong>Reusable first stage booster</strong> that lands vertically on autonomous drone ships and flies 20+ times.
+            </p>
+            <p className="text-neutral-400 leading-relaxed">
+              Made frequent, low-cost access to space real. The vast majority of the world’s commercial launch payloads now fly on Falcon-class vehicles.
+            </p>
+          </div>
+
+          {/* C. Starship */}
+          <div className="p-4 rounded-2xl bg-black/60 border border-emerald-500/20 hover:border-emerald-500/40 transition-all space-y-2">
+            <div className="flex items-center gap-2 text-emerald-300 font-extrabold text-sm">
+              <Rocket className="w-4 h-4 text-emerald-400" />
+              <span>C. Starship (Heavy Lift & Next Horizon)</span>
+            </div>
+            <p className="text-neutral-300 leading-relaxed">
+              <strong>Full reusability goal</strong>, 150+ metric ton payload capacity, and Starlink V3 deployment engine.
+            </p>
+            <p className="text-neutral-400 leading-relaxed">
+              Flight 13 deployed first Starlink V3 test sats; Flight 14 targets first operational orbital V3 deployment. One Starship carries more bandwidth capacity than multiple Falcon 9 launches.
+            </p>
+          </div>
+
+          {/* D. Starshield */}
+          <div className="p-4 rounded-2xl bg-black/60 border border-purple-500/20 hover:border-purple-500/40 transition-all space-y-2">
+            <div className="flex items-center gap-2 text-purple-300 font-extrabold text-sm">
+              <Shield className="w-4 h-4 text-purple-400" />
+              <span>D. Starshield & Rideshare</span>
+            </div>
+            <p className="text-neutral-300 leading-relaxed">
+              Government and defense satellite layer built on the same industrial manufacturing line for the U.S. Space Force.
+            </p>
+            <p className="text-neutral-400 leading-relaxed">
+              Transporter rideshare missions open low-cost space access for hundreds of satellite companies (Planet Labs, Carbon Mapper, earth observation).
+            </p>
+          </div>
+
+          {/* E. Economic Point */}
+          <div className="p-4 rounded-2xl bg-black/60 border border-rose-500/20 hover:border-rose-500/40 transition-all md:col-span-2 lg:col-span-2 space-y-2">
+            <div className="flex items-center gap-2 text-rose-300 font-extrabold text-sm">
+              <TrendingUp className="w-4 h-4 text-rose-400" />
+              <span>E. The Economic Point (Investor Intelligence)</span>
+            </div>
+            <p className="text-neutral-300 leading-relaxed">
+              SpaceX is not just "rockets." It is a vertically integrated space logistics + telecom powerhouse. Starlink is the high-margin recurring cash flow engine ($6B+ annual revenue); Starship is the scale engine; the relentless launch cadence forms an unassailable moat.
+            </p>
+            <p className="text-neutral-400 leading-relaxed italic text-[11px]">
+              Note: SpaceX remains a private company. Public equity exposure is available via partner ecosystem stocks (RKLB, ASTS, PL) or private equity funds (DXYZ). Treat as high-conviction thematic intelligence, not direct financial advice.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* VIDEO MODAL */}

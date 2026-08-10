@@ -79,10 +79,10 @@ interface DefenseWatchlistStock {
   ytdContractAwardsMillions: number;
   primaryBranch: string;
   clearanceLevel: string;
-  domain: "Air & Space" | "Defense AI & Cyber" | "Autonomous Swarms" | "Missiles & Hypersonics" | "Maritime & Submarines";
+  domain: string;
   uapTechRole: string;
   investmentThesis: string;
-  analystRating: "Strong Buy" | "Buy" | "Hold";
+  analystRating: string;
 }
 
 const FALLBACK_PERIOD: ContractPeriod = {
@@ -429,46 +429,21 @@ export const WarGovUfoHub: React.FC<WarGovUfoHubProps> = ({
       return s.domain === watchlistDomainFilter;
     })
     .sort((a, b) => {
+      if (a.ticker === "ANDURIL") return -1;
+      if (b.ticker === "ANDURIL") return 1;
       if (watchlistSortKey === "backlog") return b.dodBacklogBillions - a.dodBacklogBillions;
       if (watchlistSortKey === "change") return b.changePercent - a.changePercent;
       if (watchlistSortKey === "awards") return b.ytdContractAwardsMillions - a.ytdContractAwardsMillions;
       return parseFloat(b.marketCap.replace(/[^0-9.]/g, "")) - parseFloat(a.marketCap.replace(/[^0-9.]/g, ""));
     });
 
-  const handleSelectTicker = (tickerSymbol: string) => {
+    const handleSelectTicker = (tickerSymbol: string) => {
     triggerHaptic("selection");
-    if (onSelectStock && allStocks) {
-      const match = allStocks.find((s) => s.symbol.toUpperCase() === tickerSymbol.toUpperCase());
-      if (match) {
-        onSelectStock(match);
-      } else {
-        // Fallback ticker creation if not in default mock set
-        onSelectStock({
-          symbol: tickerSymbol.toUpperCase(),
-          name: tickerSymbol,
-          price: 100,
-          change: 0,
-          changePercent: 0,
-          volume: "1.2M",
-          marketCap: "10B",
-          peRatio: 20,
-          high52: 110,
-          low52: 90,
-          avgVolume: "1M",
-          dividendYield: 1.5,
-          beta: 1.0,
-          eps: 5.0,
-          nextEarnings: "N/A",
-          analystRating: "Buy",
-          targetPrice: 120,
-          sector: "Aerospace & Defense",
-          industry: "Defense Prime",
-          description: "Department of Defense Prime Contractor",
-          signal: "BUY",
-          signalConfidence: 85,
-        });
-      }
+    let query = tickerSymbol;
+    if (tickerSymbol === "ANDURIL") {
+      query = "ANDURIL";
     }
+    window.open(`https://finance.yahoo.com/quote/${query}`, "_blank", "noopener,noreferrer");
   };
 
   return (
