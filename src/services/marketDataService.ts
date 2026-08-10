@@ -50,6 +50,7 @@ export interface WatchlistStock {
   rating?: string;
   inst_holders?: string;
   headlines?: string[];
+  news?: Array<{ title: string; source: string; time?: string; sentiment?: string; url?: string; }>;
   quant?: QuantMetrics;
   signal?: StockBlocSignal;
   last_updated?: string;
@@ -555,6 +556,41 @@ export class MarketDataService {
     }
   }
 
+  private static async fetchFinnhubNewsForSymbol(symbol: string, apiKey: string): Promise<Array<{ title: string; source: string; time?: string; url?: string; }> | null> {
+    try {
+      const today = new Date();
+      const past = new Date();
+      past.setDate(today.getDate() - 7);
+      const toDate = today.toISOString().split('T')[0];
+      const fromDate = past.toISOString().split('T')[0];
+
+      const url = `https://finnhub.io/api/v1/company-news?symbol=${encodeURIComponent(symbol)}&from=${fromDate}&to=${toDate}&token=${encodeURIComponent(apiKey)}`;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const res = await fetch(url, {
+        headers: { 'Accept': 'application/json' },
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      if (!res.ok) return null;
+      const data = await res.json();
+      
+      if (!Array.isArray(data)) return null;
+      
+      return data.slice(0, 3).map(item => ({
+        title: item.headline,
+        source: item.source,
+        time: item.datetime ? new Date(item.datetime * 1000).toISOString() : undefined,
+        url: item.url
+      }));
+
+    } catch (e) {
+      return null;
+    }
+  }
+
   /**
    * Refreshes market data across all target watchlist tickers.
    * If live provider succeeds for records, updates them with full quant indicators & signals.
@@ -630,6 +666,16 @@ export class MarketDataService {
           last_updated: baseStock.last_updated || persisted?.updated_at || nowIso,
           source: baseStock.source || persisted?.source || "Preserved Verified Cache"
         };
+      }
+
+      if (process.env.FINNHUB_API_KEY) {
+        const querySymbol = symbol === 'SPCX' ? 'DXYZ' : symbol;
+        const news = await MarketDataService.fetchFinnhubNewsForSymbol(querySymbol, process.env.FINNHUB_API_KEY);
+        if (news && news.length > 0) {
+          mergedStock.news = news;
+        } else if (baseStock.news) {
+          mergedStock.news = baseStock.news;
+        }
       }
 
       // Calculate Quant metrics & Stock Bloc Signal deterministically
