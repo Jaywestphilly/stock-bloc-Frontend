@@ -2053,6 +2053,246 @@ app.get('/api/education/youtube-courses', async (req, res) => {
   }
 });
 
+// --- YouTube Intel Feed 5:00 AM EST Scheduled Background Task & Endpoints ---
+const INTEL_YOUTUBE_CHANNELS = [
+  {
+    channelName: "Stock Bloc",
+    channelId: "UCwNl7IKcxlC3fuA38VFReOw",
+    handle: "@stockbloc",
+    category: "Stock Market",
+  },
+  {
+    channelName: "All-In Podcast",
+    channelId: "UCESLZhusAkFfsNsApnjF_Cg",
+    handle: "@allin",
+    category: "Stock Market",
+  },
+  {
+    channelName: "Peter Diamandis",
+    channelId: "UCvxm0qTrGN_1LMYgUaftWyQ",
+    handle: "@peterdiamandis",
+    category: "Wealth Blueprint",
+  },
+  {
+    channelName: "Limitless",
+    channelId: "UCCRxYlYOmLE2l5wxs3ckJtg",
+    handle: "@limitless-fm",
+    category: "Wealth Blueprint",
+  },
+  {
+    channelName: "Alexander Wissner-Gross",
+    channelId: "UCvjvMqS2tiyIZJm0AqwXvcw",
+    handle: "@alexwg",
+    category: "Stock Market",
+  },
+];
+
+let serverYouTubeIntelFeed: any[] = [];
+let serverYouTubeLastSyncedAt: number = 0;
+let serverYouTubeNextSyncAt: number = 0;
+
+function getNext5AMEST(): Date {
+  const now = new Date();
+  const nyStr = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+  const nyDate = new Date(nyStr);
+  
+  const ny5AM = new Date(nyStr);
+  ny5AM.setHours(5, 0, 0, 0);
+  
+  if (nyDate.getTime() >= ny5AM.getTime()) {
+    ny5AM.setDate(ny5AM.getDate() + 1);
+  }
+  
+  const offset = nyDate.getTime() - now.getTime();
+  const targetUTC = ny5AM.getTime() - offset;
+  return new Date(targetUTC);
+}
+
+async function syncServerYouTubeIntelFeed() {
+  console.log('[YouTube Intel Task] Triggering 5:00 AM EST Scheduled Feed Refresh...');
+  const newVideosByChannel = new Map<string, any[]>();
+
+  for (const ch of INTEL_YOUTUBE_CHANNELS) {
+    try {
+      const rssUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${ch.channelId}`;
+      let items: any[] = [];
+
+      try {
+        const res = await fetch(rssUrl);
+        if (res.ok) {
+          const xml = await res.text();
+          const entries = xml.split("<entry>");
+          for (let i = 1; i < entries.length; i++) {
+            const entry = entries[i];
+            const videoIdMatch = entry.match(/<yt:videoId>(.*?)<\/yt:videoId>/);
+            const titleMatch = entry.match(/<title>(.*?)<\/title>/);
+            const publishedMatch = entry.match(/<published>(.*?)<\/published>/);
+            const mediaDescMatch = entry.match(/<media:description>([\s\S]*?)<\/media:description>/);
+
+            if (videoIdMatch && titleMatch) {
+              const videoId = videoIdMatch[1];
+              const title = titleMatch[1];
+              const published = publishedMatch ? publishedMatch[1] : new Date().toISOString();
+              const pubDate = new Date(published).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric"
+              });
+              const isShort = title.toLowerCase().includes("#shorts");
+
+              items.push({
+                id: `yt_${ch.channelId}_${videoId}`,
+                youtubeId: videoId,
+                videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
+                title,
+                channelName: ch.channelName,
+                category: ch.category,
+                duration: isShort ? "0:60" : "15:00",
+                views: "Verified Feed",
+                publishedDate: `${ch.handle} • ${pubDate}`,
+                thumbnailUrl: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+                description: mediaDescMatch ? mediaDescMatch[1].replace(/<[^>]*>?/gm, "").slice(0, 220) : `Official release from ${ch.channelName}`,
+                keyTakeaways: [`Official update from ${ch.channelName}`, `5:00 AM EST Scheduled Sync`],
+                isShort,
+                timestamp: new Date(published).getTime()
+              });
+            }
+          }
+        }
+      } catch (err) {
+        // Direct RSS fetch failed, fallback below
+      }
+
+      if (items.length === 0) {
+        const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+        const res = await fetch(apiUrl);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.status === "ok" && Array.isArray(data.items)) {
+            items = data.items.map((item: any, idx: number) => {
+              let videoId = "";
+              if (item.link) {
+                const match = item.link.match(/(?:v=|\/shorts\/|\/embed\/|\/)([a-zA-Z0-9_-]{11})/);
+                if (match) videoId = match[1];
+              }
+              if (!videoId && item.guid) {
+                const guidMatch = item.guid.match(/([a-zA-Z0-9_-]{11})$/);
+                if (guidMatch) videoId = guidMatch[1];
+              }
+              const isShort = item.link?.includes("/shorts/") || item.title?.toLowerCase().includes("#shorts");
+              const pubDate = item.pubDate ? new Date(item.pubDate).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric"
+              }) : "Recent";
+
+              return {
+                id: `yt_${ch.channelId}_${videoId || idx}`,
+                youtubeId: videoId,
+                videoUrl: `https://www.youtube.com/watch?v=${videoId}`,
+                title: item.title || `${ch.channelName} Video`,
+                channelName: ch.channelName,
+                category: ch.category,
+                duration: isShort ? "0:60" : "15:00",
+                views: "Verified Feed",
+                publishedDate: `${ch.handle} • ${pubDate}`,
+                thumbnailUrl: videoId ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg` : (item.thumbnail || ""),
+                description: (item.description || "").replace(/<[^>]*>?/gm, "").slice(0, 220),
+                keyTakeaways: [`Official update from ${ch.channelName}`, `5:00 AM EST Scheduled Sync`],
+                isShort: !!isShort,
+                timestamp: item.pubDate ? new Date(item.pubDate).getTime() : Date.now()
+              };
+            });
+          }
+        }
+      }
+
+      if (items.length > 0) {
+        newVideosByChannel.set(ch.channelId, items);
+      }
+    } catch (e) {
+      console.warn(`[YouTube Intel Task] RSS fetch failed for ${ch.channelName}:`, e);
+    }
+  }
+
+  const combined: any[] = [];
+  for (const ch of INTEL_YOUTUBE_CHANNELS) {
+    const fetched = newVideosByChannel.get(ch.channelId);
+    if (fetched && fetched.length > 0) {
+      combined.push(...fetched);
+    }
+  }
+
+  if (combined.length > 0) {
+    combined.sort((a, b) => {
+      
+      
+      
+      
+      const aTime = a.timestamp || 0;
+      const bTime = b.timestamp || 0;
+      return bTime - aTime;
+      
+      return 0;
+    });
+
+    serverYouTubeIntelFeed = combined;
+    console.log("TOP 3:", combined.slice(0, 3).map(c => `${c.channelName} - ${c.timestamp}`));
+  }
+
+  serverYouTubeLastSyncedAt = Date.now();
+  const next5AM = getNext5AMEST();
+  serverYouTubeNextSyncAt = next5AM.getTime();
+  console.log(`[YouTube Intel Task] 5:00 AM EST background sync complete. Total items: ${serverYouTubeIntelFeed.length}. Next sync: ${next5AM.toISOString()}`);
+}
+
+function scheduleNext5AMESTSync() {
+  const nextSyncDate = getNext5AMEST();
+  const msUntilNextSync = Math.max(1000, nextSyncDate.getTime() - Date.now());
+
+  console.log(`[YouTube Intel Task] Next 5:00 AM EST background sync in ${(msUntilNextSync / 3600000).toFixed(2)} hours (${nextSyncDate.toISOString()})`);
+
+  setTimeout(async () => {
+    try {
+      await syncServerYouTubeIntelFeed();
+    } catch (err) {
+      console.error('[YouTube Intel Task] Sync failed during scheduled run:', err);
+    } finally {
+      scheduleNext5AMESTSync();
+    }
+  }, msUntilNextSync);
+}
+
+// Warm up feed on server boot & start 5:00 AM EST schedule timer
+syncServerYouTubeIntelFeed().then(() => {
+  scheduleNext5AMESTSync();
+});
+
+// Endpoint to fetch the 5:00 AM EST synced YouTube Intel feed
+app.get('/api/intel/youtube-feed', async (req, res) => {
+  if (req.query.force === 'true' || serverYouTubeIntelFeed.length === 0) {
+    await syncServerYouTubeIntelFeed();
+  }
+
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.json({
+    videos: serverYouTubeIntelFeed,
+    lastSyncedAt: serverYouTubeLastSyncedAt,
+    nextScheduledSyncAt: serverYouTubeNextSyncAt,
+    schedule: "5:00 AM EST Daily Background Task"
+  });
+});
+
+app.post('/api/intel/youtube-feed/sync', async (req, res) => {
+  await syncServerYouTubeIntelFeed();
+  res.json({
+    success: true,
+    videos: serverYouTubeIntelFeed,
+    lastSyncedAt: serverYouTubeLastSyncedAt,
+    nextScheduledSyncAt: serverYouTubeNextSyncAt
+  });
+});
+
 // Proxy Endpoints
 app.get('/api/data/market', async (req, res) => {
   const data = await fetchAndProcessFeed('market');

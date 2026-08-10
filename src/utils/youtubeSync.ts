@@ -47,9 +47,8 @@ export const MONITORED_CHANNELS: ChannelConfig[] = [
   },
 ];
 
-const STORAGE_KEY_VIDEOS = "yt_synced_videos_v2";
-const STORAGE_KEY_TIMESTAMP = "yt_last_sync_timestamp_v2";
-const SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const STORAGE_KEY_VIDEOS = "yt_synced_videos_v5";
+const STORAGE_KEY_TIMESTAMP = "yt_last_sync_timestamp_v5";
 
 export function getStoredYouTubeVideos(): YouTubeVideo[] {
   try {
@@ -90,6 +89,34 @@ export function formatTimeSinceSync(timestamp: number): string {
   return "YouTube synced · Just now";
 }
 
+/**
+ * Calculates the UTC timestamp for the most recent 5:00 AM EST.
+ * Handles daylight saving and timezone offsets natively.
+ */
+function getMostRecent5AMEST(): number {
+  const now = new Date();
+  
+  // Format current time in New York
+  const nyStr = now.toLocaleString('en-US', { timeZone: 'America/New_York' });
+  const nyDate = new Date(nyStr);
+  nyDate.setMilliseconds(now.getMilliseconds());
+  
+  // Set to 5:00 AM
+  const ny5AM = new Date(nyStr);
+  ny5AM.setHours(5, 0, 0, 0);
+  
+  // If current NY time is before 5 AM, then the most recent 5 AM was yesterday
+  if (nyDate.getTime() < ny5AM.getTime()) {
+    ny5AM.setDate(ny5AM.getDate() - 1);
+  }
+  
+  // Calculate true UTC offset based on the local system time parsing bias
+  const offset = nyDate.getTime() - now.getTime();
+  const trueUTC5AM = ny5AM.getTime() - offset;
+  
+  return trueUTC5AM;
+}
+
 export async function syncYouTubeFeeds(force: boolean = false): Promise<{
   videos: YouTubeVideo[];
   syncedAt: number;
@@ -97,9 +124,10 @@ export async function syncYouTubeFeeds(force: boolean = false): Promise<{
 }> {
   const lastSync = getLastSyncTimestamp();
   const now = Date.now();
+  const mostRecent5AM = getMostRecent5AMEST();
 
-  // If sync is not forced and was checked less than 24 hours ago, return stored videos
-  if (!force && lastSync > 0 && now - lastSync < SYNC_INTERVAL_MS) {
+  // If sync is not forced and was checked after the most recent 5 AM EST boundary, return stored videos
+  if (!force && lastSync > mostRecent5AM) {
     return {
       videos: getStoredYouTubeVideos(),
       syncedAt: lastSync,
@@ -107,6 +135,35 @@ export async function syncYouTubeFeeds(force: boolean = false): Promise<{
     };
   }
 
+  // 1. First attempt: Call Server 5:00 AM EST Scheduled API Endpoint
+  try {
+    const apiEndpoint = force ? "/api/intel/youtube-feed?force=true" : "/api/intel/youtube-feed";
+    const serverRes = await fetch(apiEndpoint);
+    if (serverRes.ok) {
+      const serverData = await serverRes.json();
+      if (Array.isArray(serverData.videos) && serverData.videos.length > 0) {
+        const serverVideos: YouTubeVideo[] = serverData.videos;
+        const syncedAt = serverData.lastSyncedAt || now;
+
+        try {
+          localStorage.setItem(STORAGE_KEY_VIDEOS, JSON.stringify(serverVideos));
+          localStorage.setItem(STORAGE_KEY_TIMESTAMP, syncedAt.toString());
+        } catch (e) {
+          console.error("Error saving server synced videos to localStorage:", e);
+        }
+
+        return {
+          videos: serverVideos,
+          syncedAt,
+          updated: true,
+        };
+      }
+    }
+  } catch (err) {
+    console.warn("Server API fetch for YouTube feed failed, falling back to direct RSS:", err);
+  }
+
+  // 2. Client-side RSS Fallback
   const newVideosByChannel: Map<string, YouTubeVideo[]> = new Map();
 
   // Fetch feeds for all monitored channels
@@ -181,9 +238,10 @@ export async function syncYouTubeFeeds(force: boolean = false): Promise<{
                 keyTakeaways: [
                   `Official update from ${ch.channelName}`,
                   `Verified YouTube feed (${ch.handle})`,
-                  "Updated via 24-Hour Auto Feed Sync",
+                  "Updated via 5:00 AM EST Auto Feed Sync",
                 ],
                 isShort: isShort,
+                timestamp: item.pubDate ? new Date(item.pubDate).getTime() : Date.now(),
               };
             }
           );
@@ -201,7 +259,6 @@ export async function syncYouTubeFeeds(force: boolean = false): Promise<{
   // Reconstruct final video array strictly adhering to channel order:
   // Stock Bloc ALWAYS AT THE TOP!
   let combinedVideos: YouTubeVideo[] = [];
-
   for (const ch of MONITORED_CHANNELS) {
     const fetched = newVideosByChannel.get(ch.channelId);
     if (fetched && fetched.length > 0) {
@@ -222,10 +279,14 @@ export async function syncYouTubeFeeds(force: boolean = false): Promise<{
 
   // Ensure Stock Bloc videos are strictly sorted to the top
   combinedVideos.sort((a, b) => {
-    const aIsSB = (a.channelName || "").toLowerCase().includes("stock bloc");
-    const bIsSB = (b.channelName || "").toLowerCase().includes("stock bloc");
-    if (aIsSB && !bIsSB) return -1;
-    if (!aIsSB && bIsSB) return 1;
+    
+    
+    
+    
+    const aTime = a.timestamp || 0;
+    const bTime = b.timestamp || 0;
+    return bTime - aTime;
+    
     return 0;
   });
 
@@ -243,3 +304,4 @@ export async function syncYouTubeFeeds(force: boolean = false): Promise<{
     updated: true,
   };
 }
+

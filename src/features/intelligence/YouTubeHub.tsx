@@ -210,12 +210,30 @@ export const YouTubeHub: React.FC = () => {
                 </button>
               </div>
             </div>
-            <div className="text-[10px] text-neutral-400/80 bg-black/40 p-2.5 rounded-xl border border-white/5 flex items-start gap-2">
-              <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
-              <p className="leading-relaxed">
-                <strong>Automated 24H Sync:</strong> Videos are automatically fetched every 24 hours to optimize bandwidth and speed. 
-                If you want to ensure you are seeing the absolute latest content right now, click the <strong>Refresh Feeds</strong> button above to bypass the daily cache and pull the newest releases directly from YouTube.
-              </p>
+            <div className="text-[11px] text-neutral-300 bg-black/60 p-3.5 rounded-2xl border border-emerald-500/30 flex flex-col gap-2 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wide text-[10px]">
+                  <Info className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Automated 5:00 AM EST Server & Service Worker Sync Active</span>
+                </div>
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Daily 5 AM Task Running
+                </span>
+              </div>
+              <ul className="list-disc list-inside space-y-1 text-neutral-300 text-[11px] leading-relaxed">
+                <li>
+                  <strong className="text-white">Daily 5:00 AM EST Background Task:</strong> The Express server automatically executes a scheduled task every morning at 5:00 AM EST to fetch the latest video metadata across all monitored YouTube channels.
+                </li>
+                <li>
+                  <strong className="text-white">Service Worker PWA Caching:</strong> The background Service Worker (`public/sw.js`) manages offline availability and background syncing, caching the fresh 5:00 AM EST updates instantly.
+                </li>
+                <li>
+                  <strong className="text-white">YouTube RSS Indexing Note:</strong> Public YouTube RSS feeds index new video releases within 1–6 hours of upload.
+                </li>
+                <li>
+                  <strong className="text-white">Manual Refresh:</strong> Click the <RefreshCw className="w-3 h-3 inline text-cyan-400 mx-0.5" /> <strong>Refresh Feeds</strong> button above at any time to query the server and YouTube RSS feed directly.
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -289,6 +307,108 @@ export const YouTubeHub: React.FC = () => {
         </div>
       )}
 
+      {/* Primary Top Intel Spotlight (Videos 1 & 2) */}
+      {videos.length >= 2 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-red-400 font-extrabold text-sm uppercase tracking-wider">
+              <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
+              <span>Primary Intel Focus: Top Releases #1 & #2</span>
+            </div>
+            <span className="text-[10px] font-bold text-neutral-400 uppercase bg-white/5 px-2.5 py-1 rounded-full border border-white/10">
+              High Priority Media
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[videos[0], videos[1]].map((video, idx) => (
+              <div
+                key={`spotlight_${video.id}_${idx}`}
+                className={`relative rounded-3xl p-4 space-y-3 transition-all group border shadow-2xl ${
+                  idx === 0
+                    ? "bg-gradient-to-b from-red-950/80 via-neutral-900 to-black border-red-500/50 hover:border-red-400 shadow-red-950/50"
+                    : "bg-gradient-to-b from-neutral-900 via-neutral-900 to-black border-amber-500/40 hover:border-amber-400 shadow-amber-950/40"
+                }`}
+              >
+                {/* Spotlight Badge Header */}
+                <div className="flex items-center justify-between text-[10px] font-black uppercase">
+                  <span
+                    className={`px-3 py-1 rounded-full flex items-center gap-1.5 border shadow-sm ${
+                      idx === 0
+                        ? "bg-red-600 text-white border-red-400 animate-pulse"
+                        : "bg-amber-500 text-black border-amber-300 font-bold"
+                    }`}
+                  >
+                    <span>{idx === 0 ? "🔥 TOP INTEL #1" : "⚡ TOP INTEL #2"}</span>
+                  </span>
+                  <span className="text-neutral-400 font-mono text-[9px]">{video.publishedDate}</span>
+                </div>
+
+                {/* Video Thumbnail */}
+                <div
+                  onClick={() => { trackEvent("video_watched", { videoId: video.youtubeId }); setActiveVideo(video); }}
+                  className="relative aspect-video w-full rounded-2xl overflow-hidden bg-black cursor-pointer group-hover:scale-[1.01] transition-transform shadow-lg border border-white/10"
+                >
+                  <img
+                    src={video.thumbnailUrl}
+                    alt={video.title}
+                    className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80";
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform border border-white/20">
+                      <Play className="w-6 h-6 fill-current ml-1" />
+                    </div>
+                  </div>
+                  <span className="absolute bottom-2.5 right-2.5 bg-black/85 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-mono font-bold text-white border border-white/10">
+                    {video.duration}
+                  </span>
+                </div>
+
+                {/* Video Info */}
+                <div className="space-y-1.5">
+                  <h4
+                    onClick={() => { trackEvent("video_watched", { videoId: video.youtubeId }); setActiveVideo(video); }}
+                    className="font-black text-sm text-white leading-snug cursor-pointer group-hover:text-red-400 transition-colors line-clamp-2"
+                  >
+                    {video.title}
+                  </h4>
+                  <p className="text-[11px] text-neutral-300 line-clamp-2 leading-relaxed font-sans">
+                    {video.description || `Official video release from ${video.channelName}.`}
+                  </p>
+                </div>
+
+                {/* Quick Action Bar */}
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] gap-2">
+                  <button
+                    onClick={() => { trackEvent("video_watched", { videoId: video.youtubeId }); setActiveVideo(video); }}
+                    className="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black flex items-center justify-center gap-1.5 active:scale-95 transition-all text-xs shadow-lg shadow-red-600/30 cursor-pointer"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Watch Video #{idx + 1}</span>
+                  </button>
+                  <a
+                    href={appendUTM(
+                      video.videoUrl || `https://www.youtube.com/watch?v=${video.youtubeId}`,
+                      `youtube_spotlight_${video.youtubeId}`
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center cursor-pointer"
+                    title="Open on YouTube"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Playlist Category Filter Bar */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -320,11 +440,28 @@ export const YouTubeHub: React.FC = () => {
 
       {/* Video Cards Feed */}
       <div className="space-y-4">
-        {filteredVideos.map((video) => (
+        {filteredVideos.map((video, idx) => (
           <div
             key={video.id}
-            className="group p-4 rounded-3xl bg-neutral-900/90 border border-white/10 space-y-3 hover:border-red-500/40 transition-all relative"
+            className={`group p-4 rounded-3xl bg-neutral-900/90 border space-y-3 hover:border-red-500/40 transition-all relative ${
+              idx === 0
+                ? "border-red-500/40 bg-gradient-to-b from-red-950/20 to-neutral-900"
+                : idx === 1
+                ? "border-amber-500/30 bg-gradient-to-b from-amber-950/20 to-neutral-900"
+                : "border-white/10"
+            }`}
           >
+            {/* Rank badge header for top videos */}
+            {idx < 2 && selectedCategory === "LATEST" && (
+              <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase pb-1 border-b border-white/5">
+                <span className={idx === 0 ? "text-red-400 flex items-center gap-1" : "text-amber-400 flex items-center gap-1"}>
+                  <Sparkles className="w-3 h-3" />
+                  <span>{idx === 0 ? "Video #1: Primary Intel Release" : "Video #2: Featured Intel Release"}</span>
+                </span>
+                <span className="text-neutral-500">Rank #{idx + 1}</span>
+              </div>
+            )}
+
             {/* Video Thumbnail with Play Button Overlay */}
             <div
               onClick={() => { trackEvent("video_watched", { videoId: video.youtubeId }); setActiveVideo(video); }}

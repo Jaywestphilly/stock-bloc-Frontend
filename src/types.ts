@@ -397,6 +397,7 @@ export interface YouTubeVideo {
   keyTakeaways: string[];
   isShort?: boolean;
   videoUrl?: string;
+  timestamp?: number;
 }
 
 export interface YouTubeChannel {
