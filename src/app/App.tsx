@@ -966,12 +966,6 @@ export function App() {
               onSelectSort={setSortField}
             />
 
-            {/* Real time Scrolling Watchlist News Ticker for Pinned Stocks */}
-            <WatchlistNewsTicker
-              stocks={stocks}
-              onSelectStock={setSelectedStock}
-            />
-
             {/* Brokerage Affiliate Action Bar */}
             <div className="px-4 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
               <AffiliateLink

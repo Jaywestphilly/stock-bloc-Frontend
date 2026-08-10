@@ -24,6 +24,7 @@ import {
   Film,
   Link as LinkIcon,
   RefreshCw,
+  Info,
 } from "lucide-react";
 import { triggerHaptic } from "../../utils/haptics";
 import { appendUTM } from "../../utils/utm";
@@ -186,26 +187,35 @@ export const YouTubeHub: React.FC = () => {
           </p>
 
           {/* Stats Badges & 24-Hour Sync Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-400 pt-2 border-t border-white/10 font-mono">
-            <span className="flex items-center gap-1.5 text-neutral-300 font-semibold">
-              <Tv className="w-3.5 h-3.5 text-red-500" />
-              <span>5 Monitored YouTube Channels</span>
-            </span>
-
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>24H Feed Sync: {formatTimeSinceSync(lastSyncTime)}</span>
+          <div className="flex flex-col gap-3 pt-3 border-t border-white/10 font-mono">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-400">
+              <span className="flex items-center gap-1.5 text-neutral-300 font-semibold">
+                <Tv className="w-3.5 h-3.5 text-red-500" />
+                <span>5 Monitored YouTube Channels</span>
               </span>
 
-              <button
-                onClick={handleManualRefresh}
-                disabled={isSyncing}
-                title="Force refresh feeds now"
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-              >
-                <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-red-400" : ""}`} />
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>24H Feed Sync: {formatTimeSinceSync(lastSyncTime)}</span>
+                </span>
+
+                <button
+                  onClick={handleManualRefresh}
+                  disabled={isSyncing}
+                  title="Force refresh feeds now"
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-red-400" : ""}`} />
+                </button>
+              </div>
+            </div>
+            <div className="text-[10px] text-neutral-400/80 bg-black/40 p-2.5 rounded-xl border border-white/5 flex items-start gap-2">
+              <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+              <p className="leading-relaxed">
+                <strong>Automated 24H Sync:</strong> Videos are automatically fetched every 24 hours to optimize bandwidth and speed. 
+                If you want to ensure you are seeing the absolute latest content right now, click the <strong>Refresh Feeds</strong> button above to bypass the daily cache and pull the newest releases directly from YouTube.
+              </p>
             </div>
           </div>
         </div>
