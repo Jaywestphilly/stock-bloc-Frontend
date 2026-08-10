@@ -48,6 +48,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
   const educationMenu = [
     { id: "onboarding", label: "Guided 2-Step Terminal Tour", icon: Sparkles },
     { id: "terminal_guide", label: "Terminal Guide & Manual", icon: Terminal },
+    { id: "mit_courses", label: "MIT & University Courses", icon: GraduationCap },
     { id: "investopedia", label: "Investopedia Free Trading Game", icon: Sparkles },
     { id: "small_business", label: "Small Business & QSBS Tax Hub", icon: Briefcase },
     { id: "youtube", label: "Free Game Educational Videos", icon: Radio },
@@ -109,7 +110,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
 
   const isMarketsActive = ["watchlist", "intelligence", "macro", "brand"].includes(activeTab);
   const isAiActive = ["dyson_swarm", "war_gov_ufo", "ai_insights", "ai_revolution"].includes(activeTab);
-  const isEducationActive = ["investopedia", "small_business", "youtube", "terminal_guide"].includes(activeTab);
+  const isEducationActive = ["investopedia", "small_business", "youtube", "terminal_guide", "mit_courses"].includes(activeTab);
 
   return (
     <nav

@@ -20,26 +20,42 @@ export const ROUTE_MAP: Record<string, ViewTab> = {
   "/my-bloc": "my_bloc",
   "/labs": "playbooks",
   "/podcasts": "podcasts",
-  "/youtube": "youtube",
-  "/small-business": "small_business",
+  "/education/youtube": "youtube",
+  "/education/small-business": "small_business",
   "/ai": "ai_revolution",
   "/ai-infra": "ai_revolution",
   "/ai-insights": "ai_insights",
   "/ai-revolution": "ai_revolution",
   "/dyson-swarm": "dyson_swarm",
   "/war-gov-ufo": "war_gov_ufo",
-  "/investopedia": "investopedia",
-  "/terminal-guide": "terminal_guide",
+  "/education/investopedia": "investopedia",
+  "/education/terminal-guide": "terminal_guide",
+  "/intelligence/ipos": "ipos",
+  "/intelligence/ma": "ma",
+  "/intelligence/regulatory": "regulatory",
+  "/intelligence/earnings": "earnings",
+  "/intelligence/rankings": "rankings",
+  "/heatmap": "heatmap",
+  "/pricing": "pricing",
+  "/education/playbooks": "playbooks",
+  "/education/docs": "docs",
+  "/education": "mit_courses",
+  "/education/mit-courses": "mit_courses",
+  "/checkout/success": "checkout_success",
+
+  // Legacy mappings
   "/ipos": "ipos",
   "/ma": "ma",
   "/regulatory": "regulatory",
   "/earnings": "earnings",
   "/rankings": "rankings",
-  "/heatmap": "heatmap",
-  "/pricing": "pricing",
+  "/investopedia": "investopedia",
+  "/youtube": "youtube",
+  "/terminal-guide": "terminal_guide",
+  "/small-business": "small_business",
   "/playbooks": "playbooks",
   "/docs": "docs",
-  "/checkout/success": "checkout_success",
+  "/mit-courses": "mit_courses",
 };
 
 export const TAB_TO_ROUTE: Record<ViewTab, string> = {
@@ -52,25 +68,26 @@ export const TAB_TO_ROUTE: Record<ViewTab, string> = {
   real_estate: "/real-estate",
   vacancy_empire: "/vacancy-empire",
   my_bloc: "/my-bloc",
-  playbooks: "/playbooks",
+  playbooks: "/education/playbooks",
   pricing: "/pricing",
   news: "/news",
-  docs: "/docs",
+  docs: "/education/docs",
+  mit_courses: "/education/mit-courses",
   checkout_success: "/checkout/success",
   dyson_swarm: "/dyson-swarm",
   war_gov_ufo: "/war-gov-ufo",
   podcasts: "/podcasts",
-  youtube: "/youtube",
-  small_business: "/small-business",
+  youtube: "/education/youtube",
+  small_business: "/education/small-business",
   ai_insights: "/ai-insights",
   ai_revolution: "/ai-revolution",
-  investopedia: "/investopedia",
-  terminal_guide: "/terminal-guide",
-  ipos: "/ipos",
-  ma: "/ma",
-  regulatory: "/regulatory",
-  earnings: "/earnings",
-  rankings: "/rankings",
+  investopedia: "/education/investopedia",
+  terminal_guide: "/education/terminal-guide",
+  ipos: "/intelligence/ipos",
+  ma: "/intelligence/ma",
+  regulatory: "/intelligence/regulatory",
+  earnings: "/intelligence/earnings",
+  rankings: "/intelligence/rankings",
   heatmap: "/heatmap",
 };
 
@@ -103,6 +120,7 @@ export const TAB_TITLES: Partial<Record<ViewTab | "terminal", string>> = {
   earnings: "Stock Bloc | Earnings Calendar & Wall St Estimates",
   rankings: "Stock Bloc | Quant Financial Rankings",
   heatmap: "Stock Bloc | Market Heatmap & Sector Map",
+  mit_courses: "Stock Bloc | MIT & University OpenCourseWare Matrix",
 };
 
 export const TAB_DESCRIPTIONS: Partial<Record<ViewTab | "terminal", string>> = {
@@ -130,6 +148,7 @@ export const TAB_DESCRIPTIONS: Partial<Record<ViewTab | "terminal", string>> = {
   earnings: "Wall Street consensus earnings estimates, EPS beats/misses, and reporting schedules.",
   rankings: "Quant financial metrics ranking, market cap leaders, valuation multiples, and dividend yields.",
   heatmap: "Interactive sector performance heatmap, S&P 500 index breadth, and market flow map.",
+  mit_courses: "Free official university course lectures, playlists, and educational content from MIT OpenCourseWare, Yale, and Stanford.",
 };
 
 export const TAB_IMAGES: Partial<Record<ViewTab | "terminal", string>> = {
@@ -158,8 +177,18 @@ export function getRouteFromLocation(): RouteState {
     return { tab: "watchlist", isTerminalOpen: true };
   }
 
-  const tab = ROUTE_MAP[path] || "watchlist";
-  return { tab, isTerminalOpen: false };
+  let tab = ROUTE_MAP[path];
+
+  // Prefix matching for sub-tabs
+  if (!tab) {
+    if (path.startsWith("/credit/")) tab = "credit";
+    else if (path.startsWith("/real-estate/")) tab = "real_estate";
+    else if (path.startsWith("/research/dyson-swarm/")) tab = "dyson_swarm";
+    else if (path.startsWith("/research/ai-revolution/")) tab = "ai_revolution";
+    else if (path.startsWith("/intelligence/")) tab = "intelligence";
+  }
+
+  return { tab: tab || "watchlist", isTerminalOpen: false };
 }
 
 function updateMetaTag(selector: string, attribute: string, content: string) {
@@ -186,6 +215,8 @@ export function pushAppRoute(tab: ViewTab, isTerminalOpen = false) {
 
   const routeKey = isTerminalOpen ? "terminal" : tab;
   const targetPath = isTerminalOpen ? "/terminal" : TAB_TO_ROUTE[tab] || "/";
+  const currentPath = window.location.pathname;
+
   const title =
     TAB_TITLES[routeKey] || "Stock Bloc | Quant Wealth Terminal";
   const description =
@@ -193,8 +224,19 @@ export function pushAppRoute(tab: ViewTab, isTerminalOpen = false) {
   const image =
     TAB_IMAGES[routeKey] || TAB_IMAGES.brand!;
 
-  if (window.location.pathname !== targetPath) {
-    window.history.pushState({ tab, isTerminalOpen }, "", targetPath);
+  if (currentPath !== targetPath) {
+    // Prevent overwriting sub-tab routes when the base route matches
+    if (
+      (targetPath === "/credit" && currentPath.startsWith("/credit/")) ||
+      (targetPath === "/real-estate" && currentPath.startsWith("/real-estate/")) ||
+      (targetPath === "/research/dyson-swarm" && currentPath.startsWith("/research/dyson-swarm/")) ||
+      (targetPath === "/research/ai-revolution" && currentPath.startsWith("/research/ai-revolution/")) ||
+      (targetPath === "/intelligence" && currentPath.startsWith("/intelligence/"))
+    ) {
+      // Don't push over existing sub-tab
+    } else {
+      window.history.pushState({ tab, isTerminalOpen }, "", targetPath);
+    }
   }
 
   // Update document title & description

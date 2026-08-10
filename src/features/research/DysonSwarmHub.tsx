@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSubTabUrl } from "../../hooks/useSubTabUrl";
 import { formatUtcTimestamp, isDataStale } from "../../utils/timeUtils";
 import { Starlink3DGlobe } from "../../components/Starlink3DGlobe";
 import {
@@ -59,7 +60,8 @@ type DysonSubTab =
   | "spacex_history"
   | "space_docs"
   | "planet_labs"
-  | "dyson_power";
+  | "dyson_power"
+  | "space_news";
 
 interface TimeRemaining {
   days: number;
@@ -135,7 +137,21 @@ const downloadIcsFile = (launch: SpaceXLaunch) => {
 };
 
 export const DysonSwarmHub: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<DysonSubTab>("starlink_hub");
+  const [activeSubTab, setActiveSubTab] = useSubTabUrl<DysonSubTab>(
+    "/research/dyson-swarm",
+    [
+      "starlink_hub",
+      "starship_hub",
+      "launch_cadence",
+      "dyson_metaphor",
+      "spacex_history",
+      "space_docs",
+      "planet_labs",
+      "dyson_power",
+      "space_news"
+    ] as const,
+    "space_news"
+  );
   const [dysonLiveData, setDysonLiveData] = useState<DysonLiveData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -149,6 +165,44 @@ export const DysonSwarmHub: React.FC = () => {
   } | null>(null);
 
   // Active Video Modal State
+  
+  const [spaceNews, setSpaceNews] = useState<any[]>([]);
+  const [isSpaceNewsLoading, setIsSpaceNewsLoading] = useState(false);
+  const [liveLaunches, setLiveLaunches] = useState<any>(null);
+  const [isLaunchesLoading, setIsLaunchesLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeSubTab === "space_news" && spaceNews.length === 0) {
+      setIsSpaceNewsLoading(true);
+      fetch("/api/space/news")
+        .then(r => r.json())
+        .then(d => {
+          setSpaceNews(d);
+          setIsSpaceNewsLoading(false);
+        })
+        .catch(e => {
+          console.error(e);
+          setIsSpaceNewsLoading(false);
+        });
+    }
+  }, [activeSubTab]);
+
+  useEffect(() => {
+    if (activeSubTab === "launch_cadence" && !liveLaunches) {
+      setIsLaunchesLoading(true);
+      fetch("/api/space/launches")
+        .then(r => r.json())
+        .then(d => {
+          setLiveLaunches(d);
+          setIsLaunchesLoading(false);
+        })
+        .catch(e => {
+          console.error(e);
+          setIsLaunchesLoading(false);
+        });
+    }
+  }, [activeSubTab]);
+
   const [activeVideo, setActiveVideo] = useState<(typeof SPACE_DOCUMENTARIES)[0] | null>(null);
 
   // Fetch Dyson JSON Data
@@ -502,6 +556,7 @@ export const DysonSwarmHub: React.FC = () => {
 
         <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
           {[
+            { id: "space_news", label: "Live Space News", icon: Zap },
             { id: "starlink_hub", label: "Starlink Constellation", icon: Wifi },
             { id: "starship_hub", label: "Starship Program", icon: Rocket },
             { id: "launch_cadence", label: "Launch Windows", icon: Clock },
@@ -532,6 +587,44 @@ export const DysonSwarmHub: React.FC = () => {
             );
           })}
         </div>
+
+        {activeSubTab === "space_news" && (
+          <div className="space-y-6 animate-fadeIn">
+            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+              <div className="p-3 bg-cyan-500/20 rounded-xl border border-cyan-500/40">
+                <Zap className="w-6 h-6 text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white">Live Spaceflight News</h3>
+                <p className="text-sm text-cyan-300/70">Latest articles from Spaceflight News API</p>
+              </div>
+            </div>
+            
+            {isSpaceNewsLoading ? (
+               <div className="flex items-center gap-2 text-cyan-400 p-4">
+                 <div className="w-4 h-4 border-2 border-cyan-400/20 border-t-cyan-400 rounded-full animate-spin" />
+                 Fetching live news...
+               </div>
+            ) : spaceNews.length > 0 ? (
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                 {spaceNews.map((news: any) => (
+                   <a key={news.id} href={news.url} target="_blank" rel="noopener noreferrer" className="p-4 rounded-2xl bg-neutral-900/60 border border-white/10 hover:border-cyan-500/40 transition-colors flex flex-col justify-between">
+                     <div>
+                       <div className="text-xs text-cyan-400 font-mono mb-2">{news.news_site}</div>
+                       <h4 className="text-sm font-bold text-white mb-2">{news.title}</h4>
+                       <p className="text-xs text-neutral-400 line-clamp-3">{news.summary}</p>
+                     </div>
+                     <div className="mt-4 text-[10px] text-neutral-500 font-mono">
+                       {new Date(news.published_at).toLocaleString()}
+                     </div>
+                   </a>
+                 ))}
+               </div>
+            ) : (
+               <div className="p-4 bg-red-900/20 text-red-400 rounded-xl">No news found or failed to load.</div>
+            )}
+          </div>
+        )}
 
         {/* TAB 1: STARLINK HUB */}
         {activeSubTab === "starlink_hub" && (
@@ -788,6 +881,42 @@ export const DysonSwarmHub: React.FC = () => {
                 </p>
               </div>
             )}
+
+            
+            {/* Live Launch Manifest (from API) */}
+            {isLaunchesLoading ? (
+              <div className="flex items-center gap-2 text-cyan-400 p-4 bg-neutral-900/50 rounded-2xl border border-white/5">
+                <div className="w-4 h-4 border-2 border-cyan-400/20 border-t-cyan-400 rounded-full animate-spin" />
+                Fetching live SpaceX launches...
+              </div>
+            ) : liveLaunches ? (
+              <div className="p-4 rounded-2xl bg-black/60 border border-white/10 space-y-4">
+                <h3 className="text-sm font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2">
+                  <Rocket className="w-4 h-4" /> Live Upcoming Orbital Launch Schedule
+                </h3>
+                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                  {(liveLaunches.upcoming || []).slice(0, 5).map((launch: any) => (
+                    <div key={launch.id} className="p-4 rounded-xl bg-neutral-900/80 border border-white/10 space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="font-black text-white text-sm">{launch.name}</div>
+                        <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/30 font-mono text-[10px]">
+                          {new Date(launch.date_utc).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-neutral-400">
+                        Flight Number: {launch.flight_number}
+                      </div>
+                      {launch.links?.webcast && (
+                         <a href={launch.links.webcast} target="_blank" rel="noopener noreferrer" className="text-cyan-400 text-[10px] hover:underline">Watch Webcast</a>
+                      )}
+                    </div>
+                  ))}
+                  {(!liveLaunches.upcoming || liveLaunches.upcoming.length === 0) && (
+                    <div className="text-neutral-500 text-xs">No upcoming launches found in API.</div>
+                  )}
+                </div>
+              </div>
+            ) : null}
 
             {/* Upcoming Launch Manifest */}
             <div className="p-4 rounded-2xl bg-black/60 border border-white/10 space-y-3">

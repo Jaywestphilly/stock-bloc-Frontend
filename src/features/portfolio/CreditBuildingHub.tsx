@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSubTabUrl } from "../../hooks/useSubTabUrl";
 import { NotFinancialAdviceTag } from "../../components/NotFinancialAdviceTag";
 import { AffiliateLink } from "../../components/AffiliateLink";
 import {
@@ -7,6 +8,7 @@ import {
   CREDIT_REPAIR_STEPS,
 } from "../../data/credit";
 import {
+  LineChart,
   ShieldCheck,
   Zap,
   CreditCard,
@@ -35,9 +37,31 @@ import {
 } from "lucide-react";
 
 export const CreditBuildingHub: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<
-    "simulator" | "factors" | "bureaus" | "student_loans" | "cards" | "repair"
-  >("simulator");
+  const [activeTab, setActiveTab] = useSubTabUrl(
+    "/credit",
+    ["simulator", "factors", "bureaus", "student_loans", "cards", "repair", "live_macro"] as const,
+    "live_macro"
+  );
+  
+  const [macroData, setMacroData] = useState<any>(null);
+  const [isMacroLoading, setIsMacroLoading] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === "live_macro" && !macroData) {
+      setIsMacroLoading(true);
+      fetch("/api/macro/credit")
+        .then(r => r.json())
+        .then(d => {
+          setMacroData(d);
+          setIsMacroLoading(false);
+        })
+        .catch(e => {
+          console.error(e);
+          setIsMacroLoading(false);
+        });
+    }
+  }, [activeTab]);
+
   const [copiedLetter, setCopiedLetter] = useState<boolean>(false);
 
   // Student Loan Estimator States
@@ -268,6 +292,18 @@ https://stock-bloc.ai.studio/credit-hub
 
         {/* Sub-Tabs Selector */}
         <div className="flex items-center gap-2 pt-2 overflow-x-auto no-scrollbar">
+          <button
+            onClick={() => setActiveTab("live_macro")}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "live_macro"
+                ? "bg-indigo-500 text-black font-extrabold shadow-lg shadow-indigo-500/30"
+                : "bg-white/10 text-neutral-300 hover:bg-white/20"
+            }`}
+          >
+            <LineChart className="w-3.5 h-3.5" />
+            Live Market Data
+          </button>
+
           <button
             onClick={() => setActiveTab("simulator")}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
@@ -1415,7 +1451,39 @@ https://stock-bloc.ai.studio/credit-hub
       )}
 
       {/* REPAIR TAB */}
-      {activeTab === "repair" && (
+      
+        {activeTab === "live_macro" && (
+          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-neutral-900/50 border border-white/5 p-6 rounded-2xl">
+              <h2 className="text-xl font-bold text-white mb-2">Live Credit Macro Data</h2>
+              <p className="text-sm text-neutral-400 mb-6">Real-time data sourced from the Federal Reserve Economic Data (FRED) API.</p>
+              
+              {isMacroLoading ? (
+                <div className="flex items-center gap-2 text-neutral-400 p-4">
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  Fetching live data from FRED...
+                </div>
+              ) : macroData ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 rounded-xl bg-black/40 border border-white/5">
+                    <h3 className="text-sm font-bold text-neutral-400 uppercase tracking-wider mb-2">Credit Card Delinquency Rate</h3>
+                    <div className="text-3xl font-black text-white">{macroData.delinquencies?.[0]?.value}%</div>
+                    <p className="text-xs text-neutral-500 mt-2">Delinquency Rate on Credit Card Loans, All Commercial Banks<br/>Last updated: {macroData.delinquencies?.[0]?.date}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-black/40 border border-white/5">
+                    <h3 className="text-sm font-bold text-neutral-400 uppercase tracking-wider mb-2">Average CC Interest Rate</h3>
+                    <div className="text-3xl font-black text-white">{macroData.interestRates?.[0]?.value}%</div>
+                    <p className="text-xs text-neutral-500 mt-2">Commercial Bank Interest Rate on Credit Card Plans<br/>Last updated: {macroData.interestRates?.[0]?.date}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl bg-red-900/20 text-red-400 text-sm">Failed to load macro data.</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === "repair" && (
         <div className="space-y-6">
           {/* FCRA Consumer Rights Cheat Sheet */}
           <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-950/80 via-neutral-900 to-slate-900 border border-indigo-500/30 space-y-3">

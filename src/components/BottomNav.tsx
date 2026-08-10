@@ -64,7 +64,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   const isCreditActive = !isTerminalOpen && activeTab === "credit";
   const isEducationActive =
     !isTerminalOpen &&
-    ["investopedia", "small_business", "youtube", "terminal_guide"].includes(activeTab);
+    ["investopedia", "small_business", "youtube", "terminal_guide", "mit_courses"].includes(activeTab);
 
   return (
     <>
@@ -405,6 +405,24 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => handleNavigate("mit_courses")}
+                className="p-3.5 bg-neutral-900/90 border border-purple-500/50 hover:border-purple-400 hover:bg-purple-950/40 rounded-xl text-left transition-all group flex items-start gap-3 cursor-pointer active:scale-95"
+              >
+                <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400 shrink-0">
+                  <GraduationCap className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-white group-hover:text-purple-300 flex items-center justify-between">
+                    MIT & University Courses
+                    <ChevronRight className="w-4 h-4 text-purple-400" />
+                  </h4>
+                  <p className="text-[11px] text-purple-300/80 mt-0.5">
+                    Free official lectures & playlists from MIT OpenCourseWare, Yale, and Stanford.
+                  </p>
+                </div>
+              </button>
+
               <button
                 onClick={() => handleNavigate("terminal_guide")}
                 className="p-3.5 bg-neutral-900/90 border border-amber-500/50 hover:border-amber-400 hover:bg-amber-950/40 rounded-xl text-left transition-all group flex items-start gap-3 cursor-pointer active:scale-95"

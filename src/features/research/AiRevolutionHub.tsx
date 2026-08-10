@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useSubTabUrl } from "../../hooks/useSubTabUrl";
 import {
   Sparkles,
   Bot,
@@ -52,9 +53,11 @@ interface AiRevolutionHubProps {
 }
 
 export const AiRevolutionHub: React.FC<AiRevolutionHubProps> = ({ initialTab }) => {
-  const [activeTab, setActiveTab] = useState<
-    "value_chain" | "intent_engine" | "prompting" | "tools" | "build_apps" | "prompt_generator" | "impact" | "robotaxi_vs_housing"
-  >(initialTab || "value_chain");
+  const [activeTab, setActiveTab] = useSubTabUrl(
+    "/research/ai-revolution",
+    ["value_chain", "intent_engine", "prompting", "tools", "build_apps", "prompt_generator", "impact", "robotaxi_vs_housing"] as const,
+    initialTab || "value_chain"
+  );
 
   useEffect(() => {
     if (initialTab) {

@@ -1511,6 +1511,178 @@ async function fetchAndProcessFeed(feedKey: 'market' | 'sec' | 'dyson' | 'news')
   return processedData;
 }
 
+
+// --- Macro & Space Integration Endpoints ---
+
+app.get('/api/macro/real-estate', async (req, res) => {
+  try {
+    const apiKey = process.env.FRED_API_KEY;
+    if (!apiKey) {
+      return res.status(401).json({ error: 'FRED_API_KEY is not configured.' });
+    }
+    
+    // Fetch Mortgage Rates (MORTGAGE30US)
+    const mortgageRes = await fetch(`https://api.stlouisfed.org/fred/series/observations?series_id=MORTGAGE30US&api_key=${apiKey}&file_type=json&sort_order=desc&limit=12`);
+    const mortgageData = await mortgageRes.json();
+    
+    // Fetch Housing Starts (HOUST)
+    const houstRes = await fetch(`https://api.stlouisfed.org/fred/series/observations?series_id=HOUST&api_key=${apiKey}&file_type=json&sort_order=desc&limit=12`);
+    const houstData = await houstRes.json();
+
+    // Fetch Case-Shiller Index (CSUSHPINSA)
+    const csRes = await fetch(`https://api.stlouisfed.org/fred/series/observations?series_id=CSUSHPINSA&api_key=${apiKey}&file_type=json&sort_order=desc&limit=12`);
+    const csData = await csRes.json();
+
+    res.json({
+      mortgage: mortgageData.observations || [],
+      housingStarts: houstData.observations || [],
+      caseShiller: csData.observations || []
+    });
+  } catch (e) {
+    console.error('Error fetching real estate macro data:', e);
+    res.status(500).json({ error: 'Failed to fetch real estate data' });
+  }
+});
+
+app.get('/api/macro/credit', async (req, res) => {
+  try {
+    const apiKey = process.env.FRED_API_KEY;
+    if (!apiKey) {
+      return res.status(401).json({ error: 'FRED_API_KEY is not configured.' });
+    }
+    
+    // Fetch Delinquency Rate on Credit Card Loans (DRCCLACBS)
+    const delinqRes = await fetch(`https://api.stlouisfed.org/fred/series/observations?series_id=DRCCLACBS&api_key=${apiKey}&file_type=json&sort_order=desc&limit=12`);
+    const delinqData = await delinqRes.json();
+
+    // Fetch Commercial Bank Interest Rate on Credit Cards (TERMCBCCALLNS)
+    const rateRes = await fetch(`https://api.stlouisfed.org/fred/series/observations?series_id=TERMCBCCALLNS&api_key=${apiKey}&file_type=json&sort_order=desc&limit=12`);
+    const rateData = await rateRes.json();
+
+    res.json({
+      delinquencies: delinqData.observations || [],
+      interestRates: rateData.observations || []
+    });
+  } catch (e) {
+    console.error('Error fetching credit macro data:', e);
+    res.status(500).json({ error: 'Failed to fetch credit data' });
+  }
+});
+
+app.get('/api/space/news', async (req, res) => {
+  try {
+    // Spaceflight News API v4
+    const newsRes = await fetch('https://api.spaceflightnewsapi.net/v4/articles?limit=15');
+    const newsData = await newsRes.json();
+    res.json(newsData.results || []);
+  } catch (e) {
+    console.error('Error fetching space news:', e);
+    res.status(500).json({ error: 'Failed to fetch space news' });
+  }
+});
+
+app.get('/api/space/launches', async (req, res) => {
+  try {
+    // SpaceX API v4
+    const upcomingRes = await fetch('https://api.spacexdata.com/v4/launches/upcoming');
+    const upcomingData = await upcomingRes.json();
+    
+    const pastRes = await fetch('https://api.spacexdata.com/v4/launches/past');
+    const pastData = await pastRes.json();
+    
+    res.json({
+      upcoming: upcomingData || [],
+      past: (pastData || []).slice(-10).reverse() // get 10 most recent past launches
+    });
+  } catch (e) {
+    console.error('Error fetching spacex launches:', e);
+    res.status(500).json({ error: 'Failed to fetch spacex launches' });
+  }
+});
+
+
+
+// --- Education Integration Endpoints ---
+
+async function fetchFreeUniversityRssFeeds() {
+  const channels = [
+    { id: "UCEBb1b_L6zDS3xTUrIALZOw", name: "MIT OpenCourseWare" },
+    { id: "UC4EY_qnSeAP1xG14JE2A_Dw", name: "YaleCourses" },
+    { id: "UC03yXACt3AAnKkWdpO_JmFA", name: "Stanford Online" }
+  ];
+  
+  const allItems: any[] = [];
+  
+  for (const ch of channels) {
+    try {
+      const res = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${ch.id}`);
+      if (!res.ok) continue;
+      const xml = await res.text();
+      const entries = xml.split("<entry>");
+      
+      for (let i = 1; i < entries.length; i++) {
+        const entry = entries[i];
+        const videoIdMatch = entry.match(/<yt:videoId>(.*?)<\/yt:videoId>/);
+        const titleMatch = entry.match(/<title>(.*?)<\/title>/);
+        const publishedMatch = entry.match(/<published>(.*?)<\/published>/);
+        const mediaDescriptionMatch = entry.match(/<media:description>([\s\S]*?)<\/media:description>/);
+        
+        if (videoIdMatch && titleMatch) {
+          const videoId = videoIdMatch[1];
+          const title = titleMatch[1];
+          const published = publishedMatch ? publishedMatch[1] : new Date().toISOString();
+          const description = mediaDescriptionMatch ? mediaDescriptionMatch[1] : "";
+          
+          allItems.push({
+            id: videoId,
+            snippet: {
+              title,
+              description,
+              publishedAt: published,
+              channelTitle: ch.name,
+              thumbnails: {
+                medium: { url: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` },
+                default: { url: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }
+              }
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn(`[Education RSS] Error fetching RSS for ${ch.name}:`, e);
+    }
+  }
+  
+  // Sort by published date descending
+  return allItems.sort((a, b) => new Date(b.snippet.publishedAt).getTime() - new Date(a.snippet.publishedAt).getTime());
+}
+
+app.get('/api/education/youtube-courses', async (req, res) => {
+  try {
+    const apiKey = process.env.YOUTUBE_API_KEY;
+    if (apiKey) {
+      try {
+        const mitId = 'UCEBb1b_L6zDS3xTUrIALZOw';
+        const ytRes = await fetch(`https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&channelId=${mitId}&maxResults=10&key=${apiKey}`);
+        const data = await ytRes.json();
+        
+        if (!data.error && data.items && data.items.length > 0) {
+          return res.json(data.items);
+        }
+      } catch (err) {
+        console.warn('[YouTube API] Failed, falling back to RSS feeds:', err);
+      }
+    }
+    
+    // 100% Free Fallback using YouTube RSS Feeds (Zero API keys required)
+    const rssItems = await fetchFreeUniversityRssFeeds();
+    res.json(rssItems);
+  } catch (e) {
+    console.error('Error fetching youtube course data:', e);
+    res.status(500).json({ error: 'Failed to fetch youtube course data' });
+  }
+});
+
 // Proxy Endpoints
 app.get('/api/data/market', async (req, res) => {
   const data = await fetchAndProcessFeed('market');

@@ -182,6 +182,10 @@ const DocsHub = safeLazy(
   () => import("../features/education/DocsHub"),
   "DocsHub"
 );
+const MitCoursesHub = safeLazy(
+  () => import("../features/education/MitCoursesHub"),
+  "MitCoursesHub"
+);
 const TerminalGuideHub = safeLazy(
   () => import("../features/education/TerminalGuideHub"),
   "TerminalGuideHub"
@@ -1309,6 +1313,8 @@ export function App() {
             onNavigateTab={handleSelectTab}
           />
         )}
+        
+        {activeTab === "mit_courses" && <MitCoursesHub />}
 
         {activeTab === "investopedia" && (
           <div className="p-4">
