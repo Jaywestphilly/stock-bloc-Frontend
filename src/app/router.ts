@@ -186,6 +186,7 @@ export function getRouteFromLocation(): RouteState {
     else if (path.startsWith("/research/dyson-swarm/")) tab = "dyson_swarm";
     else if (path.startsWith("/research/ai-revolution/")) tab = "ai_revolution";
     else if (path.startsWith("/intelligence/")) tab = "intelligence";
+    else if (path.startsWith("/war-gov-ufo/")) tab = "war_gov_ufo";
   }
 
   return { tab: tab || "watchlist", isTerminalOpen: false };
@@ -231,7 +232,8 @@ export function pushAppRoute(tab: ViewTab, isTerminalOpen = false) {
       (targetPath === "/real-estate" && currentPath.startsWith("/real-estate/")) ||
       (targetPath === "/research/dyson-swarm" && currentPath.startsWith("/research/dyson-swarm/")) ||
       (targetPath === "/research/ai-revolution" && currentPath.startsWith("/research/ai-revolution/")) ||
-      (targetPath === "/intelligence" && currentPath.startsWith("/intelligence/"))
+      (targetPath === "/intelligence" && currentPath.startsWith("/intelligence/")) ||
+      (targetPath === "/war-gov-ufo" && currentPath.startsWith("/war-gov-ufo/"))
     ) {
       // Don't push over existing sub-tab
     } else {

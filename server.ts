@@ -1600,6 +1600,359 @@ app.get('/api/space/launches', async (req, res) => {
   }
 });
 
+// Bi-Weekly Defense Department Contract Award Periods API
+app.get('/api/defense/periods', async (req, res) => {
+  try {
+    const periods = [
+      {
+        periodId: "2026-08-T2",
+        periodName: "AUG 2026 — PERIOD 2 (AUG 01 - AUG 14, 2026)",
+        totalAwardedMillions: 18450,
+        topContractor: "Lockheed Martin (LMT)",
+        contractCount: 14,
+        lastUpdated: new Date().toISOString(),
+        nextPeriodSync: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+        awards: [
+          {
+            id: "DOD-2026-0824-LMT",
+            contractor: "Lockheed Martin Corp",
+            ticker: "LMT",
+            branch: "US Air Force / Space Development Agency",
+            amountMillions: 4250,
+            awardDate: "AUG 11, 2026",
+            title: "F-35 Block 4 Avionics & Hypersonic Glide Vehicle Integration",
+            category: "Missiles & Hypersonics",
+            uapTechBridge: "Exotic Propulsion Airframe Thermal Absorption & Low-Observable RCS",
+            revenueImpactPercent: 6.2,
+          },
+          {
+            id: "DOD-2026-0822-PLTR",
+            contractor: "Palantir Technologies",
+            ticker: "PLTR",
+            branch: "DoD AARO / US Space Command",
+            amountMillions: 880,
+            awardDate: "AUG 09, 2026",
+            title: "Maven AI C4ISR Cloud Matrix & UAP Anomaly Telemetry Ingestion",
+            category: "Defense AI & Cyber",
+            uapTechBridge: "AARO Sensor Telemetry Aggregation & Gravitational Anomaly Trajectory Processing",
+            revenueImpactPercent: 22.4,
+          },
+          {
+            id: "DOD-2026-0820-RTX",
+            contractor: "RTX Corp (Raytheon)",
+            ticker: "RTX",
+            branch: "US Navy NAVAIR",
+            amountMillions: 3120,
+            awardDate: "AUG 07, 2026",
+            title: "APG-79 AESA Radar Upgrades & ATFLIR Sensor Array Expansion",
+            category: "Air & Space",
+            uapTechBridge: "AESA Active Jamming Suppression & Gimbal Optical IR Tracking",
+            revenueImpactPercent: 4.5,
+          },
+          {
+            id: "DOD-2026-0818-NOC",
+            contractor: "Northrop Grumman",
+            ticker: "NOC",
+            branch: "US Air Force Global Strike Command",
+            amountMillions: 3890,
+            awardDate: "AUG 05, 2026",
+            title: "B-21 Raider Stealth Bomber Production Batch 3 & Space Tracking Array",
+            category: "Air & Space",
+            uapTechBridge: "Byeman-Class Deep Space Radar & Plasma Envelope Stealth Shielding",
+            revenueImpactPercent: 9.8,
+          },
+          {
+            id: "DOD-2026-0815-AVAV",
+            contractor: "AeroVironment",
+            ticker: "AVAV",
+            branch: "US Army Special Operations Command",
+            amountMillions: 620,
+            awardDate: "AUG 03, 2026",
+            title: "Switchblade 600 Precision Loitering Munitions & Autonomous Drone Swarms",
+            category: "Autonomous Swarms",
+            uapTechBridge: "Low-Acoustic Muted Hydro-Aero Flight Dynamics & Swarm Mesh Networking",
+            revenueImpactPercent: 18.5,
+          },
+          {
+            id: "DOD-2026-0812-KTOS",
+            contractor: "Kratos Defense",
+            ticker: "KTOS",
+            branch: "US Air Force Research Lab (AFRL)",
+            amountMillions: 440,
+            awardDate: "AUG 02, 2026",
+            title: "XQ-58A Valkyrie High-Speed Unmanned Tactical Target Drones",
+            category: "Autonomous Swarms",
+            uapTechBridge: "Mach 5+ Hypersonic Unmanned Target Simulation Array",
+            revenueImpactPercent: 14.1,
+          },
+          {
+            id: "DOD-2026-0810-RKLB",
+            contractor: "Rocket Lab USA",
+            ticker: "RKLB",
+            branch: "US Space Force / SDA",
+            amountMillions: 515,
+            awardDate: "AUG 01, 2026",
+            title: "Tactical Response Space Launch & Military Satellite Constellation Bus",
+            category: "Air & Space",
+            uapTechBridge: "Orbital Rapid Insertion & Hypersonic Re-entry Trajectory Telemetry",
+            revenueImpactPercent: 21.0,
+          },
+        ]
+      },
+      {
+        periodId: "2026-07-T2",
+        periodName: "JUL 2026 — PERIOD 2 (JUL 16 - JUL 31, 2026)",
+        totalAwardedMillions: 16200,
+        topContractor: "General Dynamics (GD)",
+        contractCount: 12,
+        lastUpdated: "2026-07-31T23:59:59.000Z",
+        nextPeriodSync: "2026-08-14T00:00:00.000Z",
+        awards: [
+          {
+            id: "DOD-2026-0728-GD",
+            contractor: "General Dynamics",
+            ticker: "GD",
+            branch: "US Navy NAVSEA",
+            amountMillions: 5400,
+            awardDate: "JUL 28, 2026",
+            title: "Virginia-Class Nuclear Submarine Block VI Sonar & Underwater Acoustic Array",
+            category: "Maritime & Submarines",
+            uapTechBridge: "Trans-Medium Hydro-Acoustic Cavitation & Sub-Surface Anomaly Sonar",
+            revenueImpactPercent: 12.3,
+          },
+          {
+            id: "DOD-2026-0725-BA",
+            contractor: "Boeing Defense",
+            ticker: "BA",
+            branch: "US Air Force / DARPA",
+            amountMillions: 3950,
+            awardDate: "JUL 25, 2026",
+            title: "Phantom Works Autonomous Airframe Prototyping & Hypersonic Interceptor",
+            category: "Missiles & Hypersonics",
+            uapTechBridge: "Mach 15+ Atmospheric Re-entry Friction Dissipation",
+            revenueImpactPercent: 5.1,
+          },
+          {
+            id: "DOD-2026-0720-LHX",
+            contractor: "L3Harris Technologies",
+            ticker: "LHX",
+            branch: "US Space Force / Missile Defense Agency",
+            amountMillions: 2200,
+            awardDate: "JUL 20, 2026",
+            title: "Tracking Layer Tranche 2 Satellite Payloads & Tactical Radio Comms",
+            category: "Air & Space",
+            uapTechBridge: "Deep Space Optical Sensors & Zero-Point Frequency Spectrum Analysis",
+            revenueImpactPercent: 11.2,
+          },
+          {
+            id: "DOD-2026-0718-LDOS",
+            contractor: "Leidos",
+            ticker: "LDOS",
+            branch: "Defense Information Systems Agency (DISA)",
+            amountMillions: 1850,
+            awardDate: "JUL 18, 2026",
+            title: "Military Cloud Edge Computing & DoD AI Cyber Shielding",
+            category: "Defense AI & Cyber",
+            uapTechBridge: "Federated Defense Threat Detection & Telemetry Anomaly Classification",
+            revenueImpactPercent: 11.8,
+          },
+        ]
+      }
+    ];
+
+    res.json({
+      activePeriod: periods[0],
+      allPeriods: periods,
+    });
+  } catch (e) {
+    console.error('Error fetching defense contract tranches:', e);
+    res.status(500).json({ error: 'Failed to fetch defense contract periods' });
+  }
+});
+
+// Defense Department Adjacent Watchlist API
+app.get('/api/defense/watchlist', async (req, res) => {
+  try {
+    const defenseWatchlist = [
+      {
+        ticker: "LMT",
+        name: "Lockheed Martin Corp",
+        price: 468.20,
+        changePercent: 1.85,
+        marketCap: "$114.2B",
+        peRatio: 17.4,
+        dividendYield: 2.75,
+        dodBacklogBillions: 160.5,
+        ytdContractAwardsMillions: 24850,
+        primaryBranch: "US Air Force / Space Force",
+        clearanceLevel: "TOP SECRET // SCI // SAP",
+        domain: "Air & Space",
+        uapTechRole: "Skunk Works exotic airframe prototyping, F-35 Block 4 avionics & hypersonic glide interceptors.",
+        investmentThesis: "Dominant prime contractor holding massive $160B backlog with steady 2.75% dividend yield and recurring F-35 cash flow.",
+        analystRating: "Strong Buy"
+      },
+      {
+        ticker: "NOC",
+        name: "Northrop Grumman Corp",
+        price: 504.60,
+        changePercent: 2.10,
+        marketCap: "$75.8B",
+        peRatio: 19.8,
+        dividendYield: 1.62,
+        dodBacklogBillions: 84.2,
+        ytdContractAwardsMillions: 16400,
+        primaryBranch: "US Air Force / Global Strike",
+        clearanceLevel: "TOP SECRET // BYEMAN",
+        domain: "Air & Space",
+        uapTechRole: "B-21 Raider stealth bomber, next-gen ICBM Sentinel program, and deep space surveillance optics.",
+        investmentThesis: "Sole-source provider for America's nuclear triad modernization (B-21 & Sentinel) ensuring 10+ year revenue visibility.",
+        analystRating: "Strong Buy"
+      },
+      {
+        ticker: "RTX",
+        name: "RTX Corp (Raytheon)",
+        price: 120.40,
+        changePercent: 0.95,
+        marketCap: "$160.5B",
+        peRatio: 22.1,
+        dividendYield: 2.10,
+        dodBacklogBillions: 202.0,
+        ytdContractAwardsMillions: 28900,
+        primaryBranch: "US Navy & Air Force",
+        clearanceLevel: "SECRET // NOFORN",
+        domain: "Missiles & Hypersonics",
+        uapTechRole: "APG-79 AESA Radars, ATFLIR optical trackers, Patriot missile defense & directed energy lasers.",
+        investmentThesis: "Record $202B backlog driven by global rearmament, Patriot interceptor demand, and commercial aerospace recovery.",
+        analystRating: "Buy"
+      },
+      {
+        ticker: "PLTR",
+        name: "Palantir Technologies",
+        price: 46.80,
+        changePercent: 4.80,
+        marketCap: "$102.4B",
+        peRatio: 84.5,
+        dividendYield: 0.0,
+        dodBacklogBillions: 8.5,
+        ytdContractAwardsMillions: 2880,
+        primaryBranch: "DoD AARO / US Space Command",
+        clearanceLevel: "SECRET // FEDRAMP HIGH",
+        domain: "Defense AI & Cyber",
+        uapTechRole: "Project Maven AI C4ISR operating system, Titan ground stations, & AARO anomaly telemetry ingestion.",
+        investmentThesis: "Clear monopoly in battle-management AI and intelligence data integration for US DoD and Allied defense forces.",
+        analystRating: "Strong Buy"
+      },
+      {
+        ticker: "KTOS",
+        name: "Kratos Defense & Security",
+        price: 25.90,
+        changePercent: 3.25,
+        marketCap: "$3.95B",
+        peRatio: 42.0,
+        dividendYield: 0.0,
+        dodBacklogBillions: 1.4,
+        ytdContractAwardsMillions: 820,
+        primaryBranch: "US Air Force AFRL",
+        clearanceLevel: "SECRET // SPECIAL ACCESS",
+        domain: "Autonomous Swarms",
+        uapTechRole: "XQ-58A Valkyrie collaborative combat aircraft (CCA) & high-speed hypersonic target drones.",
+        investmentThesis: "Pure-play leader in low-cost attritable unmanned fighter drones and hypersonic rocket testing platforms.",
+        analystRating: "Buy"
+      },
+      {
+        ticker: "AVAV",
+        name: "AeroVironment Inc",
+        price: 198.50,
+        changePercent: 5.40,
+        marketCap: "$5.6B",
+        peRatio: 52.1,
+        dividendYield: 0.0,
+        dodBacklogBillions: 1.1,
+        ytdContractAwardsMillions: 950,
+        primaryBranch: "US Army / USMC / SOCOM",
+        clearanceLevel: "SECRET // SOCOM",
+        domain: "Autonomous Swarms",
+        uapTechRole: "Switchblade 300/600 loitering munition drones, Puma tactical UAS, and autonomous swarm AI.",
+        investmentThesis: "Unrivaled leader in battlefield kamikaze loitering drones, seeing exponential growth in international & DoD orders.",
+        analystRating: "Strong Buy"
+      },
+      {
+        ticker: "GD",
+        name: "General Dynamics",
+        price: 298.10,
+        changePercent: 1.15,
+        marketCap: "$81.2B",
+        peRatio: 18.2,
+        dividendYield: 1.92,
+        dodBacklogBillions: 93.6,
+        ytdContractAwardsMillions: 19800,
+        primaryBranch: "US Navy NAVSEA",
+        clearanceLevel: "TOP SECRET // NAVSEA",
+        domain: "Maritime & Submarines",
+        uapTechRole: "Virginia and Columbia-class nuclear submarines, Abrams tank platforms, & IT defense infrastructure.",
+        investmentThesis: "Sole manufacturer of US nuclear submarine hull structures with guaranteed multi-decade naval funding.",
+        analystRating: "Buy"
+      },
+      {
+        ticker: "RKLB",
+        name: "Rocket Lab USA",
+        price: 9.85,
+        changePercent: 6.20,
+        marketCap: "$4.9B",
+        peRatio: 0,
+        dividendYield: 0.0,
+        dodBacklogBillions: 1.05,
+        ytdContractAwardsMillions: 640,
+        primaryBranch: "US Space Force / SDA",
+        clearanceLevel: "SECRET // SPACE FORCE",
+        domain: "Air & Space",
+        uapTechRole: "Electron & Neutron orbital launch rockets, SDA satellite constellation buses, and hypersonic re-entry testing.",
+        investmentThesis: "Number 2 commercial launcher globally behind SpaceX, rapidly winning high-margin Space Force defense satellite contracts.",
+        analystRating: "Buy"
+      },
+      {
+        ticker: "LHX",
+        name: "L3Harris Technologies",
+        price: 232.40,
+        changePercent: 1.40,
+        marketCap: "$43.8B",
+        peRatio: 18.9,
+        dividendYield: 2.05,
+        dodBacklogBillions: 33.5,
+        ytdContractAwardsMillions: 8900,
+        primaryBranch: "US Space Force & Army",
+        clearanceLevel: "TOP SECRET // SCI",
+        domain: "Air & Space",
+        uapTechRole: "Tactical radios, missile tracking satellite payloads, and Aerojet Rocketdyne solid rocket motors.",
+        investmentThesis: "Essential provider of battlefield communications and sole domestic producer of hypersonic solid rocket motors.",
+        analystRating: "Buy"
+      },
+      {
+        ticker: "LDOS",
+        name: "Leidos Holdings",
+        price: 158.20,
+        changePercent: 2.05,
+        marketCap: "$21.5B",
+        peRatio: 16.8,
+        dividendYield: 0.98,
+        dodBacklogBillions: 38.0,
+        ytdContractAwardsMillions: 6700,
+        primaryBranch: "DISA / Intelligence Community",
+        clearanceLevel: "TOP SECRET // SCI",
+        domain: "Defense AI & Cyber",
+        uapTechRole: "Mayhem air-breathing hypersonic system, DISA cloud migration, and intelligence threat analytics.",
+        investmentThesis: "Largest defense IT and intelligence systems integrator benefiting from DoD digital cloud transformation.",
+        analystRating: "Buy"
+      }
+    ];
+
+    res.json(defenseWatchlist);
+  } catch (e) {
+    console.error('Error fetching defense watchlist:', e);
+    res.status(500).json({ error: 'Failed to fetch defense watchlist' });
+  }
+});
+
 
 
 // --- Education Integration Endpoints ---
