@@ -1,3 +1,29 @@
+
+const safeStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      if (typeof window !== 'undefined') {
+        return window.localStorage.getItem(key);
+      }
+    } catch (e) {}
+    return null;
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(key, value);
+      }
+    } catch (e) {}
+  },
+  removeItem: (key: string): void => {
+    try {
+      if (typeof window !== 'undefined') {
+        window.localStorage.removeItem(key);
+      }
+    } catch (e) {}
+  }
+};
+
 import React, { useState, useEffect, useMemo } from "react";
 import { motion } from "motion/react";
 import {
@@ -72,7 +98,7 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
   // Local state persisted in localStorage
   const [positions, setPositions] = useState<PortfolioPosition[]>(() => {
     try {
-      const saved = localStorage.getItem("stockbloc_portfolio_positions");
+      const saved = safeStorage.getItem("stockbloc_portfolio_positions");
       return saved
         ? JSON.parse(saved)
         : [
@@ -87,7 +113,7 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
 
   const [preferences, setPreferences] = useState<UserPreferences>(() => {
     try {
-      const saved = localStorage.getItem("stockbloc_user_prefs");
+      const saved = safeStorage.getItem("stockbloc_user_prefs");
       return saved
         ? JSON.parse(saved)
         : {
@@ -116,10 +142,10 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
 
   // API Key & Subscription State
   const [apiKey, setApiKey] = useState<string | null>(() => {
-    return localStorage.getItem("stockbloc_api_key") || "sb_live_8f3a91c74e2d_99182a";
+    return safeStorage.getItem("stockbloc_api_key") || "sb_live_8f3a91c74e2d_99182a";
   });
   const [apiCredits, setApiCredits] = useState<number>(() => {
-    const val = localStorage.getItem("stockbloc_api_credits");
+    const val = safeStorage.getItem("stockbloc_api_credits");
     return val ? parseInt(val, 10) : 2850;
   });
   const [apiTotalCredits, setApiTotalCredits] = useState<number>(3000);
@@ -136,7 +162,7 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
     downloadUrl: string;
   }>>(() => {
     try {
-      const saved = localStorage.getItem("stockbloc_purchased_ebooks");
+      const saved = safeStorage.getItem("stockbloc_purchased_ebooks");
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
@@ -182,10 +208,10 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
         const data = await res.json();
         if (data.status === "ok" && data.profile?.purchasedItems?.length) {
           setPurchasedItems(data.profile.purchasedItems);
-          localStorage.setItem("stockbloc_purchased_ebooks", JSON.stringify(data.profile.purchasedItems));
+          safeStorage.setItem("stockbloc_purchased_ebooks", JSON.stringify(data.profile.purchasedItems));
           if (data.profile.apiKey) {
             setApiKey(data.profile.apiKey);
-            localStorage.setItem("stockbloc_api_key", data.profile.apiKey);
+            safeStorage.setItem("stockbloc_api_key", data.profile.apiKey);
           }
         }
       } catch (err) {
@@ -214,21 +240,21 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
       if (data.status === "ok" && data.key) {
         setApiKey(data.key);
         setApiCredits(data.creditsRemaining || 3000);
-        localStorage.setItem("stockbloc_api_key", data.key);
-        localStorage.setItem("stockbloc_api_credits", String(data.creditsRemaining || 3000));
+        safeStorage.setItem("stockbloc_api_key", data.key);
+        safeStorage.setItem("stockbloc_api_credits", String(data.creditsRemaining || 3000));
       } else {
         const newKey = `sb_live_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString(36)}`;
         setApiKey(newKey);
         setApiCredits(3000);
-        localStorage.setItem("stockbloc_api_key", newKey);
-        localStorage.setItem("stockbloc_api_credits", "3000");
+        safeStorage.setItem("stockbloc_api_key", newKey);
+        safeStorage.setItem("stockbloc_api_credits", "3000");
       }
     } catch {
       const newKey = `sb_live_${Math.random().toString(36).substring(2, 10)}_${Date.now().toString(36)}`;
       setApiKey(newKey);
       setApiCredits(3000);
-      localStorage.setItem("stockbloc_api_key", newKey);
-      localStorage.setItem("stockbloc_api_credits", "3000");
+      safeStorage.setItem("stockbloc_api_key", newKey);
+      safeStorage.setItem("stockbloc_api_credits", "3000");
     } finally {
       setIsGeneratingKey(false);
     }
@@ -251,13 +277,13 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
     }
 
     setApiKey(null);
-    localStorage.removeItem("stockbloc_api_key");
+    safeStorage.removeItem("stockbloc_api_key");
   };
 
 
   useEffect(() => {
     try {
-      localStorage.setItem("stockbloc_portfolio_positions", JSON.stringify(positions));
+      safeStorage.setItem("stockbloc_portfolio_positions", JSON.stringify(positions));
     } catch (e) {
       console.error("Failed to save portfolio positions", e);
     }
@@ -265,7 +291,7 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
 
   useEffect(() => {
     try {
-      localStorage.setItem("stockbloc_user_prefs", JSON.stringify(preferences));
+      safeStorage.setItem("stockbloc_user_prefs", JSON.stringify(preferences));
     } catch (e) {
       console.error("Failed to save preferences", e);
     }

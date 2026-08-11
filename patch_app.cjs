@@ -1,16 +1,26 @@
 const fs = require('fs');
-let app = fs.readFileSync('src/app/App.tsx', 'utf-8');
+let code = fs.readFileSync('src/app/App.tsx', 'utf8');
 
-const importStatement = `const MitCoursesHub = safeLazy(
-  () => import("../features/education/MitCoursesHub").then(module => ({ default: module.MitCoursesHub })),
-  "MitCoursesHub"
-);`;
+// Replace localStorage.setItem("stock_bloc_onboarding_dismissed"
+code = code.replace(
+  /localStorage\.setItem\("stock_bloc_onboarding_dismissed", "true"\);/g,
+  'try { localStorage.setItem("stock_bloc_onboarding_dismissed", "true"); } catch (e) {}'
+);
 
-app = app.replace("const TerminalGuideHub", importStatement + "\nconst TerminalGuideHub");
+// Replace const dismissed = localStorage.getItem("stock_bloc_onboarding_dismissed");
+code = code.replace(
+  /const dismissed = localStorage\.getItem\("stock_bloc_onboarding_dismissed"\);/g,
+  'let dismissed = null; try { dismissed = localStorage.getItem("stock_bloc_onboarding_dismissed"); } catch (e) {}'
+);
 
-const renderStatement = `        {activeTab === "mit_courses" && <MitCoursesHub />}`;
+// Replace localStorage.getItem("stockbloc_day_mode") if it isn't wrapped
+// Wait, in App.tsx it's currently:
+//      const stored = localStorage.getItem("stockbloc_day_mode");
+//      if (stored === null) {
+// let's just wrap it.
+code = code.replace(
+  /const stored = localStorage\.getItem\("stockbloc_day_mode"\);/g,
+  'let stored = null; try { stored = localStorage.getItem("stockbloc_day_mode"); } catch (e) {}'
+);
 
-app = app.replace("{activeTab === \"terminal_guide\" && <TerminalGuideHub onOpenTerminal={() => handleSelectTab(\"terminal\")} />}", "{activeTab === \"terminal_guide\" && <TerminalGuideHub onOpenTerminal={() => handleSelectTab(\"terminal\")} />}\n" + renderStatement);
-
-fs.writeFileSync('src/app/App.tsx', app);
-console.log("Patched App.tsx");
+fs.writeFileSync('src/app/App.tsx', code);

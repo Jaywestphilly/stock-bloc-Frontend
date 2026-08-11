@@ -428,7 +428,7 @@ export function App() {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mediaQuery = window.matchMedia("(prefers-color-scheme: light)");
     const handleSystemThemeChange = (e: MediaQueryListEvent) => {
-      const stored = localStorage.getItem("stockbloc_day_mode");
+      let stored = null; try { stored = localStorage.getItem("stockbloc_day_mode"); } catch (e) {}
       if (stored === null) {
         setIsDayMode(e.matches);
       }
@@ -459,12 +459,12 @@ export function App() {
   useEffect(() => {
     try {
       if (isAgentOrHeadless()) {
-        localStorage.setItem("stock_bloc_onboarding_dismissed", "true");
+        try { localStorage.setItem("stock_bloc_onboarding_dismissed", "true"); } catch (e) {}
         setIsOnboardingOpen(false);
         return;
       }
 
-      const dismissed = localStorage.getItem("stock_bloc_onboarding_dismissed");
+      let dismissed = null; try { dismissed = localStorage.getItem("stock_bloc_onboarding_dismissed"); } catch (e) {}
       if (!dismissed) {
         const timer = setTimeout(() => {
           setIsOnboardingOpen(true);
