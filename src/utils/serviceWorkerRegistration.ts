@@ -5,6 +5,18 @@ export function registerServiceWorker() {
     return;
   }
 
+  // Unregister in development mode to prevent stale asset caching in iframe preview
+  if (import.meta.env.DEV) {
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const registration of registrations) {
+        registration.unregister();
+      }
+    }).catch(() => {
+      // Ignore unregister errors in dev
+    });
+    return;
+  }
+
   window.addEventListener("load", async () => {
     try {
       const registration = await navigator.serviceWorker.register("/sw.js", {

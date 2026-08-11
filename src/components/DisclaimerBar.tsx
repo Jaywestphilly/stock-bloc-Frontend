@@ -10,15 +10,21 @@ export const DisclaimerBar: React.FC<Props> = ({ onOpenDisclaimerModal }) => {
   const [isDismissed, setIsDismissed] = useState(true);
 
   useEffect(() => {
-    const dismissed = sessionStorage.getItem("stockbloc_disclaimer_dismissed");
-    if (!dismissed) {
+    try {
+      const dismissed = sessionStorage.getItem("stockbloc_disclaimer_dismissed");
+      if (!dismissed) {
+        setIsDismissed(false);
+      }
+    } catch (e) {
       setIsDismissed(false);
     }
   }, []);
 
   const handleDismiss = () => {
     triggerHaptic("selection");
-    sessionStorage.setItem("stockbloc_disclaimer_dismissed", "true");
+    try {
+      sessionStorage.setItem("stockbloc_disclaimer_dismissed", "true");
+    } catch (e) {}
     setIsDismissed(true);
   };
 

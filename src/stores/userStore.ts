@@ -13,8 +13,12 @@ interface UserState {
 
 const getInitialDayMode = () => {
   if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem("sb_theme_pref");
-    if (stored) return stored === "light";
+    try {
+      const stored = localStorage.getItem("sb_theme_pref");
+      if (stored) return stored === "light";
+    } catch (e) {
+      // ignore storage access error
+    }
   }
   return false;
 };
@@ -35,7 +39,9 @@ export const useUserStore = create<UserState>((set, get) => ({
   isDayMode: getInitialDayMode(),
   setIsDayMode: (isDayMode) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem("sb_theme_pref", isDayMode ? "light" : "dark");
+      try {
+        localStorage.setItem("sb_theme_pref", isDayMode ? "light" : "dark");
+      } catch (e) {}
     }
     set({ isDayMode });
   },
@@ -52,7 +58,9 @@ export const useUserStore = create<UserState>((set, get) => ({
       : [...starredTickers, symbol];
     
     if (typeof window !== 'undefined') {
-      localStorage.setItem("stock_bloc_saved", JSON.stringify(updated));
+      try {
+        localStorage.setItem("stock_bloc_saved", JSON.stringify(updated));
+      } catch (e) {}
     }
     set({ starredTickers: updated });
   }

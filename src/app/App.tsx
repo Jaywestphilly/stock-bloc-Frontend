@@ -34,7 +34,7 @@ function safeLazy<T extends React.ComponentType<any>>(
   return lazy(async () => {
     try {
       const module = await importFn();
-      sessionStorage.removeItem("app_script_reload_attempt");
+      try { sessionStorage.removeItem("app_script_reload_attempt"); } catch (e) {}
       const Component = exportName ? module[exportName] : (module.default || module);
       return { default: Component };
     } catch (error) {
@@ -42,14 +42,18 @@ function safeLazy<T extends React.ComponentType<any>>(
       await new Promise((resolve) => setTimeout(resolve, 600));
       try {
         const module = await importFn();
-        sessionStorage.removeItem("app_script_reload_attempt");
+        try { sessionStorage.removeItem("app_script_reload_attempt"); } catch (e) {}
         const Component = exportName ? module[exportName] : (module.default || module);
         return { default: Component };
       } catch (retryError) {
         console.error("Secondary module script import failed:", retryError);
-        const hasReloaded = sessionStorage.getItem("app_script_reload_attempt");
+        let hasReloaded = false;
+        try {
+          hasReloaded = !!sessionStorage.getItem("app_script_reload_attempt");
+        } catch (e) {}
+
         if (!hasReloaded) {
-          sessionStorage.setItem("app_script_reload_attempt", "true");
+          try { sessionStorage.setItem("app_script_reload_attempt", "true"); } catch (e) {}
           window.location.reload();
           return new Promise(() => {}); // pause to allow reload without boundary error
         }
@@ -59,7 +63,7 @@ function safeLazy<T extends React.ComponentType<any>>(
             <p>Please click below to refresh the workspace session.</p>
             <button
               onClick={() => {
-                sessionStorage.removeItem("app_script_reload_attempt");
+                try { sessionStorage.removeItem("app_script_reload_attempt"); } catch (e) {}
                 window.location.reload();
               }}
               className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold cursor-pointer transition-all"

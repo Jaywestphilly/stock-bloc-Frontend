@@ -10,10 +10,14 @@ export const FloatingCommunityButton: React.FC = () => {
   const [isDismissed, setIsDismissed] = useState(false);
 
   useEffect(() => {
-    const dismissed = sessionStorage.getItem("stockbloc_community_btn_dismissed");
-    if (dismissed) {
-      setIsDismissed(true);
-      return;
+    try {
+      const dismissed = sessionStorage.getItem("stockbloc_community_btn_dismissed");
+      if (dismissed) {
+        setIsDismissed(true);
+        return;
+      }
+    } catch (e) {
+      // ignore storage error
     }
 
     // Timer to reveal button after 5 seconds
@@ -38,7 +42,9 @@ export const FloatingCommunityButton: React.FC = () => {
   const handleDismiss = (e: React.MouseEvent) => {
     e.stopPropagation();
     triggerHaptic("selection");
-    sessionStorage.setItem("stockbloc_community_btn_dismissed", "true");
+    try {
+      sessionStorage.setItem("stockbloc_community_btn_dismissed", "true");
+    } catch (e) {}
     setIsDismissed(true);
     setIsOpen(false);
   };

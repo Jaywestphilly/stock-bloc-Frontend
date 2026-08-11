@@ -11,8 +11,12 @@ export const GlobalDisclaimerBar: React.FC<GlobalDisclaimerBarProps> = ({ onOpen
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    const dismissed = sessionStorage.getItem("sb_disclaimer_dismissed");
-    if (!dismissed) {
+    try {
+      const dismissed = sessionStorage.getItem("sb_disclaimer_dismissed");
+      if (!dismissed) {
+        setIsVisible(true);
+      }
+    } catch (e) {
       setIsVisible(true);
     }
   }, []);
@@ -22,7 +26,9 @@ export const GlobalDisclaimerBar: React.FC<GlobalDisclaimerBarProps> = ({ onOpen
   const handleDismiss = () => {
     triggerHaptic("light");
     setIsVisible(false);
-    sessionStorage.setItem("sb_disclaimer_dismissed", "true");
+    try {
+      sessionStorage.setItem("sb_disclaimer_dismissed", "true");
+    } catch (e) {}
   };
 
   const handleViewDisclaimer = (e: React.MouseEvent) => {
