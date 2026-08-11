@@ -1,6 +1,103 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+    (function() {
+      // 1. Safe localStorage polyfill
+      let isLocalStorageAvailable = false;
+      try {
+        const testKey = "__storage_test__";
+        window.localStorage.setItem(testKey, testKey);
+        window.localStorage.removeItem(testKey);
+        isLocalStorageAvailable = true;
+      } catch (e) {
+        isLocalStorageAvailable = false;
+      }
+
+      if (!isLocalStorageAvailable) {
+        console.warn("Native localStorage is blocked. Initializing safe mock storage.");
+        const mockStore = {};
+        const mockStorage = {
+          getItem: function(key) {
+            return mockStore.hasOwnProperty(key) ? mockStore[key] : null;
+          },
+          setItem: function(key, value) {
+            mockStore[key] = String(value);
+          },
+          removeItem: function(key) {
+            delete mockStore[key];
+          },
+          clear: function() {
+            for (let k in mockStore) delete mockStore[k];
+          },
+          key: function(index) {
+            const keys = Object.keys(mockStore);
+            return keys[index] || null;
+          },
+          get length() {
+            return Object.keys(mockStore).length;
+          }
+        };
+        try {
+          Object.defineProperty(window, 'localStorage', {
+            value: mockStorage,
+            writable: true,
+            configurable: true,
+            enumerable: true
+          });
+        } catch (err) {
+          console.error("Failed to polyfill localStorage", err);
+        }
+      }
+
+      // 2. Safe sessionStorage polyfill
+      let isSessionStorageAvailable = false;
+      try {
+        const testKey = "__session_test__";
+        window.sessionStorage.setItem(testKey, testKey);
+        window.sessionStorage.removeItem(testKey);
+        isSessionStorageAvailable = true;
+      } catch (e) {
+        isSessionStorageAvailable = false;
+      }
+
+      if (!isSessionStorageAvailable) {
+        console.warn("Native sessionStorage is blocked. Initializing safe mock storage.");
+        const mockStore = {};
+        const mockStorage = {
+          getItem: function(key) {
+            return mockStore.hasOwnProperty(key) ? mockStore[key] : null;
+          },
+          setItem: function(key, value) {
+            mockStore[key] = String(value);
+          },
+          removeItem: function(key) {
+            delete mockStore[key];
+          },
+          clear: function() {
+            for (let k in mockStore) delete mockStore[k];
+          },
+          key: function(index) {
+            const keys = Object.keys(mockStore);
+            return keys[index] || null;
+          },
+          get length() {
+            return Object.keys(mockStore).length;
+          }
+        };
+        try {
+          Object.defineProperty(window, 'sessionStorage', {
+            value: mockStorage,
+            writable: true,
+            configurable: true,
+            enumerable: true
+          });
+        } catch (err) {
+          console.error("Failed to polyfill sessionStorage", err);
+        }
+      }
+    })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Stock Bloc | Quant Wealth Terminal</title>
@@ -169,9 +266,9 @@
 
       function updateWatchlistState() {
         // 1. If watchlist is stored in localStorage
-        try {
-          const storedState = localStorage.getItem('stock_bloc_watchlist') || localStorage.getItem('watchlist');
-          if (storedState) {
+        const storedState = localStorage.getItem('stock_bloc_watchlist') || localStorage.getItem('watchlist');
+        if (storedState) {
+          try {
             let items = JSON.parse(storedState);
             // Remove legacy $SPACEX entries
             items = items.filter(item => item.symbol !== 'SPACEX' && item.displaySymbol !== '$SPACEX');
@@ -186,9 +283,9 @@
             
             localStorage.setItem('stock_bloc_watchlist', JSON.stringify(items));
             localStorage.setItem('watchlist', JSON.stringify(items));
+          } catch (e) {
+            console.warn("Could not parse local storage watchlist:", e);
           }
-        } catch (e) {
-          console.warn("Could not access or parse local storage watchlist:", e);
         }
 
         // 2. DOM text update fallback for rendered cards
