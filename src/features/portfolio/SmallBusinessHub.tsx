@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Briefcase,
   Scale,
@@ -30,6 +30,13 @@ export const SmallBusinessHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
     "formation" | "business_credit" | "startup_roadmap" | "valuation_calc"
   >("formation");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [activeTab]);
+
   const [copiedEinSteps, setCopiedEinSteps] = useState(false);
 
   // Cap Table / SAFE Dilution Estimator States

@@ -60,10 +60,19 @@ export const MarketIntelligenceHub: React.FC<MarketIntelligenceHubProps> = ({
     }
   }, [initialSubTab]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [activeSubTab]);
+
   const handleSelectTab = (tab: IntelligenceSubTab) => {
     setActiveSubTab(tab);
     if (onSubTabChange) {
       onSubTabChange(tab);
+    }
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     }
   };
 

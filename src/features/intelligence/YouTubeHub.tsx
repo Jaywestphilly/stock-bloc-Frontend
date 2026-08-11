@@ -56,6 +56,12 @@ export function extractYouTubeId(urlOrId: string): string | null {
 export const YouTubeHub: React.FC = () => {
   const [videos, setVideos] = useState<YouTubeVideo[]>(() => getStoredYouTubeVideos());
   const [selectedCategory, setSelectedCategory] = useState<string>("LATEST");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [selectedCategory]);
   const [activeVideo, setActiveVideo] = useState<YouTubeVideo | null>(null);
   const [copied, setCopied] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);

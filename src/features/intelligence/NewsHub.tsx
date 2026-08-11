@@ -110,6 +110,12 @@ const getItemTags = (item: CombinedFeedItem): string[] => {
 export const NewsHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"ALL" | "YOUTUBE" | "NEWS_VIDEOS">("ALL");
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [activeTab, selectedSector]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeVideoModal, setActiveVideoModal] = useState<YouTubeVideo | null>(null);
   const [feedVideos, setFeedVideos] = useState<YouTubeVideo[]>(() => getStoredYouTubeVideos());

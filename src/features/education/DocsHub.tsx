@@ -26,7 +26,7 @@ export const DocsHub: React.FC = () => {
             <h3 className="font-bold text-lg text-white">OpenAPI Spec</h3>
           </div>
           <p className="text-sm text-neutral-400 mb-4">RESTful endpoints for market data, portfolios, and user management.</p>
-          <a href="#" className="inline-flex items-center gap-2 text-xs font-bold text-blue-400 hover:text-blue-300 uppercase">
+          <a href="/openapi.json" className="inline-flex items-center gap-2 text-xs font-bold text-blue-400 hover:text-blue-300 uppercase">
             View Swagger UI <ArrowRight className="w-4 h-4" />
           </a>
         </div>
@@ -68,7 +68,7 @@ export const DocsHub: React.FC = () => {
             <h3 className="font-bold text-lg text-white">Integration Guides</h3>
           </div>
           <p className="text-sm text-neutral-400 mb-4">Tutorials for building custom agents using Stock Bloc tools.</p>
-          <a href="#" className="inline-flex items-center gap-2 text-xs font-bold text-amber-400 hover:text-amber-300 uppercase">
+          <a href="/llms.txt" className="inline-flex items-center gap-2 text-xs font-bold text-amber-400 hover:text-amber-300 uppercase">
             Read Docs <ArrowRight className="w-4 h-4" />
           </a>
         </div>

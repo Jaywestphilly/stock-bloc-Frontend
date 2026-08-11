@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BookOpen,
   ShieldCheck,
@@ -40,6 +40,12 @@ export const PlaybooksHub: React.FC<Props> = ({ onSelectTab }) => {
   const [checkoutNotice, setCheckoutNotice] = useState<string | null>(null);
   const [copiedPromptId, setCopiedPromptId] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<"all" | "leaderboard" | "notebook" | "prompts" | "discovery" | "books">("all");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [activeSubTab]);
 
   const handleCopyPrompt = (promptId: string, promptText: string) => {
     triggerHaptic("selection");

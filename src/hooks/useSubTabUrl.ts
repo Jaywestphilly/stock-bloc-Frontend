@@ -20,16 +20,26 @@ export function useSubTabUrl<T extends string>(
     setActiveTabState(tab);
     if (typeof window !== "undefined") {
       window.history.pushState({}, "", `${basePath}/${tab}`);
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     }
   }, [basePath]);
 
   useEffect(() => {
     const handlePopState = () => {
       setActiveTabState(getInitialTab());
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
     };
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, [getInitialTab]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [activeTab]);
 
   return [activeTab, setActiveTab];
 }

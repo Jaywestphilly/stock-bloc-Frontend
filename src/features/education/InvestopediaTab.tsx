@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import {
   BookOpen,
@@ -207,6 +207,12 @@ export const InvestopediaTab: React.FC<InvestopediaTabProps> = ({
     | "real_estate"
     | "credit"
   >("all");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [activeSection, selectedCategory]);
 
   const filteredTerms = EXTENDED_INDICATORS.filter((item) => {
     const matchesCategory =

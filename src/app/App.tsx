@@ -307,6 +307,9 @@ export function App() {
   // Sync route history and window popstate
   useEffect(() => {
     pushAppRoute(activeTab, isBloombergTerminalOpen);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
 
     const handlePopState = () => {
       const route = getRouteFromLocation();
@@ -315,11 +318,21 @@ export function App() {
       if (route.isTerminalOpen) {
         setIsBloombergTerminalOpen(true);
       }
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      }
     };
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, [activeTab]);
+
+  // Ensure scroll resets when category or subtab changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    }
+  }, [selectedCategory, watchlistSubTab]);
 
   // Clear lazy loading script reload attempt flag on successful mount to allow resilient page reloads on next version update
   useEffect(() => {
