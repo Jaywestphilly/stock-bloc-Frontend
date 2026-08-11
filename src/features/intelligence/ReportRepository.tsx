@@ -312,6 +312,53 @@ const SPECIALIZED_DOSSIERS: MasterReportItem[] = [
       },
     ],
   },
+  {
+    id: "rep_tsunami_aehr_sic_burnin",
+    category: "SUPERSONIC_TSUNAMI",
+    title: "Aehr Test Systems ($AEHR) Wafer-Level Burn-In & SiC/Photonics Dossier",
+    subtitle: "SiC Power Semiconductors, AI Optical Interconnects & High-Yield Wafer Reliability",
+    date: "Q4 SEC Intelligence Synthesis",
+    symbols: ["AEHR", "NVDA", "ON", "COHR"],
+    secFormCode: "TEST TSUNAMI #04",
+    pagesCount: 9,
+    badge: "SILICON BURN-IN",
+    managerGoals: "Capture 80%+ market share in FOX-XP wafer-level test and burn-in systems for Silicon Carbide (SiC) EV traction inverters, AI data center power supplies, and silicon photonics optical transceivers.",
+    summaryText: "Aehr Test Systems ($AEHR) provides proprietary wafer-level test and burn-in solutions that eliminate early life device failures in mission-critical silicon carbide (SiC) power chips and silicon photonics optical interconnects. As AI data centers demand kilowatt-level power density and 800G/1.6T optical transceivers to replace copper connections, AEHR's FOX-XP multichip wafer testing platform has become a fundamental bottleneck for high-yield AI hardware manufacturing.",
+    detailsTable: {
+      label1: "FOX-XP Installed Base",
+      value1: "250+ Wafer Systems",
+      label2: "SiC & Photonics Moat",
+      value2: "FOX-CP / FOX-XP Wafers",
+      label3: "AI Optical Demand",
+      value3: "1.6T Transceiver Surge",
+    },
+    rawItems: [
+      {
+        symbol: "AEHR",
+        companyName: "Aehr Test Systems (Wafer Burn-In)",
+        quarterlyChangeType: "NEW BUY",
+        portfolioPercent: 65.0,
+        epsActual: "$0.18 vs $0.14 Est",
+        aiThesis: "Monopoly supplier in wafer-level burn-in systems for SiC power modules and AI silicon photonics.",
+      },
+      {
+        symbol: "ON",
+        companyName: "ON Semiconductor (Traction Inverters)",
+        quarterlyChangeType: "INCREASED",
+        portfolioPercent: 20.0,
+        epsActual: "$0.96 vs $0.92 Est",
+        aiThesis: "Primary buyer of AEHR FOX-XP systems for automotive and industrial SiC wafer testing.",
+      },
+      {
+        symbol: "COHR",
+        companyName: "Coherent Corp (Optical Transceivers)",
+        quarterlyChangeType: "NEW BUY",
+        portfolioPercent: 15.0,
+        epsActual: "$0.53 vs $0.48 Est",
+        aiThesis: "Leading silicon photonics manufacturer utilizing AEHR wafer-level testing for 800G/1.6T AI transceivers.",
+      },
+    ],
+  },
 ];
 
 export const ReportRepository: React.FC = () => {

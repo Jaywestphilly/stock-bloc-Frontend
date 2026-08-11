@@ -777,6 +777,15 @@ export function App() {
             lastUpdatedIso
           };
         });
+
+        // Retain any initial stocks missing from backend watchlist feed
+        const backendSymbols = new Set(mappedStocks.map((s: any) => s.symbol.toUpperCase()));
+        INITIAL_STOCKS.forEach((initStock) => {
+          if (!backendSymbols.has(initStock.symbol.toUpperCase())) {
+            mappedStocks.push(initStock);
+          }
+        });
+
         setStocks(mappedStocks);
 
         // Read updated_at from GitHub JSON and set fetch time

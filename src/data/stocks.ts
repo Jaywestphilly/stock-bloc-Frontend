@@ -184,9 +184,50 @@ export const INITIAL_STOCKS: StockTicker[] = [
     description: "Direct-to-Cellular Moat: BlueBird satellite constellation commercial launch providing global cellular broadband.",
     tags: ["Space Cellular Broadband", "Satellites", "Telecom"],
     isPinned: false
+  },
+  {
+    symbol: "AEHR",
+    name: "Aehr Test Systems",
+    price: 16.85,
+    change: 1.24,
+    changePercent: 7.94,
+    category: "tsunami",
+    sparkline: [14.20, 14.85, 15.10, 15.60, 15.95, 16.30, 16.85],
+    history: {
+      "1D": [14.20, 14.85, 15.10, 15.60, 15.95, 16.30, 16.85].map((price, i) => ({ time: `${i}:00`, price })),
+      "1W": [14.20, 14.85, 15.10, 15.60, 15.95, 16.30, 16.85].map((price, i) => ({ time: `Day ${i+1}`, price })),
+      "1M": [14.20, 14.85, 15.10, 15.60, 15.95, 16.30, 16.85].map((price, i) => ({ time: `Week ${i+1}`, price })),
+      "1Y": [14.20, 14.85, 15.10, 15.60, 15.95, 16.30, 16.85].map((price, i) => ({ time: `Month ${i+1}`, price })),
+      "ALL": [14.20, 14.85, 15.10, 15.60, 15.95, 16.30, 16.85].map((price, i) => ({ time: `Year ${i+1}`, price }))
+    },
+    marketCap: "$520M",
+    high52: 24.50,
+    low52: 10.20,
+    volume: "4.8M",
+    description: "Wafer Test & Silicon Carbide Burn-In: Critical FOX-XP wafer-level test systems for SiC power semiconductors, AI silicon photonics transceivers, and high-reliability datacenter power.",
+    tags: ["Silicon Carbide", "Silicon Photonics", "Semiconductor Test", "AI Interconnects"],
+    isPinned: false
   }
 ];
 export const STOCK_NEWS_FEED: StockNews[] = [
+  {
+    id: "news_aehr_1",
+    title: "Aehr Test Systems Receives $12.5M Order for FOX-XP Wafer-Level Burn-In Systems for AI Silicon Photonics",
+    source: "BusinessWire / Semiconductor Digest",
+    timeAgo: "15m ago",
+    url: "https://www.aehr.com/news/",
+    relatedSymbol: "AEHR",
+    sentiment: "positive",
+  },
+  {
+    id: "news_aehr_2",
+    title: "Silicon Photonics & SiC Power Demand Accelerate Tsunami Growth Catalyst for $AEHR",
+    source: "Stock Bloc Research",
+    timeAgo: "45m ago",
+    url: "https://www.aehr.com/products/fox-xp/",
+    relatedSymbol: "AEHR",
+    sentiment: "positive",
+  },
   {
     id: "yt_stock_allin1",
     title: "All-In Podcast E188: Markets bounce back, AI spending boom, startup valuations",

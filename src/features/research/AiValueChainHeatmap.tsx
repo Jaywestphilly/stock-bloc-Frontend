@@ -97,6 +97,7 @@ export const VALUE_CHAIN_DATA: CompanyEntry[] = [
   { company: "Montage Technology", ticker: "688008", exchange: "STAR", category: "Semi Production", subCategory: "IC Design", whatTheyDo: "Chinese designer of memory-interface and connectivity chips." },
 
   // OSAT
+  { company: "Aehr Test Systems", ticker: "AEHR", exchange: "NASDAQ", category: "Semi Production", subCategory: "OSAT", whatTheyDo: "Specialized wafer-level test and burn-in equipment provider for SiC power chips & AI silicon photonics." },
   { company: "ASE Technology Holding", ticker: "ASX", exchange: "NYSE", category: "Semi Production", subCategory: "OSAT", whatTheyDo: "World's largest outsourced chip assembly, packaging, and test (OSAT) provider." },
   { company: "KYEC (King Yuan Electronics)", ticker: "2449", exchange: "TWSE", category: "Semi Production", subCategory: "OSAT", whatTheyDo: "Taiwan-based semiconductor testing house." },
   { company: "Tong Hsing Electronic", ticker: "6217", exchange: "TWSE", category: "Semi Production", subCategory: "OSAT", whatTheyDo: "Taiwan-based semiconductor packaging and substrate maker." },

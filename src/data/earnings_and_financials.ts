@@ -259,6 +259,28 @@ export const EARNINGS_CALENDAR_DATA: EarningsReport[] = [
     beatOrMiss: "Beat",
   },
   {
+    id: "earn_aehr_q4",
+    symbol: "AEHR",
+    companyName: "Aehr Test Systems",
+    reportDate: "Jul 16, 2026",
+    timing: "After Market Close",
+    fiscalQuarter: "Q4 FY2026",
+    epsEstimate: "$0.14",
+    epsActual: "$0.18",
+    revenueEstimate: "$15.4 Million",
+    revenueActual: "$16.6 Million",
+    guidanceHighlight:
+      "FOX-XP order pipeline expanding for silicon photonics transceivers and high-power SiC modules.",
+    summaryText:
+      "Aehr Test Systems beat Q4 earnings and revenue expectations driven by customer adoption of FOX-XP wafer-level testing for AI silicon photonics and electric vehicle power chips.",
+    aiKeyTakeaways: [
+      "Secured $12.5M follow-on order for FOX-XP wafer-level burn-in systems.",
+      "Gross margins surged to 52.4% due to favorable product mix.",
+      "Silicon photonics test bookings accelerated as 800G/1.6T optical transceivers ramp.",
+    ],
+    beatOrMiss: "Beat",
+  },
+  {
     id: "earn_asml_q2",
     symbol: "ASML",
     companyName: "ASML Holding NV",

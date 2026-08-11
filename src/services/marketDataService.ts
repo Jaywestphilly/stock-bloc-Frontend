@@ -349,7 +349,7 @@ export function calculateStockBlocSignal(stock: WatchlistStock, quant: QuantMetr
 
 export class MarketDataService {
   private static WATCHLIST_SYMBOLS = [
-    "SPCX", "NVDA", "AAPL", "TSLA", "PLTR", "MSFT", "VST", "ASTS",
+    "SPCX", "NVDA", "AEHR", "AAPL", "TSLA", "PLTR", "MSFT", "VST", "ASTS",
     "POET", "QUBT", "XSD", "HBM", "LITE", "CRWV", "BE", "SNDK",
     "AMD", "GOOGL", "MU", "CORZ", "BTC-USD", "META", "TSM", "^NYA",
     "SPY", "^GSPC", "AMZN", "NVT", "AIPO", "QQQ", "APLD", "^IXIC",

@@ -20,6 +20,15 @@ export interface VolatilitySpike {
 
 export const DEFAULT_VOLATILITY_SPIKES: VolatilitySpike[] = [
   {
+    symbol: "AEHR",
+    name: "Aehr Test Systems",
+    price: 16.85,
+    changePercent: +7.94,
+    relativeVolume: 4.1,
+    volumeMillions: 4.8,
+    catalyst: "FOX-XP AI Silicon Photonics Order Surge",
+  },
+  {
     symbol: "VST",
     name: "Vistra Corp",
     price: 88.45,
