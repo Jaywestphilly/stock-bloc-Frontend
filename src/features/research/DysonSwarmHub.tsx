@@ -805,9 +805,15 @@ export const DysonSwarmHub: React.FC = () => {
               Interactive 3D Starlink Constellation Globe
             </h2>
           </div>
-          <span className="text-[11px] font-mono text-neutral-400">
-            Drag to Rotate · Scroll to Zoom
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="hidden sm:inline text-[11px] font-mono text-neutral-400">
+              Drag to Rotate · Scroll to Zoom
+            </span>
+            <a href="/satellite-map" target="_blank" rel="noopener noreferrer" className="text-xs font-bold px-3 py-1 bg-cyan-900/50 text-cyan-300 rounded-lg border border-cyan-500/30 hover:bg-cyan-800/80 transition-colors cursor-pointer flex items-center gap-1">
+              <Globe className="w-3.5 h-3.5" />
+              Open Full Map
+            </a>
+          </div>
         </div>
 
         <Starlink3DGlobe

@@ -129,6 +129,7 @@ export type ViewTab =
   | "war_gov_ufo"
   | "intelligence"
   | "dyson_swarm"
+  | "satellite_map"
   | "podcasts"
   | "real_estate"
   | "vacancy_empire"

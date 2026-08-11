@@ -150,6 +150,10 @@ const DysonSwarmHub = safeLazy(
   () => import("../features/research/DysonSwarmHub"),
   "DysonSwarmHub"
 );
+const SatelliteMapHub = safeLazy(
+  () => import("../features/research/SatelliteMapHub"),
+  "SatelliteMapHub"
+);
 const WarGovUfoHub = safeLazy(
   () => import("../features/research/WarGovUfoHub"),
   "WarGovUfoHub"
@@ -1278,6 +1282,8 @@ export function App() {
         )}
 
         {activeTab === "dyson_swarm" && <DysonSwarmHub stocks={stocks} />}
+        
+        {activeTab === "satellite_map" && <SatelliteMapHub onNavigateTab={handleSelectTab} />}
 
         {activeTab === "vacancy_empire" && (
           <div className="p-2 sm:p-4 w-full">

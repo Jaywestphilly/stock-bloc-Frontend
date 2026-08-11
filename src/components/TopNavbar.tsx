@@ -109,7 +109,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
   };
 
   const isMarketsActive = ["watchlist", "intelligence", "macro", "brand"].includes(activeTab);
-  const isAiActive = ["dyson_swarm", "war_gov_ufo", "ai_insights", "ai_revolution"].includes(activeTab);
+  const isAiActive = ["dyson_swarm", "war_gov_ufo", "ai_insights", "ai_revolution", "satellite_map"].includes(activeTab);
   const isEducationActive = ["investopedia", "small_business", "youtube", "terminal_guide", "mit_courses"].includes(activeTab);
 
   return (

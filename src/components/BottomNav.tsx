@@ -59,7 +59,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
     ["watchlist", "brand", "macro", "intelligence"].includes(activeTab);
   const isAiActive =
     !isTerminalOpen &&
-    ["dyson_swarm", "war_gov_ufo", "ai_insights", "ai_revolution"].includes(activeTab);
+    ["dyson_swarm", "war_gov_ufo", "ai_insights", "ai_revolution", "satellite_map"].includes(activeTab);
   const isRealEstateActive = !isTerminalOpen && activeTab === "real_estate";
   const isCreditActive = !isTerminalOpen && activeTab === "credit";
   const isEducationActive =

@@ -27,6 +27,7 @@ export const ROUTE_MAP: Record<string, ViewTab> = {
   "/ai-insights": "ai_insights",
   "/ai-revolution": "ai_revolution",
   "/dyson-swarm": "dyson_swarm",
+  "/satellite-map": "satellite_map",
   "/war-gov-ufo": "war_gov_ufo",
   "/education/investopedia": "investopedia",
   "/education/terminal-guide": "terminal_guide",
@@ -75,6 +76,7 @@ export const TAB_TO_ROUTE: Record<ViewTab, string> = {
   mit_courses: "/education/mit-courses",
   checkout_success: "/checkout/success",
   dyson_swarm: "/dyson-swarm",
+  satellite_map: "/satellite-map",
   war_gov_ufo: "/war-gov-ufo",
   podcasts: "/podcasts",
   youtube: "/education/youtube",
@@ -106,6 +108,7 @@ export const TAB_TITLES: Partial<Record<ViewTab | "terminal", string>> = {
   news: "Stock Bloc | 𝕏 & YouTube Market Intelligence Feed",
   checkout_success: "Stock Bloc | Order Success & Digital Delivery",
   dyson_swarm: "Stock Bloc | Dyson Swarm Orbital Solar Infrastructure Hub",
+  satellite_map: "Stock Bloc | Live 3D Satellite Map & Coverage Tracker",
   war_gov_ufo: "Stock Bloc | Aerospace & Defense Intelligence",
   podcasts: "Stock Bloc | Podcasts & Macro Intelligence",
   youtube: "Stock Bloc | Official Video Intelligence",
@@ -135,6 +138,7 @@ export const TAB_DESCRIPTIONS: Partial<Record<ViewTab | "terminal", string>> = {
   playbooks: "Quantitative strategy playbooks, macro risk frameworks, and high-probability wealth strategies.",
   news: "Real-time unified market intelligence feed aggregating official @StockBloc updates on 𝕏, video masterclasses, and breaking macro financial news.",
   dyson_swarm: "Quant space research hub tracking Starlink orbital shell deployments, SpaceX Starship launch telemetry, clean energy megaprojects, and space infrastructure.",
+  satellite_map: "Live 3D interactive satellite map tracking orbital constellations and local overhead coverage.",
   war_gov_ufo: "Aerospace, defense prime contractors, SEC defense disclosures, and UAP intelligence.",
   podcasts: "Curated macro podcasts, financial interviews, and daily economic briefing audio feeds.",
   youtube: "Official Stock Bloc video breakdowns, quant masterclasses, and market strategy tutorials.",
@@ -157,6 +161,7 @@ export const TAB_IMAGES: Partial<Record<ViewTab | "terminal", string>> = {
   watchlist: "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?auto=format&fit=crop&w=1200&q=80",
   news: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80",
   dyson_swarm: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80",
+  satellite_map: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80",
   hedge_funds: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80",
   credit: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1200&q=80",
   real_estate: "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80",
@@ -184,6 +189,7 @@ export function getRouteFromLocation(): RouteState {
     if (path.startsWith("/credit/")) tab = "credit";
     else if (path.startsWith("/real-estate/")) tab = "real_estate";
     else if (path.startsWith("/research/dyson-swarm/")) tab = "dyson_swarm";
+    else if (path.startsWith("/satellite-map/")) tab = "satellite_map";
     else if (path.startsWith("/research/ai-revolution/")) tab = "ai_revolution";
     else if (path.startsWith("/intelligence/")) tab = "intelligence";
     else if (path.startsWith("/war-gov-ufo/")) tab = "war_gov_ufo";
@@ -231,6 +237,7 @@ export function pushAppRoute(tab: ViewTab, isTerminalOpen = false) {
       (targetPath === "/credit" && currentPath.startsWith("/credit/")) ||
       (targetPath === "/real-estate" && currentPath.startsWith("/real-estate/")) ||
       (targetPath === "/research/dyson-swarm" && currentPath.startsWith("/research/dyson-swarm/")) ||
+      (targetPath === "/satellite-map" && currentPath.startsWith("/satellite-map/")) ||
       (targetPath === "/research/ai-revolution" && currentPath.startsWith("/research/ai-revolution/")) ||
       (targetPath === "/intelligence" && currentPath.startsWith("/intelligence/")) ||
       (targetPath === "/war-gov-ufo" && currentPath.startsWith("/war-gov-ufo/"))
