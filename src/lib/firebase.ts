@@ -3,7 +3,10 @@ import { initializeApp, getApps } from "firebase/app";
 import {
   getAuth,
   GoogleAuthProvider,
+  OAuthProvider,
   signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   User,
@@ -16,17 +19,15 @@ import {
   collection,
   getDocs,
 } from "firebase/firestore";
+import firebaseConfigRaw from "../../firebase-applet-config.json";
 
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "demo-key",
-  authDomain:
-    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "demo-app.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "demo-app",
-  storageBucket:
-    import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "demo-app.appspot.com",
-  messagingSenderId:
-    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "1234567890",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:1234567890:web:1234567890",
+  apiKey: firebaseConfigRaw.apiKey,
+  authDomain: firebaseConfigRaw.authDomain,
+  projectId: firebaseConfigRaw.projectId,
+  storageBucket: firebaseConfigRaw.storageBucket,
+  messagingSenderId: firebaseConfigRaw.messagingSenderId,
+  appId: firebaseConfigRaw.appId,
 };
 
 const app =
@@ -34,6 +35,10 @@ const app =
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
+export const appleProvider = new OAuthProvider('apple.com');
+appleProvider.addScope('email');
+appleProvider.addScope('name');
+
 
 export interface UserProfile {
   uid: string;

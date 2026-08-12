@@ -64,6 +64,9 @@ import { NotFinancialAdviceTag } from "../../components/NotFinancialAdviceTag";
 import { StockTicker, ViewTab } from "../../types";
 import { triggerHaptic } from "../../utils/haptics";
 import { PdfPreviewModal } from "../../components/PdfPreviewModal";
+import { auth, db } from "../../lib/firebase";
+import { onAuthStateChanged, User } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 
 interface PortfolioPosition {
@@ -95,6 +98,50 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
   onSelectTab,
   onOpenAuth,
 }) => {
+  // Inner dashboard tab state
+  const [activeDashboardTab, setActiveDashboardTab] = useState<"overview" | "settings">("overview");
+  
+  // Firebase Auth & Settings State
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [portfolioVisibility, setPortfolioVisibility] = useState<"Public Portfolio" | "Private Portfolio">("Private Portfolio");
+  const [isSavingVisibility, setIsSavingVisibility] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      setCurrentUser(u);
+      if (u) {
+        try {
+          const userRef = doc(db, "users", u.uid);
+          const snap = await getDoc(userRef);
+          if (snap.exists() && snap.data().portfolioVisibility) {
+            setPortfolioVisibility(snap.data().portfolioVisibility);
+          }
+        } catch (e) {
+          console.error("Failed to load user settings", e);
+        }
+      }
+    });
+    return unsubscribe;
+  }, []);
+
+  const handleToggleVisibility = async (visibility: "Public Portfolio" | "Private Portfolio") => {
+    triggerHaptic("selection");
+    setPortfolioVisibility(visibility);
+    if (currentUser) {
+      setIsSavingVisibility(true);
+      try {
+        const userRef = doc(db, "users", currentUser.uid);
+        await setDoc(userRef, { portfolioVisibility: visibility }, { merge: true });
+      } catch (e) {
+        console.error("Failed to save visibility", e);
+      } finally {
+        setIsSavingVisibility(false);
+      }
+    } else {
+      onOpenAuth(); // Prompt user to sign in if they try to save setting
+    }
+  };
+
   // Local state persisted in localStorage
   const [positions, setPositions] = useState<PortfolioPosition[]>(() => {
     try {
@@ -430,7 +477,41 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
           </div>
         </div>
 
-        {/* Portfolio High-Level Valuation Banner */}
+        {/* Dashboard Navigation Tabs */}
+        <div className="flex items-center gap-4 mt-8 relative z-10 border-b border-cyan-500/30">
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveDashboardTab("overview");
+            }}
+            className={`pb-3 px-2 text-sm font-bold uppercase transition-all border-b-2 ${
+              activeDashboardTab === "overview"
+                ? "border-cyan-400 text-cyan-300"
+                : "border-transparent text-neutral-500 hover:text-cyan-400/70"
+            }`}
+          >
+            Portfolio & Assets
+          </button>
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveDashboardTab("settings");
+            }}
+            className={`pb-3 px-2 text-sm font-bold uppercase transition-all border-b-2 flex items-center gap-2 ${
+              activeDashboardTab === "settings"
+                ? "border-cyan-400 text-cyan-300"
+                : "border-transparent text-neutral-500 hover:text-cyan-400/70"
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            User Settings
+          </button>
+        </div>
+      </div>
+
+      {activeDashboardTab === "overview" ? (
+        <>
+          {/* Portfolio High-Level Valuation Banner */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-cyan-500/30">
           <div className="p-4 rounded-2xl bg-black/60 border border-cyan-500/20">
             <span className="text-[11px] text-cyan-400/80 uppercase font-mono block">
@@ -487,7 +568,6 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
             </div>
           </div>
         </div>
-      </div>
 
       {/* Manual Portfolio Holdings Table */}
       <div className="bg-black/80 rounded-2xl p-6 border border-cyan-500/30 space-y-4">
@@ -948,6 +1028,50 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
           category={previewPdfItem.category}
           onClose={() => setPreviewPdfItem(null)}
         />
+      )}
+        </>
+      ) : (
+        <div className="bg-black/80 rounded-3xl p-6 sm:p-8 border border-cyan-500/20">
+          <div className="flex items-center gap-3 mb-6">
+            <SlidersHorizontal className="w-5 h-5 text-cyan-400" />
+            <h2 className="text-xl sm:text-2xl font-black font-mono text-white uppercase tracking-wider">
+              USER SETTINGS
+            </h2>
+          </div>
+
+          <div className="space-y-6">
+            {/* Portfolio Privacy Toggle */}
+            <div className="bg-neutral-900/60 border border-neutral-700/60 rounded-xl p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-white uppercase">Portfolio Visibility</h3>
+                  <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold border ${portfolioVisibility === "Public Portfolio" ? "bg-emerald-950 text-emerald-400 border-emerald-500/40" : "bg-rose-950 text-rose-400 border-rose-500/40"}`}>
+                    {portfolioVisibility}
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-400 mt-1">
+                  When public, your portfolio allocation is visible on your profile. When private, only you can see it.
+                </p>
+              </div>
+              <div className="flex bg-black p-1 rounded-lg border border-neutral-800 shrink-0">
+                <button
+                  disabled={isSavingVisibility}
+                  onClick={() => handleToggleVisibility("Public Portfolio")}
+                  className={`px-3 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${portfolioVisibility === "Public Portfolio" ? "bg-emerald-500 text-black" : "text-neutral-400 hover:text-white"}`}
+                >
+                  Public
+                </button>
+                <button
+                  disabled={isSavingVisibility}
+                  onClick={() => handleToggleVisibility("Private Portfolio")}
+                  className={`px-3 py-1.5 text-xs font-bold uppercase rounded-md transition-all ${portfolioVisibility === "Private Portfolio" ? "bg-rose-500 text-white" : "text-neutral-400 hover:text-white"}`}
+                >
+                  Private
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
       {isAddingPosition && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
