@@ -978,7 +978,7 @@ export function App() {
         </>
 
       {/* Main Tab Views */}
-      <main className="max-w-3xl mx-auto w-full">
+      <main className="max-w-3xl md:max-w-6xl xl:max-w-[1400px] mx-auto w-full px-2 sm:px-4 transition-all duration-300">
         <Suspense fallback={<HubLoadingFallback />}>
           {(activeTab === "watchlist" || activeTab === "podcasts") && (
           <div className="w-full">

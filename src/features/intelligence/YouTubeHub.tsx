@@ -137,7 +137,7 @@ export const YouTubeHub: React.FC = () => {
   };
 
   return (
-    <div className="p-4 space-y-6 max-w-3xl mx-auto text-white font-mono">
+    <div className="p-4 space-y-6 max-w-[1400px] mx-auto text-white font-mono">
       {/* Featured Channel Banner */}
       <div className="relative rounded-3xl bg-neutral-900 border border-white/15 overflow-hidden shadow-2xl">
         {/* Banner image background */}
@@ -266,7 +266,7 @@ export const YouTubeHub: React.FC = () => {
             </a>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {realLifeShorts.map((short) => (
               <div
                 key={short.id}
@@ -445,7 +445,7 @@ export const YouTubeHub: React.FC = () => {
       </div>
 
       {/* Video Cards Feed */}
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredVideos.map((video, idx) => (
           <div
             key={video.id}

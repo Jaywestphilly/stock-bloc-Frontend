@@ -254,7 +254,7 @@ https://stock-bloc.ai.studio/credit-hub
   const liveCalcUtil = totalLimit > 0 ? (totalBalance / totalLimit) * 100 : 0;
 
   return (
-    <div className="p-4 space-y-6 max-w-3xl mx-auto text-white">
+    <div className="p-4 space-y-6 max-w-[1400px] mx-auto text-white">
       {/* Header Banner */}
       <div className="relative p-6 rounded-3xl bg-gradient-to-br from-indigo-950 via-neutral-900 to-purple-950 border border-indigo-500/30 shadow-2xl space-y-3 overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />

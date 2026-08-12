@@ -24,7 +24,7 @@ const safeStorage = {
   }
 };
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { motion } from "motion/react";
 import {
   UserCheck,
@@ -102,10 +102,72 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
   // Inner dashboard tab state
   const [activeDashboardTab, setActiveDashboardTab] = useState<"overview" | "settings">("overview");
   
+  // Helper to load positions and merge any newly saved watchlist paper trades
+  const loadPositionsFromStorage = useCallback((): PortfolioPosition[] => {
+    try {
+      const savedPortfolio = safeStorage.getItem("stockbloc_portfolio_positions");
+      let currentPositions: PortfolioPosition[] = savedPortfolio ? JSON.parse(savedPortfolio) : [];
+
+      const savedPaperTrades = safeStorage.getItem("stockbloc_paper_trades");
+      if (savedPaperTrades) {
+        const trades: any[] = JSON.parse(savedPaperTrades);
+        let updated = false;
+        trades.forEach((tr) => {
+          if (!tr.symbol) return;
+          const sym = tr.symbol.toUpperCase();
+          const exists = currentPositions.some((p) => p.symbol.toUpperCase() === sym);
+          if (!exists) {
+            currentPositions.push({
+              id: tr.id || `pos_imported_${Date.now()}_${sym}`,
+              symbol: sym,
+              shares: Number(tr.shares) || 1,
+              avgCost: Number(tr.entryPrice) || 100,
+              targetPrice: Math.round((Number(tr.entryPrice) || 100) * 1.25 * 100) / 100,
+              notes: `Saved from Watchlist (${tr.entryDate || "Recent"})`,
+            });
+            updated = true;
+          }
+        });
+        if (updated) {
+          safeStorage.setItem("stockbloc_portfolio_positions", JSON.stringify(currentPositions));
+        }
+      }
+
+      if (currentPositions.length === 0) {
+        return [
+          { id: "1", symbol: "NVDA", shares: 25, avgCost: 109.58, targetPrice: 158.59, notes: "AI GPU dominance" },
+          { id: "2", symbol: "PLTR", shares: 150, avgCost: 21.75, targetPrice: 44.26, notes: "AIP defense contract surge" },
+          { id: "3", symbol: "O", shares: 80, avgCost: 51.41, targetPrice: 63.18, notes: "Monthly REIT dividend" },
+        ];
+      }
+
+      return currentPositions;
+    } catch {
+      return [];
+    }
+  }, []);
+
   // Firebase Auth & Settings State
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [portfolioVisibility, setPortfolioVisibility] = useState<"Public Portfolio" | "Private Portfolio">("Private Portfolio");
   const [isSavingVisibility, setIsSavingVisibility] = useState(false);
+
+  // Local state persisted in localStorage and Firestore
+  const [positions, setPositions] = useState<PortfolioPosition[]>(loadPositionsFromStorage);
+
+  // Listen for portfolio position updates across modals / tabs
+  useEffect(() => {
+    const handlePortfolioSync = () => {
+      setPositions(loadPositionsFromStorage());
+    };
+
+    window.addEventListener("stockbloc_portfolio_updated", handlePortfolioSync);
+    window.addEventListener("storage", handlePortfolioSync);
+    return () => {
+      window.removeEventListener("stockbloc_portfolio_updated", handlePortfolioSync);
+      window.removeEventListener("storage", handlePortfolioSync);
+    };
+  }, [loadPositionsFromStorage]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -114,11 +176,18 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
         try {
           const userRef = doc(db, "users", u.uid);
           const snap = await getDoc(userRef);
-          if (snap.exists() && snap.data().portfolioVisibility) {
-            setPortfolioVisibility(snap.data().portfolioVisibility);
+          if (snap.exists()) {
+            const data = snap.data();
+            if (data.portfolioVisibility) {
+              setPortfolioVisibility(data.portfolioVisibility);
+            }
+            if (data.portfolioPositions && Array.isArray(data.portfolioPositions) && data.portfolioPositions.length > 0) {
+              setPositions(data.portfolioPositions);
+              safeStorage.setItem("stockbloc_portfolio_positions", JSON.stringify(data.portfolioPositions));
+            }
           }
         } catch (e) {
-          console.error("Failed to load user settings", e);
+          console.error("Failed to load user settings/portfolio", e);
         }
       }
     });
@@ -142,22 +211,6 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
       onOpenAuth(); // Prompt user to sign in if they try to save setting
     }
   };
-
-  // Local state persisted in localStorage
-  const [positions, setPositions] = useState<PortfolioPosition[]>(() => {
-    try {
-      const saved = safeStorage.getItem("stockbloc_portfolio_positions");
-      return saved
-        ? JSON.parse(saved)
-        : [
-            { id: "1", symbol: "NVDA", shares: 25, avgCost: 109.58, targetPrice: 158.59, notes: "AI GPU dominance" },
-            { id: "2", symbol: "PLTR", shares: 150, avgCost: 21.75, targetPrice: 44.26, notes: "AIP defense contract surge" },
-            { id: "3", symbol: "O", shares: 80, avgCost: 51.41, targetPrice: 63.18, notes: "Monthly REIT dividend" },
-          ];
-    } catch {
-      return [];
-    }
-  });
 
   const [preferences, setPreferences] = useState<UserPreferences>(() => {
     try {
@@ -332,10 +385,16 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
   useEffect(() => {
     try {
       safeStorage.setItem("stockbloc_portfolio_positions", JSON.stringify(positions));
+      if (currentUser) {
+        const userRef = doc(db, "users", currentUser.uid);
+        setDoc(userRef, { portfolioPositions: positions }, { merge: true }).catch((err) =>
+          console.warn("Failed to sync positions to Firestore:", err)
+        );
+      }
     } catch (e) {
       console.error("Failed to save portfolio positions", e);
     }
-  }, [positions]);
+  }, [positions, currentUser]);
 
   useEffect(() => {
     try {
@@ -429,7 +488,7 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-6 space-y-8 font-mono select-none">
+    <div className="w-full max-w-[1400px] mx-auto px-4 py-6 space-y-8 font-mono select-none">
       {/* Dashboard Top Identity Header */}
       <div className="relative bg-black/90 rounded-3xl p-6 sm:p-8 border border-cyan-500/40 shadow-2xl shadow-cyan-950/60 overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />

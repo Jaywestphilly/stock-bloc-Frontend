@@ -95,7 +95,7 @@ export const PodcastNewsFeed = ({
   };
 
   return (
-    <div className="p-4 space-y-6 max-w-3xl mx-auto text-white">
+    <div className="p-4 space-y-6 max-w-[1400px] mx-auto text-white">
       {/* Header Banner */}
       <div className="relative p-6 rounded-3xl bg-gradient-to-br from-amber-950 via-neutral-900 to-cyan-950 border border-amber-500/30 shadow-2xl space-y-3 overflow-hidden">
         <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -235,19 +235,19 @@ export const PodcastNewsFeed = ({
       </div>
 
       {/* Articles Feed List */}
-      <div className="space-y-4">
-        {filteredArticles.length === 0 ? (
-          <div className="p-8 text-center rounded-3xl bg-white/5 border border-white/10 space-y-2">
-            <Newspaper className="w-8 h-8 text-neutral-500 mx-auto" />
-            <h4 className="text-sm font-bold text-white">
-              No subject articles found
-            </h4>
-            <p className="text-xs text-neutral-400">
-              Try adjusting your search query or selected topic filter.
-            </p>
-          </div>
-        ) : (
-          filteredArticles.map((article) => {
+      {filteredArticles.length === 0 ? (
+        <div className="p-8 text-center rounded-3xl bg-white/5 border border-white/10 space-y-2">
+          <Newspaper className="w-8 h-8 text-neutral-500 mx-auto" />
+          <h4 className="text-sm font-bold text-white">
+            No subject articles found
+          </h4>
+          <p className="text-xs text-neutral-400">
+            Try adjusting your search query or selected topic filter.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredArticles.map((article) => {
             const catInfo = SUBJECT_CATEGORIES.find(
               (c) => c.id === article.subjectCategory,
             );
@@ -369,9 +369,9 @@ export const PodcastNewsFeed = ({
                 </div>
               </div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
 
       {/* ARTICLE BRIEF MODAL */}
       {activeArticle && (

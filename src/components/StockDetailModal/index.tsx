@@ -8,6 +8,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { StockTicker, TimeFrame, PaperTrade, CandleDataPoint, StockDetailSubProps } from "../../types";
+import { auth, db } from "../../lib/firebase";
+import { doc, setDoc } from "firebase/firestore";
 import { getTickerSentiment } from "../../utils/sentiment";
 import { formatChartTimestamp, calculateCleanYAxisTicks } from "../../utils/chartFormatters";
 import {
@@ -585,7 +587,7 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
     };
   }, [paperTrades, stock]);
 
-  const handleExecutePaperTrade = () => {
+  const handleExecutePaperTrade = async () => {
     if (!stock || sharesInput <= 0 || entryPriceInput <= 0) {
       triggerHaptic("error");
       return;
@@ -605,30 +607,106 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
       type: tradeType,
     };
 
-    const updated = [newTrade, ...paperTrades];
-    setPaperTrades(updated);
+    const updatedTrades = [newTrade, ...paperTrades];
+    setPaperTrades(updatedTrades);
+
     try {
-      localStorage.setItem("stockbloc_paper_trades", JSON.stringify(updated));
+      localStorage.setItem("stockbloc_paper_trades", JSON.stringify(updatedTrades));
+
+      // Sync into My Bloc Profile portfolio positions (stockbloc_portfolio_positions)
+      const rawPositions = localStorage.getItem("stockbloc_portfolio_positions");
+      let currentPositions: Array<{
+        id: string;
+        symbol: string;
+        shares: number;
+        avgCost: number;
+        targetPrice?: number;
+        notes?: string;
+      }> = rawPositions ? JSON.parse(rawPositions) : [];
+
+      const targetSym = stock.symbol.toUpperCase();
+      const existingIdx = currentPositions.findIndex((p) => p.symbol.toUpperCase() === targetSym);
+
+      if (existingIdx >= 0) {
+        const existingPos = currentPositions[existingIdx];
+        if (tradeType === "BUY") {
+          const totalShares = existingPos.shares + Number(sharesInput);
+          const totalCost = (existingPos.shares * existingPos.avgCost) + (Number(sharesInput) * Number(entryPriceInput));
+          currentPositions[existingIdx] = {
+            ...existingPos,
+            shares: totalShares,
+            avgCost: totalShares > 0 ? totalCost / totalShares : Number(entryPriceInput),
+            notes: `Added from Watchlist (${new Date().toLocaleDateString()})`,
+          };
+        } else {
+          // SELL / REDUCE
+          const newShares = Math.max(0, existingPos.shares - Number(sharesInput));
+          if (newShares === 0) {
+            currentPositions = currentPositions.filter((_, idx) => idx !== existingIdx);
+          } else {
+            currentPositions[existingIdx] = {
+              ...existingPos,
+              shares: newShares,
+            };
+          }
+        }
+      } else {
+        currentPositions.push({
+          id: `pos_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          symbol: targetSym,
+          shares: Number(sharesInput),
+          avgCost: Number(entryPriceInput),
+          targetPrice: Math.round(Number(entryPriceInput) * 1.25 * 100) / 100,
+          notes: `Added from Watchlist (${new Date().toLocaleDateString()})`,
+        });
+      }
+
+      localStorage.setItem("stockbloc_portfolio_positions", JSON.stringify(currentPositions));
+      window.dispatchEvent(new Event("stockbloc_portfolio_updated"));
+
+      if (auth.currentUser) {
+        const userRef = doc(db, "users", auth.currentUser.uid);
+        await setDoc(userRef, { portfolioPositions: currentPositions }, { merge: true });
+      }
     } catch (e) {
-      console.error("Failed to save paper trade:", e);
+      console.error("Failed to save paper trade / sync portfolio positions:", e);
     }
 
     triggerHaptic("success");
     setTradeSuccessMsg(
-      `Virtual ${tradeType} position saved for ${sharesInput} shares of ${stock.symbol}!`,
+      `Saved to My Bloc Profile! (${sharesInput} shares of ${stock.symbol} @ $${entryPriceInput})`,
     );
     setTimeout(() => {
       setTradeSuccessMsg(null);
       setShowPaperForm(false);
-    }, 2000);
+    }, 2500);
   };
 
-  const handleClosePosition = (tradeId: string) => {
+  const handleClosePosition = async (tradeId: string) => {
     triggerHaptic("heavy");
+    const closedTrade = paperTrades.find((t) => t.id === tradeId);
     const updated = paperTrades.filter((t) => t.id !== tradeId);
     setPaperTrades(updated);
+
     try {
       localStorage.setItem("stockbloc_paper_trades", JSON.stringify(updated));
+
+      if (closedTrade) {
+        const rawPositions = localStorage.getItem("stockbloc_portfolio_positions");
+        if (rawPositions) {
+          let currentPositions: Array<any> = JSON.parse(rawPositions);
+          currentPositions = currentPositions.filter(
+            (p) => p.symbol.toUpperCase() !== closedTrade.symbol.toUpperCase()
+          );
+          localStorage.setItem("stockbloc_portfolio_positions", JSON.stringify(currentPositions));
+          window.dispatchEvent(new Event("stockbloc_portfolio_updated"));
+
+          if (auth.currentUser) {
+            const userRef = doc(db, "users", auth.currentUser.uid);
+            await setDoc(userRef, { portfolioPositions: currentPositions }, { merge: true });
+          }
+        }
+      }
     } catch (e) {
       console.error("Failed to update paper trades:", e);
     }

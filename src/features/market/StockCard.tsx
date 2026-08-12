@@ -18,6 +18,7 @@ import {
   ExternalLink,
   Loader2,
   DollarSign,
+  Briefcase,
 } from "lucide-react";
 import { TrendSentimentVisualizer } from "../../components/TrendSentimentVisualizer";
 import { computeDeterministicSignal, getStockDataFreshness } from "../../utils/signalCalculator";
@@ -296,6 +297,52 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
   const prevPriceRef = useRef<number>(stock?.price || 0);
   const { starredTickers, toggleStarredTicker } = useUserStore();
   const isStarred = starredTickers.includes(stock.symbol);
+
+  const [saveSuccessToast, setSaveSuccessToast] = useState<string | null>(null);
+
+  const handleQuickSaveToPortfolio = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    triggerHaptic("success");
+    try {
+      const rawPositions = localStorage.getItem("stockbloc_portfolio_positions");
+      let currentPositions: Array<{
+        id: string;
+        symbol: string;
+        shares: number;
+        avgCost: number;
+        targetPrice?: number;
+        notes?: string;
+      }> = rawPositions ? JSON.parse(rawPositions) : [];
+
+      const targetSym = stock.symbol.toUpperCase();
+      const existingIdx = currentPositions.findIndex((p) => p.symbol.toUpperCase() === targetSym);
+
+      if (existingIdx >= 0) {
+        currentPositions[existingIdx] = {
+          ...currentPositions[existingIdx],
+          shares: currentPositions[existingIdx].shares + 1,
+          notes: `Added 1 share from Watchlist (${new Date().toLocaleDateString()})`,
+        };
+      } else {
+        currentPositions.push({
+          id: `pos_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+          symbol: targetSym,
+          shares: 1,
+          avgCost: stock.price,
+          targetPrice: Math.round(stock.price * 1.25 * 100) / 100,
+          notes: `Saved from Watchlist (${new Date().toLocaleDateString()})`,
+        });
+      }
+
+      localStorage.setItem("stockbloc_portfolio_positions", JSON.stringify(currentPositions));
+      window.dispatchEvent(new Event("stockbloc_portfolio_updated"));
+
+      setSaveSuccessToast(`Saved ${stock.symbol} to My Bloc Portfolio!`);
+      setTimeout(() => setSaveSuccessToast(null), 2000);
+    } catch (err) {
+      console.error("Failed to save position", err);
+    }
+  };
 
   const ROBINHOOD_REFERRAL_URL = "https://join.robinhood.com/jumannc3";
 
@@ -616,6 +663,13 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
       {/* Hidden Swipe Actions Background */}
       <div className="absolute inset-y-0 right-0 flex items-center gap-1.5 pr-2 z-0">
         <button
+          onClick={handleQuickSaveToPortfolio}
+          className="w-9 h-9 rounded-xl bg-emerald-950/90 border border-emerald-500/40 text-emerald-300 flex items-center justify-center hover:bg-emerald-900 active:scale-95 transition-all cursor-pointer shadow-md shadow-emerald-500/20"
+          title="Save 1 Share to Portfolio Tracker"
+        >
+          <Briefcase className="w-4 h-4 text-emerald-400" />
+        </button>
+        <button
           onClick={(e) => {
             e.stopPropagation();
             triggerHaptic("selection");
@@ -718,6 +772,16 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
         <div className="hud-corner-tr" />
         <div className="hud-corner-bl" />
         <div className="hud-corner-br" />
+
+        {saveSuccessToast && (
+          <div className="absolute inset-x-0 top-0 z-30 bg-emerald-950/95 border-b border-emerald-400 text-emerald-200 text-xs font-mono font-bold py-1 px-3 flex items-center justify-between shadow-lg">
+            <div className="flex items-center gap-1.5">
+              <Briefcase className="w-3.5 h-3.5 text-emerald-400 animate-bounce" />
+              <span>{saveSuccessToast}</span>
+            </div>
+            <span className="text-[10px] text-emerald-400 font-bold uppercase">[ MY BLOC ]</span>
+          </div>
+        )}
 
         <div
           className="flex items-center justify-between w-full font-mono"
