@@ -68,6 +68,7 @@ import { PdfPreviewModal } from "../../components/PdfPreviewModal";
 import { auth, db } from "../../lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
+import { useUserStore } from "../../stores/userStore";
 
 
 interface PortfolioPosition {
@@ -101,6 +102,7 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
 }) => {
   // Inner dashboard tab state
   const [activeDashboardTab, setActiveDashboardTab] = useState<"overview" | "settings">("overview");
+  const { starredTickers, setStarredTickers, clearUserStorage } = useUserStore();
   
   // Helper to load positions and merge any newly saved watchlist paper trades
   const loadPositionsFromStorage = useCallback((): PortfolioPosition[] => {
@@ -185,10 +187,31 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
               setPositions(data.portfolioPositions);
               safeStorage.setItem("stockbloc_portfolio_positions", JSON.stringify(data.portfolioPositions));
             }
+            if (data.starredTickers && Array.isArray(data.starredTickers)) {
+              setStarredTickers(data.starredTickers);
+            }
+            if (data.paperTrades) {
+              safeStorage.setItem("stockbloc_paper_trades", JSON.stringify(data.paperTrades));
+            }
+            if (data.preferences) {
+              setPreferences(data.preferences);
+              safeStorage.setItem("stockbloc_user_prefs", JSON.stringify(data.preferences));
+            }
           }
         } catch (e) {
           console.error("Failed to load user settings/portfolio", e);
         }
+      } else {
+        // Clear sensitive portfolio data from local storage on sign out
+        safeStorage.removeItem("stockbloc_portfolio_positions");
+        safeStorage.removeItem("stockbloc_paper_trades");
+        safeStorage.removeItem("stockbloc_user_prefs");
+        clearUserStorage();
+        setPositions([
+          { id: "1", symbol: "NVDA", shares: 25, avgCost: 109.58, targetPrice: 158.59, notes: "AI GPU dominance" },
+          { id: "2", symbol: "PLTR", shares: 150, avgCost: 21.75, targetPrice: 44.26, notes: "AIP defense contract surge" },
+          { id: "3", symbol: "O", shares: 80, avgCost: 51.41, targetPrice: 63.18, notes: "Monthly REIT dividend" },
+        ]);
       }
     });
     return unsubscribe;
@@ -399,10 +422,29 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
   useEffect(() => {
     try {
       safeStorage.setItem("stockbloc_user_prefs", JSON.stringify(preferences));
+      if (currentUser) {
+        const userRef = doc(db, "users", currentUser.uid);
+        setDoc(userRef, { preferences }, { merge: true }).catch((err) =>
+          console.warn("Failed to sync preferences to Firestore:", err)
+        );
+      }
     } catch (e) {
       console.error("Failed to save preferences", e);
     }
-  }, [preferences]);
+  }, [preferences, currentUser]);
+
+  useEffect(() => {
+    try {
+      if (currentUser) {
+        const userRef = doc(db, "users", currentUser.uid);
+        setDoc(userRef, { starredTickers }, { merge: true }).catch((err) =>
+          console.warn("Failed to sync starredTickers to Firestore:", err)
+        );
+      }
+    } catch (e) {
+      console.error("Failed to save starredTickers", e);
+    }
+  }, [starredTickers, currentUser]);
 
   // Compute portfolio valuation
   const portfolioSummary = useMemo(() => {
@@ -488,7 +530,7 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
   };
 
   return (
-    <div className="w-full max-w-[1400px] mx-auto px-4 py-6 space-y-8 font-mono select-none">
+    <div className="w-full max-w-7xl xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto px-4 py-6 space-y-8 font-mono select-none">
       {/* Dashboard Top Identity Header */}
       <div className="relative bg-black/90 rounded-3xl p-6 sm:p-8 border border-cyan-500/40 shadow-2xl shadow-cyan-950/60 overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />

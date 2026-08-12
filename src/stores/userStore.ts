@@ -9,6 +9,8 @@ interface UserState {
   setUserPlan: (plan: "free" | "pro" | "institutional") => void;
   starredTickers: string[];
   toggleStarredTicker: (symbol: string) => void;
+  setStarredTickers: (tickers: string[]) => void;
+  clearUserStorage: () => void;
 }
 
 const getInitialDayMode = () => {
@@ -63,5 +65,21 @@ export const useUserStore = create<UserState>((set, get) => ({
       } catch (e) {}
     }
     set({ starredTickers: updated });
+  },
+  setStarredTickers: (tickers) => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem("stock_bloc_saved", JSON.stringify(tickers));
+      } catch (e) {}
+    }
+    set({ starredTickers: tickers });
+  },
+  clearUserStorage: () => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem("stock_bloc_saved");
+      } catch (e) {}
+    }
+    set({ starredTickers: [] });
   }
 }));
