@@ -62,11 +62,19 @@ export const CommunityHub = () => {
     // Auth Listener to get current user details including username
     const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
       if (user) {
-        const docRef = doc(db, "users", user.uid);
-        const snap = await getDoc(docRef);
+        let username = user.displayName || "Anonymous";
+        try {
+          const docRef = doc(db, "users", user.uid);
+          const snap = await getDoc(docRef);
+          if (snap.exists() && snap.data().username) {
+            username = snap.data().username;
+          }
+        } catch (e) {
+          console.warn("Failed to fetch user profile for community", e);
+        }
         setCurrentUser({
           uid: user.uid,
-          username: snap.exists() && snap.data().username ? snap.data().username : user.displayName || "Anonymous"
+          username
         });
       } else {
         setCurrentUser(null);
@@ -81,6 +89,8 @@ export const CommunityHub = () => {
         msgs.push({ id: doc.id, ...doc.data() } as ChatMessage);
       });
       setChatMessages(msgs.reverse());
+    }, (error) => {
+      console.warn("Chats listener error:", error);
     });
 
     // Real-time listener for Discussions
@@ -91,6 +101,8 @@ export const CommunityHub = () => {
         posts.push({ id: doc.id, ...doc.data() } as DiscussionPost);
       });
       setDiscussions(posts);
+    }, (error) => {
+      console.warn("Discussions listener error:", error);
     });
 
     return () => {
