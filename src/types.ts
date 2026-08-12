@@ -154,7 +154,8 @@ export type ViewTab =
   | "checkout_success"
   | "news"
   | "docs"
-  | "mit_courses";
+  | "mit_courses"
+  | "apple_watch";
 
 export interface ApiKeyDetails {
   key: string;

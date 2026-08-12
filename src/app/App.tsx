@@ -221,6 +221,7 @@ const HubLoadingFallback: React.FC = () => (
   </div>
 );
 
+import { AppleWatchGlanceView } from "../components/AppleWatchGlanceView";
 import { DisclaimerBar } from "../components/DisclaimerBar";
 import { trackEvent } from "../utils/analytics";
 import { FloatingCommunityButton } from "../components/FloatingCommunityButton";
@@ -272,7 +273,15 @@ export function App() {
   }, [marketDataUpdatedAt]);
 
   // Route & High Contrast Initial State
-  const initialRoute = useMemo(() => getRouteFromLocation(), []);
+  const initialRoute = useMemo(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("watch") === "true" || params.get("mode") === "watch") {
+        return { tab: "apple_watch" as ViewTab, isTerminalOpen: false };
+      }
+    }
+    return getRouteFromLocation();
+  }, []);
   const [activeTab, setActiveTab] = useState<ViewTab>(initialRoute.tab);
   const { isCommandPaletteOpen, setIsCommandPaletteOpen } = useModalStore();
   const { isBloombergTerminalOpen, setIsBloombergTerminalOpen } = useModalStore();
@@ -1395,6 +1404,17 @@ export function App() {
           <BrandLandingHub
             onSelectTab={handleSelectTab}
             onOpenLinktree={() => setIsBrandLinktreeOpen(true)}
+          />
+        )}
+
+        {activeTab === "apple_watch" && (
+          <AppleWatchGlanceView
+            stocks={stocks}
+            onExitWatchMode={() => setActiveTab("watchlist")}
+            onSelectStock={(stk) => {
+              setSelectedStock(stk);
+              setActiveTab("watchlist");
+            }}
           />
         )}
 

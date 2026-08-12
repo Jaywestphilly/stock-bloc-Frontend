@@ -43,6 +43,8 @@ export const ROUTE_MAP: Record<string, ViewTab> = {
   "/education": "mit_courses",
   "/education/mit-courses": "mit_courses",
   "/checkout/success": "checkout_success",
+  "/watch": "apple_watch",
+  "/apple-watch": "apple_watch",
 
   // Legacy mappings
   "/ipos": "ipos",
@@ -91,6 +93,7 @@ export const TAB_TO_ROUTE: Record<ViewTab, string> = {
   earnings: "/intelligence/earnings",
   rankings: "/intelligence/rankings",
   heatmap: "/heatmap",
+  apple_watch: "/watch",
 };
 
 export const TAB_TITLES: Partial<Record<ViewTab | "terminal", string>> = {
@@ -124,6 +127,7 @@ export const TAB_TITLES: Partial<Record<ViewTab | "terminal", string>> = {
   rankings: "Stock Bloc | Quant Financial Rankings",
   heatmap: "Stock Bloc | Market Heatmap & Sector Map",
   mit_courses: "Stock Bloc | MIT & University OpenCourseWare Matrix",
+  apple_watch: "Stock Bloc | Apple Watch Glance & Complication Mode",
 };
 
 export const TAB_DESCRIPTIONS: Partial<Record<ViewTab | "terminal", string>> = {

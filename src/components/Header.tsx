@@ -20,6 +20,7 @@ import {
   BookOpen,
   Youtube,
   Database,
+  Watch,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
 import { useMarketStore } from "../stores/marketStore";
@@ -161,6 +162,17 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <UserCheck className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline text-[11px] font-black uppercase">My Bloc</span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              if (onSelectTab) onSelectTab("apple_watch");
+            }}
+            className="p-1.5 bg-neutral-900 border border-emerald-500/40 alien-block-cut-sm text-emerald-300 hover:bg-emerald-950/30 transition-all active:scale-90 cursor-pointer shrink-0"
+            title="Apple Watch Companion Mode & Glance View"
+          >
+            <Watch className="w-4 h-4 text-emerald-400" />
           </button>
 
           <button

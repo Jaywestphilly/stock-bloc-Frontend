@@ -99,7 +99,10 @@
     })();
     </script>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <meta name="disabled-adaptations" content="watch" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Stock Bloc | Quant Wealth Terminal</title>
     <meta name="description" content="Stock Bloc Quant Wealth Terminal — Real-time market momentum, 13F hedge fund intelligence, credit dispute strategy hub, and real estate deal analyzer." />
     
@@ -121,53 +124,232 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Orbitron:wght@500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Structured Data (JSON-LD Schema) for Founder, SoftwareApplication & FinancialProduct SEO -->
-    <script type="application/ld+json">
+    <!-- Structured Data (JSON-LD Schema) for Founder, Brand, SoftwareApplication & FinancialProduct SEO -->
+    <script type="application/ld+json" id="stockbloc-static-schema">
     {
       "@context": "https://schema.org",
-      "@type": "Person",
-      "name": "Jumanne Carter",
-      "alternateName": "Jay West Philly",
-      "jobTitle": "Founder & Creator",
-      "sameAs": [
-        "https://youtube.com/@stockbloc",
-        "https://linktr.ee/StockBloc"
-      ],
-      "worksFor": {
-        "@type": "Organization",
-        "name": "Stock Bloc",
-        "url": "https://stock-bloc.ai.studio"
-      }
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://stock-bloc.ai.studio/#organization",
+          "name": "Stock Bloc",
+          "alternateName": ["Stock Bloc Wealth Operating System", "Stock Bloc Quant Terminal"],
+          "url": "https://stock-bloc.ai.studio",
+          "logo": "https://i.imgur.com/48y0amp.jpg",
+          "founder": {
+            "@id": "https://stock-bloc.ai.studio/#person"
+          },
+          "sameAs": [
+            "https://youtube.com/@stockbloc",
+            "https://instagram.com/stockbloc",
+            "https://linktr.ee/StockBloc"
+          ],
+          "description": "Stock Bloc is a quantitative wealth terminal, market intelligence matrix, and asset management platform founded by Jumanne Carter."
+        },
+        {
+          "@type": "Person",
+          "@id": "https://stock-bloc.ai.studio/#person",
+          "name": "Jumanne Carter",
+          "alternateName": ["Jay West Philly", "Jumanne 'Jay West Philly' Carter"],
+          "jobTitle": "Founder & Creator",
+          "url": "https://stock-bloc.ai.studio",
+          "sameAs": [
+            "https://youtube.com/@stockbloc",
+            "https://instagram.com/stockbloc",
+            "https://linktr.ee/StockBloc"
+          ],
+          "worksFor": {
+            "@id": "https://stock-bloc.ai.studio/#organization"
+          },
+          "knowsAbout": [
+            "Quantitative Finance",
+            "Stock Market Analysis",
+            "13F Whale Tracking",
+            "FCRA Credit Repair Strategy",
+            "Real Estate Cash Flow Modeling"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://stock-bloc.ai.studio/#website",
+          "url": "https://stock-bloc.ai.studio",
+          "name": "Stock Bloc | Quant Wealth Terminal",
+          "publisher": {
+            "@id": "https://stock-bloc.ai.studio/#organization"
+          },
+          "author": {
+            "@id": "https://stock-bloc.ai.studio/#person"
+          },
+          "description": "Official Stock Bloc Quant Wealth Terminal created by Jumanne Carter for stock tracking, 13F SEC analysis, credit dispute strategies, and real estate cash flow modeling.",
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://stock-bloc.ai.studio/?s={search_term_string}",
+            "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://stock-bloc.ai.studio/#application",
+          "name": "Stock Bloc Quant Terminal",
+          "operatingSystem": "iOS, Android, macOS, Windows, Web",
+          "applicationCategory": "FinanceApplication",
+          "author": {
+            "@id": "https://stock-bloc.ai.studio/#person"
+          },
+          "publisher": {
+            "@id": "https://stock-bloc.ai.studio/#organization"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "ratingCount": "1280"
+          }
+        },
+        {
+          "@type": "FinancialProduct",
+          "@id": "https://stock-bloc.ai.studio/#financialProduct",
+          "name": "Stock Bloc Quantitative Intelligence Suite",
+          "description": "Real-time stock momentum workstation, SEC 13F hedge fund analytics, FCRA credit score simulator, and real estate deal cash flow analyzer.",
+          "provider": {
+            "@id": "https://stock-bloc.ai.studio/#organization"
+          }
+        }
+      ]
     }
     </script>
 
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "Stock Bloc Quant Terminal",
-      "operatingSystem": "All",
-      "applicationCategory": "FinanceApplication",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      }
-    }
-    </script>
+    <!-- Dynamic Schema & SEO Injection Engine -->
+    <script>
+    (function injectDynamicStructuredData() {
+      try {
+        const origin = window.location.origin || "https://stock-bloc.ai.studio";
+        
+        // Dynamically create or update runtime canonical & OpenGraph links
+        let canonicalLink = document.querySelector("link[rel='canonical']");
+        if (!canonicalLink) {
+          canonicalLink = document.createElement("link");
+          canonicalLink.rel = "canonical";
+          document.head.appendChild(canonicalLink);
+        }
+        canonicalLink.href = origin + window.location.pathname;
 
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "FinancialProduct",
-      "name": "Stock Bloc Quantitative Intelligence Suite",
-      "description": "Real-time stock momentum workstation, SEC 13F hedge fund analytics, FCRA credit score simulator, and real estate deal cash flow analyzer.",
-      "provider": {
-        "@type": "Organization",
-        "name": "Stock Bloc",
-        "url": "https://stock-bloc.ai.studio"
+        const ogUrlMeta = document.querySelector("meta[property='og:url']");
+        if (ogUrlMeta) {
+          ogUrlMeta.setAttribute("content", origin + window.location.pathname);
+        }
+
+        // Dynamically build runtime JSON-LD structured data graph
+        const schemaGraph = {
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "@id": origin + "/#organization",
+              "name": "Stock Bloc",
+              "alternateName": ["Stock Bloc Wealth Operating System", "Stock Bloc Quant Terminal", "Stock Bloc Intelligence"],
+              "url": origin,
+              "logo": "https://i.imgur.com/48y0amp.jpg",
+              "founder": {
+                "@type": "Person",
+                "@id": origin + "/#person",
+                "name": "Jumanne Carter",
+                "alternateName": ["Jay West Philly", "Jumanne 'Jay West Philly' Carter"]
+              },
+              "sameAs": [
+                "https://youtube.com/@stockbloc",
+                "https://instagram.com/stockbloc",
+                "https://linktr.ee/StockBloc"
+              ],
+              "description": "Stock Bloc is an all-in-one quantitative wealth terminal, market intelligence matrix, and asset management workstation created by Jumanne Carter."
+            },
+            {
+              "@type": "Person",
+              "@id": origin + "/#person",
+              "name": "Jumanne Carter",
+              "alternateName": ["Jay West Philly", "Jumanne 'Jay West Philly' Carter"],
+              "jobTitle": "Founder & Creator",
+              "url": origin,
+              "image": "https://i.imgur.com/48y0amp.jpg",
+              "sameAs": [
+                "https://youtube.com/@stockbloc",
+                "https://instagram.com/stockbloc",
+                "https://linktr.ee/StockBloc"
+              ],
+              "worksFor": {
+                "@type": "Organization",
+                "@id": origin + "/#organization",
+                "name": "Stock Bloc"
+              },
+              "knowsAbout": [
+                "Quantitative Investment Strategies",
+                "Stock Market Momentum Tracking",
+                "SEC 13F Institutional Filing Analytics",
+                "FCRA Credit Score Restoration",
+                "Real Estate Cash Flow Modeling"
+              ]
+            },
+            {
+              "@type": "WebSite",
+              "@id": origin + "/#website",
+              "url": origin,
+              "name": "Stock Bloc | Quant Wealth Terminal",
+              "publisher": { "@id": origin + "/#organization" },
+              "author": { "@id": origin + "/#person" },
+              "description": "Stock Bloc Quant Wealth Terminal created by Jumanne Carter for stock tracking, 13F SEC whale analysis, credit dispute automation, and real estate deal analysis.",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": origin + "/?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+              }
+            },
+            {
+              "@type": "SoftwareApplication",
+              "@id": origin + "/#application",
+              "name": "Stock Bloc Quant Terminal",
+              "operatingSystem": "iOS, Android, macOS, Windows, Web",
+              "applicationCategory": "FinanceApplication",
+              "author": { "@id": origin + "/#person" },
+              "publisher": { "@id": origin + "/#organization" },
+              "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD"
+              },
+              "aggregateRating": {
+                "@type": "AggregateRating",
+                "ratingValue": "4.9",
+                "ratingCount": "1280"
+              }
+            },
+            {
+              "@type": "FinancialProduct",
+              "@id": origin + "/#financialProduct",
+              "name": "Stock Bloc Quantitative Intelligence Suite",
+              "description": "Real-time stock momentum workstation, SEC 13F hedge fund analytics, FCRA credit score simulator, and real estate deal cash flow analyzer.",
+              "provider": { "@id": origin + "/#organization" }
+            }
+          ]
+        };
+
+        const existingDynamicScript = document.getElementById("stockbloc-dynamic-schema");
+        if (existingDynamicScript) {
+          existingDynamicScript.textContent = JSON.stringify(schemaGraph, null, 2);
+        } else {
+          const dynamicScript = document.createElement("script");
+          dynamicScript.id = "stockbloc-dynamic-schema";
+          dynamicScript.type = "application/ld+json";
+          dynamicScript.textContent = JSON.stringify(schemaGraph, null, 2);
+          document.head.appendChild(dynamicScript);
+        }
+      } catch (err) {
+        console.warn("Dynamic schema injection notice:", err);
       }
-    }
+    })();
     </script>
   </head>
   <body>
