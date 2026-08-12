@@ -125,6 +125,7 @@ export interface PaperTrade {
 
 export type ViewTab =
   | "watchlist"
+  | "community"
   | "macro"
   | "war_gov_ufo"
   | "intelligence"

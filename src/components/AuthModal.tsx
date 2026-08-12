@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import {
   auth,
+  db,
   googleProvider,
   appleProvider,
   UserProfile,
   saveUserDataLocally,
   getUserDataLocally,
 } from "../lib/firebase";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import {
   signInWithPopup,
   signOut,
@@ -44,10 +46,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
+  const [isProfilePublic, setIsProfilePublic] = useState(false);
 
   useEffect(() => {
     // Sync Auth State
-    const unsubscribe = onAuthStateChanged(auth, (user: User | null) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user: User | null) => {
       if (user) {
         const prof: UserProfile = {
           uid: user.uid,
@@ -57,6 +60,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         };
         setCurrentUser(prof);
         saveUserDataLocally("profile", prof);
+
+        // Fetch privacy preference
+        try {
+          const docRef = doc(db, "users", user.uid);
+          const snap = await getDoc(docRef);
+          if (snap.exists() && snap.data().isPublic !== undefined) {
+            setIsProfilePublic(snap.data().isPublic);
+          }
+        } catch (e) {
+          console.warn("Failed to fetch user privacy setting");
+        }
       } else {
         const localProf = getUserDataLocally("profile", null);
         setCurrentUser(localProf);
@@ -179,6 +193,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleTogglePrivacy = async () => {
+    if (!currentUser) return;
+    const newVal = !isProfilePublic;
+    setIsProfilePublic(newVal);
+    triggerHaptic("light");
+    try {
+      const docRef = doc(db, "users", currentUser.uid);
+      await setDoc(docRef, { isPublic: newVal }, { merge: true });
+    } catch (e) {
+      console.error("Failed to update privacy", e);
+      setIsProfilePublic(!newVal); // revert
+    }
+  };
+
   const handleSignOut = async () => {
     triggerHaptic("light");
     try {
@@ -253,6 +281,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   </li>
                 ))}
               </ul>
+            </div>
+
+            {/* Privacy Toggle */}
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/10">
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4 text-cyan-400" />
+                <div>
+                  <h5 className="text-xs font-bold text-white leading-none">Public Profile</h5>
+                  <p className="text-[10px] text-neutral-400 font-mono mt-1">Show stats on leaderboards</p>
+                </div>
+              </div>
+              <button
+                onClick={handleTogglePrivacy}
+                className={`w-10 h-6 rounded-full relative transition-colors cursor-pointer ${isProfilePublic ? 'bg-cyan-500' : 'bg-neutral-600'}`}
+              >
+                <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${isProfilePublic ? 'translate-x-4' : 'translate-x-0'}`} />
+              </button>
             </div>
 
             <button

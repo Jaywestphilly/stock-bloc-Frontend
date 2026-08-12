@@ -25,6 +25,7 @@ import { TopNavbar } from "../components/TopNavbar";
 import { CommandPalette } from "../components/CommandPalette";
 import { TsunamiVolatilityTicker } from "../components/TsunamiVolatilityTicker";
 import { Footer } from "../components/Footer";
+import { UsernamePromptModal } from "../components/UsernamePromptModal";
 
 // Helper function for resilient dynamic imports with automatic retry and error recovery
 function safeLazy<T extends React.ComponentType<any>>(
@@ -205,6 +206,10 @@ const NewsHub = safeLazy(
 const CheckoutSuccess = safeLazy(
   () => import("../components/CheckoutSuccess"),
   "CheckoutSuccess"
+);
+const CommunityHub = safeLazy(
+  () => import("../features/community/CommunityHub").then(m => ({ default: m.CommunityHub })),
+  "CommunityHub"
 );
 
 
@@ -1400,6 +1405,8 @@ export function App() {
           />
         )}
 
+        {activeTab === "community" && <CommunityHub />}
+
         {activeTab === "brand" && (
           <BrandLandingHub
             onSelectTab={handleSelectTab}
@@ -1539,6 +1546,7 @@ export function App() {
 
       {/* Firebase Authentication & Storage Modal */}
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <UsernamePromptModal />
 
       {/* Pro Subscription Modal */}
       <ProSubscriptionModal

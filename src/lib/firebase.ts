@@ -45,6 +45,7 @@ export interface UserProfile {
   displayName: string | null;
   email: string | null;
   photoURL: string | null;
+  username?: string | null;
 }
 
 // Local persistence fallback if Firebase isn't fully provisioned in current environment
