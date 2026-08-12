@@ -208,7 +208,7 @@ const CheckoutSuccess = safeLazy(
   "CheckoutSuccess"
 );
 const CommunityHub = safeLazy(
-  () => import("../features/community/CommunityHub").then(m => ({ default: m.CommunityHub })),
+  () => import("../features/community/CommunityHub"),
   "CommunityHub"
 );
 

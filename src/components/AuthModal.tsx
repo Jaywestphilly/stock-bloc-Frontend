@@ -30,6 +30,7 @@ import {
   Lock,
   Sparkles,
   Apple,
+  Eye,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
 

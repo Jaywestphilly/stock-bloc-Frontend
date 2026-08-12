@@ -355,3 +355,5 @@ export const CommunityHub = () => {
     </div>
   );
 };
+
+export default CommunityHub;
