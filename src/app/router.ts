@@ -47,6 +47,10 @@ export const ROUTE_MAP: Record<string, ViewTab> = {
   "/watch": "apple_watch",
   "/apple-watch": "apple_watch",
 
+  "/developers": "developers",
+  "/developer": "developers",
+  "/agents": "agents",
+
   // Legacy mappings
   "/ipos": "ipos",
   "/ma": "ma",
@@ -96,6 +100,9 @@ export const TAB_TO_ROUTE: Record<ViewTab, string> = {
   rankings: "/intelligence/rankings",
   heatmap: "/heatmap",
   apple_watch: "/watch",
+  developers: "/developers",
+  agents: "/agents",
+  agent_profile: "/agents", // Will be modified dynamically by pushAppRoute based on handle but base is fine
 };
 
 export const TAB_TITLES: Partial<Record<ViewTab | "terminal", string>> = {
@@ -130,6 +137,9 @@ export const TAB_TITLES: Partial<Record<ViewTab | "terminal", string>> = {
   heatmap: "Stock Bloc | Market Heatmap & Sector Map",
   mit_courses: "Stock Bloc | MIT & University OpenCourseWare Matrix",
   apple_watch: "Stock Bloc | Apple Watch Glance & Complication Mode",
+  developers: "Stock Bloc | Developer Portal",
+  agents: "Stock Bloc | AI Agent Directory",
+  agent_profile: "Stock Bloc | AI Agent Profile",
 };
 
 export const TAB_DESCRIPTIONS: Partial<Record<ViewTab | "terminal", string>> = {
@@ -159,6 +169,9 @@ export const TAB_DESCRIPTIONS: Partial<Record<ViewTab | "terminal", string>> = {
   rankings: "Quant financial metrics ranking, market cap leaders, valuation multiples, and dividend yields.",
   heatmap: "Interactive sector performance heatmap, S&P 500 index breadth, and market flow map.",
   mit_courses: "Free official university course lectures, playlists, and educational content from MIT OpenCourseWare, Yale, and Stanford.",
+  developers: "Stock Bloc Developer Portal for creating and managing external AI agents.",
+  agents: "Discover independently created AI agents connecting to the Stock Bloc platform.",
+  agent_profile: "View this AI Agent's profile, specialties, and activity.",
 };
 
 export const TAB_IMAGES: Partial<Record<ViewTab | "terminal", string>> = {
@@ -199,6 +212,7 @@ export function getRouteFromLocation(): RouteState {
     else if (path.startsWith("/research/ai-revolution/")) tab = "ai_revolution";
     else if (path.startsWith("/intelligence/")) tab = "intelligence";
     else if (path.startsWith("/war-gov-ufo/")) tab = "war_gov_ufo";
+    else if (path.startsWith("/agents/")) tab = "agent_profile";
   }
 
   return { tab: tab || "watchlist", isTerminalOpen: false };
@@ -246,7 +260,8 @@ export function pushAppRoute(tab: ViewTab, isTerminalOpen = false) {
       (targetPath === "/satellite-map" && currentPath.startsWith("/satellite-map/")) ||
       (targetPath === "/research/ai-revolution" && currentPath.startsWith("/research/ai-revolution/")) ||
       (targetPath === "/intelligence" && currentPath.startsWith("/intelligence/")) ||
-      (targetPath === "/war-gov-ufo" && currentPath.startsWith("/war-gov-ufo/"))
+      (targetPath === "/war-gov-ufo" && currentPath.startsWith("/war-gov-ufo/")) ||
+      (targetPath === "/agents" && currentPath.startsWith("/agents/"))
     ) {
       // Don't push over existing sub-tab
     } else {

@@ -211,6 +211,18 @@ const CommunityHub = safeLazy(
   () => import("../features/community/CommunityHub"),
   "CommunityHub"
 );
+const DeveloperPortal = safeLazy(
+  () => import("../features/developer/DeveloperPortal"),
+  "DeveloperPortal"
+);
+const AgentDirectory = safeLazy(
+  () => import("../features/agents/AgentDirectory"),
+  "AgentDirectory"
+);
+const AgentProfile = safeLazy(
+  () => import("../features/agents/AgentProfile"),
+  "AgentProfile"
+);
 
 
 const HubLoadingFallback: React.FC = () => (
@@ -1426,6 +1438,10 @@ export function App() {
         )}
 
         {activeTab === "docs" && <DocsHub />}
+
+        {activeTab === "developers" && <DeveloperPortal onNavigateTab={handleSelectTab} />}
+        {activeTab === "agents" && <AgentDirectory onNavigateTab={handleSelectTab} />}
+        {activeTab === "agent_profile" && <AgentProfile onNavigateTab={handleSelectTab} />}
         </Suspense>
       </main>
 

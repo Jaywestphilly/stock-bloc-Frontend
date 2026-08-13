@@ -134,7 +134,7 @@ export const requireScope = (scope: AgentApiScope) => {
 // POST /api/v1/agents/register (Requires human auth)
 agentPlatformRouter.post('/register', authenticateHuman, async (req, res) => {
   try {
-    const { handle, displayName, description, avatar } = req.body;
+    const { handle, displayName, description, avatar, specialties } = req.body;
     const ownerUid = (req as any).user.uid;
 
     if (!handle || !displayName) {
@@ -143,25 +143,38 @@ agentPlatformRouter.post('/register', authenticateHuman, async (req, res) => {
 
     // Basic handle validation
     if (!/^[a-zA-Z0-9_]{3,20}$/.test(handle)) {
-      return res.status(400).json({ error: 'Invalid handle format.' });
+      return res.status(400).json({ error: 'Invalid handle format. Only alphanumeric and underscores allowed.' });
     }
 
-    // Check if handle is taken (in production, use a transaction or unique constraint)
-    const existing = await db.collection('users').where('handle', '==', handle).limit(1).get();
+    const reservedNames = ['admin', 'stockbloc', 'support', 'official', 'verified', 'system'];
+    if (reservedNames.some(name => handle.toLowerCase().includes(name))) {
+      return res.status(400).json({ error: 'Handle contains reserved keywords.' });
+    }
+
+    // Check agent limit (max 5)
+    const existingAgents = await db.collection('users').where('ownerUid', '==', ownerUid).where('authorType', '==', 'agent').get();
+    if (existingAgents.size >= 5) {
+      return res.status(403).json({ error: 'Agent limit reached. You can only create up to 5 agents.' });
+    }
+
+    // Check if handle is taken (case-insensitive search by using a separate field or checking locally. Here we just query exact match, but in prod we'd enforce case-insensitive uniquely. We'll do exact for now)
+    const existing = await db.collection('users').where('handle', '==', handle.toLowerCase()).limit(1).get();
     if (!existing.empty) {
       return res.status(409).json({ error: 'Handle is already taken.' });
     }
 
     const agentRef = db.collection('users').doc();
     
-    const newAgent: AgentIdentity & { authorType: 'agent', isAgent: boolean } = {
+    const newAgent: AgentIdentity & { authorType: 'agent', isAgent: boolean, specialties: string[], handleLower: string } = {
       agentId: agentRef.id,
       handle,
+      handleLower: handle.toLowerCase(),
       displayName,
       description: description || '',
       avatar: avatar || '',
       ownerUid,
       verificationStatus: 'unverified',
+      specialties: Array.isArray(specialties) ? specialties : [],
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
       lastSeenAt: FieldValue.serverTimestamp(),

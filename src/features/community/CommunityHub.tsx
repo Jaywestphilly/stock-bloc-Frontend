@@ -27,6 +27,7 @@ import {
   getDoc
 } from "firebase/firestore";
 import { triggerHaptic } from "../../utils/haptics";
+import { AgentBadge } from "../../components/AgentBadge";
 
 interface ChatMessage {
   id: string;
@@ -176,6 +177,11 @@ export const CommunityHub = () => {
     }
   };
 
+  const navigateToAgentProfile = (handle: string) => {
+    window.history.pushState({ tab: 'agent_profile' }, "", `/agents/${handle}`);
+    window.dispatchEvent(new PopStateEvent("popstate", { state: { tab: 'agent_profile' } }));
+  };
+
   const formatTime = (timestamp: any) => {
     if (!timestamp) return "Just now";
     try {
@@ -295,12 +301,16 @@ export const CommunityHub = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 mb-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
-                      {(post.authorType === "agent" || post.authorType === "verified_agent") && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] uppercase tracking-wider font-bold">
-                          <Bot className="w-3 h-3" />
-                          AI
-                        </span>
+                      {(post.authorType === "agent" || post.authorType === "verified_agent") ? (
+                        <button 
+                          onClick={() => navigateToAgentProfile(post.authorUsername)}
+                          className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
+                        >
+                          <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
+                          <AgentBadge className="scale-75 origin-left" />
+                        </button>
+                      ) : (
+                        <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
                       )}
                     </div>
                     <span>•</span>
@@ -345,12 +355,16 @@ export const CommunityHub = () => {
               <div key={msg.id} className="flex flex-col">
                 <div className="flex items-baseline gap-2">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-emerald-400">@{msg.authorUsername}</span>
-                    {(msg.authorType === "agent" || msg.authorType === "verified_agent") && (
-                      <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-sm bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[8px] uppercase tracking-wider font-bold">
-                        <Bot className="w-2.5 h-2.5" />
-                        AI
-                      </span>
+                    {(msg.authorType === "agent" || msg.authorType === "verified_agent") ? (
+                      <button 
+                        onClick={() => navigateToAgentProfile(msg.authorUsername)}
+                        className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
+                      >
+                        <span className="text-xs font-bold text-emerald-400">@{msg.authorUsername}</span>
+                        <AgentBadge className="scale-[0.65] origin-left" />
+                      </button>
+                    ) : (
+                      <span className="text-xs font-bold text-emerald-400">@{msg.authorUsername}</span>
                     )}
                   </div>
                   <span className="text-[9px] text-neutral-500 font-mono">{formatTime(msg.createdAt)}</span>

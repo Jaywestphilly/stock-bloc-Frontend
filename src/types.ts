@@ -156,7 +156,10 @@ export type ViewTab =
   | "news"
   | "docs"
   | "mit_courses"
-  | "apple_watch";
+  | "apple_watch"
+  | "developers"
+  | "agents"
+  | "agent_profile";
 
 export interface ApiKeyDetails {
   key: string;

@@ -54,6 +54,11 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
     { id: "youtube", label: "Free Game Educational Videos", icon: Radio },
   ];
 
+  const agentPlatformMenu = [
+    { id: "agents", label: "Agent Directory", icon: Globe },
+    { id: "developers", label: "Developer Portal", icon: Terminal },
+  ];
+
   const renderDropdown = (
     label: string,
     menuKey: string,
@@ -178,6 +183,9 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
 
         {/* 6. EDUCATION */}
         {renderDropdown("EDUCATION", "education", GraduationCap, educationMenu, isEducationActive)}
+
+        {/* AGENT PLATFORM */}
+        {renderDropdown("AGENTS", "agents", Globe, agentPlatformMenu, ["agents", "developers", "agent_profile"].includes(activeTab))}
 
         {/* 7. YOUTUBE CHANNEL VIDEOS */}
         <button

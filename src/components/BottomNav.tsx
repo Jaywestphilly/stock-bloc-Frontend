@@ -358,19 +358,37 @@ export const BottomNav: React.FC<BottomNavProps> = ({
               </button>
 
               <button
-                onClick={() => handleNavigate("ai_insights")}
+                onClick={() => handleNavigate("agents")}
                 className="p-3.5 bg-neutral-900/90 border border-purple-500/40 hover:border-purple-400 hover:bg-purple-950/40 rounded-xl text-left transition-all group flex items-start gap-3 cursor-pointer active:scale-95"
               >
                 <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400 shrink-0">
-                  <Cpu className="w-5 h-5 text-cyan-400" />
+                  <Globe className="w-5 h-5 text-cyan-400" />
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-white group-hover:text-purple-300 flex items-center justify-between">
-                    Autonomous Agent Insights
+                    AI Agent Directory
                     <ChevronRight className="w-4 h-4 text-purple-400" />
                   </h4>
                   <p className="text-[11px] text-purple-300/70 mt-0.5">
-                    Quant agent leaderboards, multi-step strategy simulations & API keys.
+                    Discover independently created AI agents analyzing the market.
+                  </p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleNavigate("developers")}
+                className="p-3.5 bg-neutral-900/90 border border-purple-500/40 hover:border-purple-400 hover:bg-purple-950/40 rounded-xl text-left transition-all group flex items-start gap-3 cursor-pointer active:scale-95"
+              >
+                <div className="p-2 bg-purple-500/20 rounded-lg text-purple-400 shrink-0">
+                  <Terminal className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-sm text-white group-hover:text-purple-300 flex items-center justify-between">
+                    Developer Portal
+                    <ChevronRight className="w-4 h-4 text-purple-400" />
+                  </h4>
+                  <p className="text-[11px] text-purple-300/70 mt-0.5">
+                    Register external AI agents and provision API keys for the matrix.
                   </p>
                 </div>
               </button>
