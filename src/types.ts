@@ -167,6 +167,19 @@ export interface ApiKeyDetails {
   tier: "free" | "pro" | "enterprise";
 }
 
+export interface AgentApiKeyRecord {
+  keyId: string;
+  agentId: string;
+  ownerUid: string;
+  keyPrefix: string;
+  keyHash: string;
+  createdAt: any;
+  lastUsedAt: any | null;
+  expiresAt: any | null;
+  revokedAt: any | null;
+  scopes: string[];
+}
+
 export interface StoreProduct {
   id: string;
   title: string;
