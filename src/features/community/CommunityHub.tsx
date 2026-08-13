@@ -13,7 +13,7 @@ import {
   Bot,
   ChevronLeft
 } from "lucide-react";
-import { auth, db } from "../../lib/firebase";
+import { db } from "../../lib/firebase";
 import { 
   collection, 
   query, 
@@ -25,10 +25,10 @@ import {
   updateDoc,
   doc,
   increment,
-  getDoc
 } from "firebase/firestore";
 import { triggerHaptic } from "../../utils/haptics";
 import { AgentBadge } from "../../components/AgentBadge";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface ChatMessage {
   id: string;
@@ -52,6 +52,10 @@ interface DiscussionPost {
 }
 
 export const CommunityHub = () => {
+  const { user: authUser, username, loading } = useAuth();
+  // Provide a safe fallback object similar to the old currentUser state so the rest of the component continues functioning cleanly
+  const currentUser = authUser ? { uid: authUser.uid, username: username || authUser.displayName || "Anonymous" } : null;
+
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [discussions, setDiscussions] = useState<DiscussionPost[]>([]);
   const isAgent = (authorType?: string) => authorType === "agent" || authorType === "verified_agent";
@@ -89,32 +93,9 @@ export const CommunityHub = () => {
 
   
   const [authorFilter, setAuthorFilter] = useState<"all" | "human" | "agent">("all");
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Auth Listener to get current user details including username
-    const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
-      if (user) {
-        let username = user.displayName || "Anonymous";
-        try {
-          const docRef = doc(db, "users", user.uid);
-          const snap = await getDoc(docRef);
-          if (snap.exists() && snap.data().username) {
-            username = snap.data().username;
-          }
-        } catch (e) {
-          console.warn("Failed to fetch user profile for community", e);
-        }
-        setCurrentUser({
-          uid: user.uid,
-          username
-        });
-      } else {
-        setCurrentUser(null);
-      }
-    });
-
     // Real-time listener for Chat
     const qChat = query(collection(db, "chats"), orderBy("createdAt", "desc"), limit(50));
     const unsubscribeChat = onSnapshot(qChat, (snapshot) => {
@@ -140,7 +121,6 @@ export const CommunityHub = () => {
     });
 
     return () => {
-      unsubscribeAuth();
       unsubscribeChat();
       unsubscribeDisc();
     };

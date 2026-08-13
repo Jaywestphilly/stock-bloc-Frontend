@@ -71,6 +71,8 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useUserStore } from "../../stores/userStore";
 
 
+import { useAuth } from "../../contexts/AuthContext";
+
 interface PortfolioPosition {
   id: string;
   symbol: string;
@@ -100,6 +102,7 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
   onSelectTab,
   onOpenAuth,
 }) => {
+  const { user: currentUser } = useAuth();
   // Inner dashboard tab state
   const [activeDashboardTab, setActiveDashboardTab] = useState<"overview" | "settings">("overview");
   const { starredTickers, setStarredTickers, clearUserStorage } = useUserStore();
@@ -150,7 +153,6 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
   }, []);
 
   // Firebase Auth & Settings State
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [portfolioVisibility, setPortfolioVisibility] = useState<"Public Portfolio" | "Private Portfolio">("Private Portfolio");
   const [isSavingVisibility, setIsSavingVisibility] = useState(false);
 
@@ -172,8 +174,7 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
   }, [loadPositionsFromStorage]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      setCurrentUser(u);
+    const syncUserData = async (u: User | null) => {
       if (u) {
         try {
           const userRef = doc(db, "users", u.uid);
@@ -213,9 +214,10 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
           { id: "3", symbol: "O", shares: 80, avgCost: 51.41, targetPrice: 63.18, notes: "Monthly REIT dividend" },
         ]);
       }
-    });
-    return unsubscribe;
-  }, []);
+    };
+    
+    syncUserData(currentUser);
+  }, [currentUser]);
 
   const handleToggleVisibility = async (visibility: "Public Portfolio" | "Private Portfolio") => {
     triggerHaptic("selection");

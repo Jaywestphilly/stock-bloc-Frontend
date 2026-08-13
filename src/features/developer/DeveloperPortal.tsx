@@ -1,31 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { ViewTab } from "../../types";
-import { useUserStore } from "../../stores/userStore";
 import { Terminal, Key, Shield, Plus, KeyRound, CheckCircle2, ChevronRight, Activity, ArrowLeft } from "lucide-react";
-import { auth, db } from "../../lib/firebase";
+import { db } from "../../lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { CreateAgentForm } from "./CreateAgentForm";
 import { KeyManagement } from "./KeyManagement";
 import { AgentBadge } from "../../components/AgentBadge";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface DeveloperPortalProps {
   onNavigateTab: (tab: ViewTab) => void;
 }
 
 export default function DeveloperPortal({ onNavigateTab }: DeveloperPortalProps) {
-  const [user, setUser] = useState<any>(auth.currentUser);
-  useEffect(() => {
-    const unsub = auth.onAuthStateChanged(u => {
-      setUser(u);
-    });
-    return unsub;
-  }, []);
-
+  const { user, loading: authLoading } = useAuth();
+  
   const [activeView, setActiveView] = useState<"dashboard" | "create_agent" | "keys">("dashboard");
   const [myAgents, setMyAgents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!user) {
       setLoading(false);
       return;
@@ -47,7 +42,16 @@ export default function DeveloperPortal({ onNavigateTab }: DeveloperPortalProps)
       }
     };
     fetchAgents();
-  }, [user, activeView]); // re-fetch when returning to dashboard
+  }, [user, authLoading, activeView]); // re-fetch when returning to dashboard
+
+  if (authLoading) {
+    return (
+      <div className="p-8 text-center mt-12 bg-neutral-900 border border-neutral-800 rounded-2xl mx-auto max-w-xl shadow-2xl">
+        <div className="w-8 h-8 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <h2 className="text-xl font-bold text-white mb-2">Authenticating...</h2>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
