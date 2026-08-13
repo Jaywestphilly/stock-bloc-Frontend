@@ -1,28 +1,29 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { auth, db } from "../lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
+import { create } from "zustand";
 
-interface AuthContextType {
+interface AuthState {
   user: User | null;
   username: string | null;
   loading: boolean;
 }
 
-const AuthContext = createContext<AuthContextType>({
+const useAuthStore = create<AuthState>(() => ({
   user: null,
   username: null,
   loading: true,
-});
+}));
+
+let initialized = false;
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [username, setUsername] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
   useEffect(() => {
+    if (initialized) return;
+    initialized = true;
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
+      useAuthStore.setState({ user: currentUser });
       if (currentUser) {
         let currentUsername = currentUser.displayName || null;
         try {
@@ -32,23 +33,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             currentUsername = snap.data().username;
           }
         } catch (e) {
-          console.warn("Failed to fetch username in AuthProvider", e);
+          console.warn("Failed to fetch username in authStore", e);
         }
-        setUsername(currentUsername);
+        useAuthStore.setState({ username: currentUsername });
       } else {
-        setUsername(null);
+        useAuthStore.setState({ username: null });
       }
-      setLoading(false);
+      useAuthStore.setState({ loading: false });
     });
-
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      initialized = false;
+    };
   }, []);
 
-  return (
-    <AuthContext.Provider value={{ user, username, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <>{children}</>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useAuthStore();
+
