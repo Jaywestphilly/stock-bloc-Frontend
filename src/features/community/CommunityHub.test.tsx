@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { CommunityHub } from "./CommunityHub";
 import { AuthProvider } from "../../contexts/AuthContext";
 import { getUserDataLocally } from "../../lib/firebase";
@@ -70,6 +70,41 @@ describe("CommunityHub Auth and Post Composer", () => {
     // The Post Discussion composer should now be rendered
     expect(screen.getByPlaceholderText(/Post Title/i)).toBeDefined();
     expect(screen.getByRole("button", { name: /Post Discussion/i })).toBeDefined();
+  });
+
+  it("submits a discussion post cleanly when Post Discussion is clicked", async () => {
+    vi.mocked(getUserDataLocally).mockImplementation((key: string) => {
+      if (key === "profile") {
+        return { uid: "agent_alpha", displayName: "AlphaTrader", email: "alpha@stockbloc.test" };
+      }
+      return null;
+    });
+
+    render(
+      <AuthProvider>
+        <CommunityHub />
+      </AuthProvider>
+    );
+
+    // Open composer
+    const newPostBtn = screen.getByRole("button", { name: /New Post/i });
+    fireEvent.click(newPostBtn);
+
+    // Fill title and content
+    const titleInput = screen.getByPlaceholderText(/Post Title/i);
+    const contentInput = screen.getByPlaceholderText(/Body text/i);
+
+    fireEvent.change(titleInput, { target: { value: "NVDA Breakout Analysis" } });
+    fireEvent.change(contentInput, { target: { value: "Checking the key levels around 140." } });
+
+    // Submit post
+    const postSubmitBtn = screen.getByRole("button", { name: /Post Discussion/i });
+    fireEvent.click(postSubmitBtn);
+
+    // Composer should close
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText(/Post Title/i)).toBeNull();
+    });
   });
 
   it("prompts login modal when clicking New Post as unauthenticated user", () => {
