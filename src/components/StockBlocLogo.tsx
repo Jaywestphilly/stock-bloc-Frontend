@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 
 interface StockBlocLogoProps {
   size?: "sm" | "md" | "lg" | "xl" | "hero";
   showText?: boolean;
   showTagline?: boolean;
+  framed?: boolean;
   className?: string;
 }
 
@@ -11,6 +12,7 @@ export const StockBlocLogo: React.FC<StockBlocLogoProps> = ({
   size = "md",
   showText = true,
   showTagline = false,
+  framed = false,
   className = "",
 }) => {
   // Dimensions based on size
@@ -19,29 +21,41 @@ export const StockBlocLogo: React.FC<StockBlocLogoProps> = ({
     md: "w-11 h-11",
     lg: "w-20 h-20",
     xl: "w-32 h-32",
-    hero: "w-52 h-52",
+    hero: "w-48 h-48 sm:w-56 sm:h-56",
   }[size];
 
   const textSizeClass = {
     sm: "text-[10px]",
     md: "text-xs",
-    lg: "text-base",
-    xl: "text-xl",
-    hero: "text-2xl sm:text-3xl",
+    lg: "text-base sm:text-lg",
+    xl: "text-xl sm:text-2xl",
+    hero: "text-2xl sm:text-4xl",
   }[size];
 
   return (
     <div
-      className={`flex flex-col items-center justify-center font-mono select-none ${className}`}
+      className={`flex flex-col items-center justify-center select-none ${className}`}
     >
-      {/* Official Stock Bloc Bell & SB Arrow Logo Emblem */}
+      {/* Official Stock Bloc Bell & SB Arrow Logo Emblem with subtle geometric framing */}
       <div
-        className={`relative ${iconDimensions} flex items-center justify-center group overflow-hidden rounded-2xl`}
+        className={`relative ${iconDimensions} flex items-center justify-center group overflow-hidden rounded-2xl ${
+          framed
+            ? "p-1.5 bg-[#060b13] border border-cyan-500/40 shadow-[0_0_25px_rgba(0,242,254,0.25)]"
+            : ""
+        }`}
       >
+        {framed && (
+          <>
+            <span className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-cyan-400 pointer-events-none" />
+            <span className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-cyan-400 pointer-events-none" />
+            <span className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-cyan-400 pointer-events-none" />
+            <span className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-cyan-400 pointer-events-none" />
+          </>
+        )}
         <img 
           src="/logo.jpg" 
           alt="Stock Bloc Logo" 
-          className="w-full h-full object-cover relative z-10 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]"
+          className="w-full h-full object-cover rounded-xl relative z-10 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]"
         />
       </div>
 
@@ -49,13 +63,13 @@ export const StockBlocLogo: React.FC<StockBlocLogoProps> = ({
       {showText && (
         <div className="mt-3 text-center">
           <h2
-            className={`${textSizeClass} font-black text-cyan-100 tracking-[0.2em] uppercase font-mono drop-shadow-[0_0_16px_rgba(34,211,238,0.8)]`}
+            className={`${textSizeClass} font-black text-cyan-100 tracking-[0.2em] uppercase font-display drop-shadow-[0_0_16px_rgba(34,211,238,0.7)]`}
           >
-            "STOCK BLOC"
+            STOCK BLOC
           </h2>
           {showTagline && (
-            <p className="mt-1 text-[11px] sm:text-xs font-black tracking-[0.3em] text-cyan-400 font-mono uppercase">
-              BUILD WEALTH. BREAK LIMITS.
+            <p className="mt-1 text-[10px] sm:text-xs font-bold tracking-[0.28em] text-cyan-400/90 font-mono uppercase">
+              FUTURE FINANCIAL INTELLIGENCE NETWORK
             </p>
           )}
         </div>
@@ -63,3 +77,4 @@ export const StockBlocLogo: React.FC<StockBlocLogoProps> = ({
     </div>
   );
 };
+

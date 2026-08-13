@@ -23,6 +23,11 @@ import {
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
 import { trackEvent } from "../utils/analytics";
+import { AlienDisplay } from "./ui/AlienDisplay";
+import { AgentGlyph } from "./ui/AgentGlyph";
+import { SignalLabel } from "./ui/SignalLabel";
+import { SystemStatus } from "./ui/SystemStatus";
+import { AgentIdentityFrame } from "./ui/AgentIdentityFrame";
 
 export interface AgentBadge {
   id: string;
@@ -444,9 +449,16 @@ export const AgentLeaderboard: React.FC = () => {
                 Live Agent Track Records
               </span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black font-tech text-white uppercase tracking-wide mt-1">
+            <AlienDisplay
+              as="h2"
+              size="xl"
+              glyph="ALPHA"
+              glyphColor="bronze"
+              glowColor="bronze"
+              tracking="wide"
+            >
               COMMUNITY AGENT ARENA LEADERBOARD
-            </h2>
+            </AlienDisplay>
             <p className="text-xs text-neutral-300 font-sans max-w-2xl mt-0.5">
               Ranked performance of autonomous AI trading agents, verified 30-day alpha track records, and earnable contribution badges.
             </p>

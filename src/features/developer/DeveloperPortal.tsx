@@ -25,6 +25,9 @@ import { useAuth } from "../../contexts/AuthContext";
 import { AgentConnectionWizard } from "./AgentConnectionWizard";
 import { DeveloperAnalytics } from "./DeveloperAnalytics";
 import { DeveloperDocs } from "./DeveloperDocs";
+import { AlienDisplay } from "../../components/ui/AlienDisplay";
+import { AgentGlyph } from "../../components/ui/AgentGlyph";
+import { AgentIdentityFrame } from "../../components/ui/AgentIdentityFrame";
 
 interface DeveloperPortalProps {
   onNavigateTab: (tab: ViewTab) => void;
@@ -125,17 +128,31 @@ export default function DeveloperPortal({ onNavigateTab, initialSubTab = "dashbo
   }));
 
   return (
-    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6 mt-2">
+    <div className="max-w-6xl mx-auto p-4 sm:p-6 space-y-6 mt-2 alien-grid-subtle">
       {/* Developer Header Bar */}
-      <div className="bg-neutral-900/80 border border-neutral-800 rounded-2xl p-6 relative overflow-hidden backdrop-blur-xl">
+      <div className="bg-[#050913]/90 border border-cyan-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden backdrop-blur-xl shadow-[0_0_30px_rgba(0,242,254,0.06)]">
+        <span className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-cyan-400 pointer-events-none" />
+        <span className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-cyan-400 pointer-events-none" />
+
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-mono font-bold mb-2">
-              <Terminal className="w-3.5 h-3.5" />
-              Stock Bloc Developer Hub
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-xs font-mono font-bold tracking-wider">
+              <AgentGlyph type="AI" size="xs" color="cyan" glow={false} />
+              <span>STOCK BLOC DEVELOPER HUB // FLEET OPERATIONS</span>
             </div>
-            <h1 className="text-2xl font-black text-white tracking-tight">Autonomous Agent Fleet Manager</h1>
-            <p className="text-neutral-400 text-xs mt-1 max-w-xl">
+            
+            <AlienDisplay
+              as="h1"
+              size="xl"
+              glyph="NETWORK"
+              glyphColor="cyan"
+              glowColor="cyan"
+              tracking="wide"
+            >
+              AUTONOMOUS AGENT FLEET MANAGER
+            </AlienDisplay>
+
+            <p className="text-neutral-300 text-xs mt-1 max-w-xl font-sans leading-relaxed">
               Register agent identities, issue scoped API keys, run live connection tests, and monitor Brier accuracy calibration.
             </p>
           </div>
@@ -143,22 +160,22 @@ export default function DeveloperPortal({ onNavigateTab, initialSubTab = "dashbo
             <button
               onClick={() => setActiveView("create_agent")}
               disabled={myAgents.length >= 5}
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:bg-neutral-800 disabled:text-neutral-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-cyan-500/20 flex items-center gap-1.5"
+              className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-950 text-xs font-mono font-bold rounded-xl transition-all shadow-lg shadow-cyan-500/25 flex items-center gap-1.5 active:scale-95"
             >
               <Plus className="w-4 h-4" />
-              Create Agent
+              CREATE AGENT NODE
             </button>
           </div>
         </div>
 
         {/* Sub-Navigation Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto pt-6 mt-4 border-t border-neutral-800/80 scrollbar-none text-xs font-bold">
+        <div className="flex items-center gap-2 overflow-x-auto pt-6 mt-4 border-t border-cyan-500/20 scrollbar-none text-xs font-mono font-bold">
           {[
-            { id: "dashboard", label: "Agent Fleet", icon: Shield },
-            { id: "wizard", label: "Connection Wizard", icon: Sparkles },
-            { id: "keys", label: "Manage Keys", icon: KeyRound },
-            { id: "analytics", label: "Telemetry & Funnel", icon: BarChart3 },
-            { id: "docs", label: "API Docs", icon: BookOpen },
+            { id: "dashboard", label: "AGENT FLEET", icon: Shield },
+            { id: "wizard", label: "CONNECTION WIZARD", icon: Sparkles },
+            { id: "keys", label: "MANAGE KEYS", icon: KeyRound },
+            { id: "analytics", label: "TELEMETRY & FUNNEL", icon: BarChart3 },
+            { id: "docs", label: "API DOCS", icon: BookOpen },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeView === tab.id;
@@ -166,10 +183,10 @@ export default function DeveloperPortal({ onNavigateTab, initialSubTab = "dashbo
               <button
                 key={tab.id}
                 onClick={() => setActiveView(tab.id as any)}
-                className={`px-3.5 py-2 rounded-xl whitespace-nowrap flex items-center gap-1.5 transition-all ${
+                className={`px-3.5 py-2 rounded-xl whitespace-nowrap flex items-center gap-1.5 transition-all uppercase ${
                   isActive
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                    : "bg-neutral-950/60 text-neutral-400 hover:text-white border border-neutral-800"
+                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400 shadow-[0_0_12px_rgba(0,242,254,0.2)]"
+                    : "bg-[#060b13] text-neutral-400 hover:text-white border border-neutral-800"
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
