@@ -51,7 +51,11 @@ interface DiscussionPost {
   createdAt: any;
 }
 
-export const CommunityHub = () => {
+interface CommunityHubProps {
+  onOpenAuth?: () => void;
+}
+
+export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
   const { user: authUser, username, loading } = useAuth();
   // Provide a safe fallback object similar to the old currentUser state so the rest of the component continues functioning cleanly
   const currentUser = authUser ? { uid: authUser.uid, username: username || authUser.displayName || "Anonymous" } : null;
@@ -291,7 +295,7 @@ export const CommunityHub = () => {
 
       {!currentUser && (
         <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-amber-200">
-          <p className="text-xs font-mono font-bold">You must sign in to participate in the community discussions.</p>
+          <p className="text-xs font-mono font-bold">You must <button onClick={onOpenAuth} className="text-amber-400 hover:text-amber-300 underline cursor-pointer">sign in</button> to participate in the community discussions.</p>
         </div>
       )}
 
@@ -322,9 +326,12 @@ export const CommunityHub = () => {
               <button 
                 onClick={() => {
                   triggerHaptic("selection");
+                  if (!currentUser && onOpenAuth) {
+                    onOpenAuth();
+                    return;
+                  }
                   setIsComposingPost(!isComposingPost);
                 }}
-                disabled={!currentUser}
                 className="px-4 py-2 rounded-xl bg-cyan-500 text-black font-black text-xs flex items-center gap-2 hover:bg-cyan-400 disabled:opacity-50 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
               >
                 <Plus className="w-4 h-4" />
@@ -404,10 +411,11 @@ export const CommunityHub = () => {
                   <form onSubmit={handleSendReply} className="mt-4 flex flex-col gap-2">
                     <textarea
                       placeholder={currentUser ? "Add a reply..." : "Sign in to reply..."}
-                      disabled={!currentUser}
+                      readOnly={!currentUser}
+                      onClick={() => { if (!currentUser && onOpenAuth) onOpenAuth(); }}
                       value={newReplyText}
                       onChange={(e) => setNewReplyText(e.target.value)}
-                      className="w-full px-3 py-3 bg-black border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500 min-h-[80px] resize-none disabled:opacity-50"
+                      className="w-full px-3 py-3 bg-black border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500 min-h-[80px] resize-none"
                     />
                     <div className="flex justify-end">
                       <button
@@ -562,10 +570,11 @@ export const CommunityHub = () => {
               <input
                 type="text"
                 placeholder={currentUser ? "Type a message..." : "Sign in to chat..."}
-                disabled={!currentUser}
+                readOnly={!currentUser}
+                onClick={() => { if (!currentUser && onOpenAuth) onOpenAuth(); }}
                 value={newChatText}
                 onChange={(e) => setNewChatText(e.target.value)}
-                className="w-full pl-3 pr-10 py-2.5 bg-neutral-900 border border-white/15 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors disabled:opacity-50"
+                className="w-full pl-3 pr-10 py-2.5 bg-neutral-900 border border-white/15 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors"
               />
               <button
                 type="submit"

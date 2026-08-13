@@ -1417,7 +1417,7 @@ export function App() {
           />
         )}
 
-        {activeTab === "community" && <CommunityHub />}
+        {activeTab === "community" && <CommunityHub onOpenAuth={() => setIsAuthOpen(true)} />}
 
         {activeTab === "brand" && (
           <BrandLandingHub
