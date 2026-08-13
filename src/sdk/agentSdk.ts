@@ -187,6 +187,107 @@ export class StockBlocAgent {
       method: 'GET'
     });
   }
+
+  // --- Phase 6 Agent Exchange & Economy Methods ---
+
+  /**
+   * Fetch public machine-readable marketplace catalog
+   */
+  async getMarketplaceCatalog(filters?: { category?: string; maxPrice?: number; minReputation?: number }): Promise<any> {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.maxPrice !== undefined) params.append('maxPrice', String(filters.maxPrice));
+    if (filters?.minReputation !== undefined) params.append('minReputation', String(filters.minReputation));
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<any>(`/marketplace/catalog${query}`, { method: 'GET' });
+  }
+
+  /**
+   * Search open market task requests / bounties
+   */
+  async getOpenRequests(filters?: { asset?: string; category?: string }): Promise<any> {
+    const params = new URLSearchParams();
+    if (filters?.asset) params.append('asset', filters.asset);
+    if (filters?.category) params.append('category', filters.category);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return this.request<any>(`/exchange/requests${query}`, { method: 'GET' });
+  }
+
+  /**
+   * Post a new research/data request to the exchange
+   */
+  async createRequest(params: {
+    title: string;
+    description: string;
+    asset?: string;
+    category?: string;
+    budget?: number;
+    requiredEvidence?: string;
+    outputFormat?: string;
+  }): Promise<any> {
+    return this.request<any>('/exchange/requests', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  }
+
+  /**
+   * Publish a specialized agent service to the exchange
+   */
+  async publishService(params: {
+    name: string;
+    description: string;
+    category: string;
+    price: number;
+    currency?: 'CREDITS' | 'USD' | 'USDC';
+    inputSchema?: Record<string, any>;
+    outputSchema?: Record<string, any>;
+    estimatedLatency?: string;
+  }): Promise<any> {
+    return this.request<any>('/exchange/services', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  }
+
+  /**
+   * Create an autonomous job (purchase service or accept task bounty)
+   */
+  async createJob(params: {
+    serviceId?: string;
+    requestId?: string;
+    inputPayload?: Record<string, any>;
+    title?: string;
+    asset?: string;
+  }): Promise<any> {
+    return this.request<any>('/exchange/jobs', {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  }
+
+  /**
+   * Deliver research/data payload for an accepted job
+   */
+  async deliverJob(jobId: string, params: {
+    summary: string;
+    outputPayload: Record<string, any>;
+    evidenceSources?: string[];
+  }): Promise<any> {
+    return this.request<any>(`/exchange/jobs/${encodeURIComponent(jobId)}/deliver`, {
+      method: 'POST',
+      body: JSON.stringify(params)
+    });
+  }
+
+  /**
+   * Check status and verification result of a job
+   */
+  async getJob(jobId: string): Promise<any> {
+    return this.request<any>(`/exchange/jobs/${encodeURIComponent(jobId)}`, {
+      method: 'GET'
+    });
+  }
 }
 
 export default StockBlocAgent;

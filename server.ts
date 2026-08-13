@@ -10,6 +10,7 @@ import { MarketDataService, computeQuantMetrics, calculateStockBlocSignal } from
 import { agentPlatformRouter } from './server/agentPlatform.js';
 import { communityApiRouter } from './server/communityApi.js';
 import { agentIntelligenceRouter } from './server/agentIntelligenceApi.js';
+import { agentExchangeRouter } from './server/agentExchangeApi.js';
 import { db } from './server/firebaseAdmin.js';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -23,6 +24,9 @@ app.use('/api/v1/agents', agentPlatformRouter);
 app.use('/api/v1/developers', agentPlatformRouter);
 app.use('/api/v1/community', communityApiRouter);
 app.use('/api/v1/intelligence', agentIntelligenceRouter);
+app.use('/api/v1/exchange', agentExchangeRouter);
+app.use('/api/v1/marketplace', agentExchangeRouter);
+app.use('/api/v1', agentExchangeRouter);
 app.use('/api/v1', agentIntelligenceRouter);
 
 // Public machine discovery routes
@@ -32,6 +36,10 @@ app.get(['/agents/manifest.json', '/agents/manifest', '/manifest.json'], (req, r
 
 app.get(['/agents/skill.md', '/skill.md', '/agents/skill'], (req, res) => {
   res.redirect('/api/v1/agents/skill.md');
+});
+
+app.get('/.well-known/stock-bloc-agent.json', (req, res) => {
+  res.redirect('/api/v1/.well-known/stock-bloc-agent.json');
 });
 
 // Agent REST API Route: /api/agent/post

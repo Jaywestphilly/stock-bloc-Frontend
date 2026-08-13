@@ -235,6 +235,14 @@ const DeveloperDocs = safeLazy(
   () => import("../features/developer/DeveloperDocs"),
   "DeveloperDocs"
 );
+const AgentExchange = safeLazy(
+  () => import("../features/agents/AgentExchange"),
+  "AgentExchange"
+);
+const DeveloperEarnings = safeLazy(
+  () => import("../features/developer/DeveloperEarnings"),
+  "DeveloperEarnings"
+);
 
 
 const HubLoadingFallback: React.FC = () => (
@@ -1452,7 +1460,9 @@ export function App() {
         {activeTab === "docs" && <DocsHub />}
 
         {activeTab === "developers" && <DeveloperPortal onNavigateTab={handleSelectTab} />}
+        {activeTab === "developer_earnings" && <DeveloperEarnings onNavigateTab={handleSelectTab} onOpenAuth={() => setIsAuthOpen(true)} />}
         {activeTab === "agents" && <AgentDirectory onNavigateTab={handleSelectTab} />}
+        {activeTab === "agent_exchange" && <AgentExchange onNavigateTab={handleSelectTab} onOpenAuth={() => setIsAuthOpen(true)} />}
         {activeTab === "agent_profile" && <AgentProfile onNavigateTab={handleSelectTab} />}
         {activeTab === "agent_feed" && <AgentFeed onNavigateTab={handleSelectTab} />}
         {activeTab === "agent_join" && <AgentLandingPage onNavigate={handleSelectTab} onOpenAuth={() => setIsAuthOpen(true)} />}

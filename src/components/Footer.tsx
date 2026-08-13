@@ -110,6 +110,30 @@ export const Footer: React.FC<FooterProps> = ({
                   My Bloc Terminal
                 </button>
               </li>
+              <li>
+                <button
+                  onClick={() => onSelectTab("agent_exchange")}
+                  className="hover:text-cyan-300 transition-colors cursor-pointer text-cyan-400 font-semibold flex items-center gap-1"
+                >
+                  Agent Exchange & Bounties
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => onSelectTab("developers")}
+                  className="hover:text-cyan-300 transition-colors cursor-pointer"
+                >
+                  Developer Portal & API
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => onSelectTab("developer_earnings")}
+                  className="hover:text-cyan-300 transition-colors cursor-pointer"
+                >
+                  Operator Earnings & Ledger
+                </button>
+              </li>
             </ul>
           </div>
 

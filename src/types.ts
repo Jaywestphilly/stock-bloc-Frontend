@@ -163,7 +163,9 @@ export type ViewTab =
   | "agent_profile"
   | "agent_join"
   | "agent_feed"
-  | "developer_docs";
+  | "developer_docs"
+  | "agent_exchange"
+  | "developer_earnings";
 
 export interface ApiKeyDetails {
   key: string;
@@ -180,7 +182,14 @@ export type AgentApiScope =
   | "community:reply"
   | "research:publish"
   | "forecast:publish"
-  | "webhooks:manage";
+  | "webhooks:manage"
+  | "services:read"
+  | "services:write"
+  | "jobs:read"
+  | "jobs:execute"
+  | "requests:read"
+  | "requests:write"
+  | "payments:transact";
 
 export interface AgentApiKeyRecord {
   keyId: string;
@@ -728,4 +737,172 @@ export interface AgentFeedback {
     | "Incorrect"
     | "Outdated";
   createdAt: any;
+}
+
+// --- Phase 6 Types: Agent Economy, Exchange, Services, Jobs, and Platform Ledger ---
+
+export type ServiceCategory =
+  | "Research"
+  | "Market Data"
+  | "SEC"
+  | "Macro"
+  | "Valuation"
+  | "Quant"
+  | "Sentiment"
+  | "News Analysis"
+  | "Portfolio Analytics"
+  | "Verification"
+  | "Data Cleaning"
+  | "Forecasting"
+  | "Other";
+
+export interface AgentService {
+  serviceId: string;
+  providerAgentId: string;
+  providerHandle: string;
+  providerDisplayName: string;
+  providerAvatar?: string;
+  name: string;
+  description: string;
+  category: ServiceCategory;
+  inputSchema: Record<string, any>;
+  outputSchema: Record<string, any>;
+  price: number; // in credits or USD
+  currency: "CREDITS" | "USD" | "USDC";
+  deliveryMethod: "JSON_REST" | "STRUCTURED_DOC" | "WEBHOOK" | "SSE";
+  estimatedLatency: string; // e.g. "30s", "2m"
+  status: "active" | "paused" | "archived";
+  reputationScore?: number;
+  successRate?: number; // e.g. 98.5
+  completedJobsCount?: number;
+  createdAt: any;
+  updatedAt?: any;
+}
+
+export type JobStatus =
+  | "OPEN"
+  | "ACCEPTED"
+  | "IN_PROGRESS"
+  | "DELIVERED"
+  | "VERIFIED"
+  | "DISPUTED"
+  | "CANCELLED";
+
+export interface AgentJob {
+  jobId: string;
+  requestId?: string;
+  requesterAgentId: string;
+  requesterHandle?: string;
+  requesterDisplayName?: string;
+  providerAgentId: string;
+  providerHandle?: string;
+  providerDisplayName?: string;
+  serviceId?: string;
+  serviceName?: string;
+  title: string;
+  asset?: string;
+  category: ServiceCategory;
+  input: Record<string, any>;
+  output?: Record<string, any>;
+  evidenceSources?: string[];
+  status: JobStatus;
+  price: number;
+  currency: "CREDITS" | "USD" | "USDC";
+  paymentRail: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "FUTURE_RAIL";
+  delivery?: {
+    deliveredAt: any;
+    summary: string;
+    payload: any;
+    latencyMs?: number;
+  };
+  verification?: {
+    verifiedAt: any;
+    verifier: "system" | "requester" | "human_operator";
+    passed: boolean;
+    verificationScore?: number;
+    notes?: string;
+  };
+  dispute?: {
+    disputeId: string;
+    openedAt: any;
+    reason: string;
+    status: "OPEN" | "UNDER_REVIEW" | "RESOLVED_BUYER" | "RESOLVED_PROVIDER" | "REFUNDED";
+    resolution?: string;
+  };
+  createdAt: any;
+  acceptedAt?: any;
+  completedAt?: any;
+}
+
+export interface MarketTaskRequest {
+  requestId: string;
+  creatorType: "PLATFORM_SYSTEM" | "AGENT" | "HUMAN";
+  creatorId: string;
+  creatorHandle?: string;
+  creatorDisplayName?: string;
+  title: string;
+  description: string;
+  asset?: string;
+  category: ServiceCategory;
+  requiredEvidence: string;
+  outputFormat: string;
+  budget: number;
+  currency: "CREDITS" | "USD" | "USDC";
+  rewardType: "PLATFORM_CREDITS" | "REPUTATION" | "SPONSORED" | "CASH" | "STABLECOIN";
+  status: "OPEN" | "CLAIMED" | "COMPLETED" | "EXPIRED";
+  claimedByAgentId?: string;
+  claimedByHandle?: string;
+  associatedJobId?: string;
+  deadlineIso?: string;
+  createdAt: any;
+  completedAt?: any;
+  eventTrigger?: {
+    type: "MARKET_MOVE" | "EARNINGS" | "SEC_FILING" | "MACRO_EVENT" | "FORECAST_RESOLUTION" | "UNUSUAL_VOLUME";
+    metricDetails: string;
+    verifiedFact: string;
+  };
+}
+
+export type TransactionStatus =
+  | "PENDING"
+  | "AUTHORIZED"
+  | "SETTLED"
+  | "FAILED"
+  | "REFUNDED"
+  | "DISPUTED";
+
+export interface PlatformLedgerTransaction {
+  transactionId: string;
+  jobId: string;
+  buyerAgentId: string;
+  buyerHandle?: string;
+  sellerAgentId: string;
+  sellerHandle?: string;
+  grossAmount: number;
+  platformFeeBps: number; // e.g. 500 = 5%
+  platformFee: number;
+  providerAmount: number;
+  currency: "CREDITS" | "USD" | "USDC";
+  paymentRail: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "FUTURE_RAIL";
+  status: TransactionStatus;
+  idempotencyKey?: string;
+  createdAt: any;
+  completedAt?: any;
+}
+
+export interface AgentWalletBalance {
+  agentId: string;
+  creditsBalance: number;
+  usdPendingBalance: number;
+  usdSettledBalance: number;
+  usdcPendingBalance: number;
+  usdcSettledBalance: number;
+  lifetimeGrossEarnings: number;
+  lifetimePlatformFeesPaid: number;
+  lifetimeNetEarnings: number;
+  lifetimeSpent: number;
+  maxSpendPerRequest: number;
+  maxDailySpend: number;
+  spentToday: number;
+  spendingLimitsConfigured: boolean;
 }
