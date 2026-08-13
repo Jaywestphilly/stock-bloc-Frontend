@@ -156,6 +156,7 @@ export const NewsHub: React.FC = () => {
       return 6;
     };
 
+    // Load initial feed
     fetch("/api/data/news")
       .then((res) => {
         if (!res.ok) return fetch("/intel_news_feed.json");
@@ -189,6 +190,93 @@ export const NewsHub: React.FC = () => {
     syncYouTubeFeeds(false).then((res) => {
       if (res.videos && res.videos.length > 0) {
         setFeedVideos(res.videos);
+
+        // Dynamically update the top 2 featured positions (Stock Bloc #1 and Alex Wissner-Gross #2)
+        // using the latest live-synced videos so they never remain frozen!
+        const latestStockBloc = res.videos.find((v) => (v.channelName || "").toLowerCase().includes("stock bloc"));
+        const latestAlexWg = res.videos.find((v) => (v.channelName || "").toLowerCase().includes("alexwg") || (v.channelName || "").toLowerCase().includes("wissner-gross"));
+        const latestAllIn = res.videos.find((v) => (v.channelName || "").toLowerCase().includes("all-in"));
+        const latestDiamandis = res.videos.find((v) => (v.channelName || "").toLowerCase().includes("diamandis"));
+
+        setIntelFeed((prevFeed) => {
+          const updatedFeed = [...prevFeed];
+
+          if (latestStockBloc && latestStockBloc.youtubeId) {
+            const sbIdx = updatedFeed.findIndex(item => (item.channel_name || "").toLowerCase().includes("stock bloc"));
+            const sbItem = {
+              id: latestStockBloc.id || "sb_official_live",
+              title: latestStockBloc.title,
+              channel_name: "Stock Bloc",
+              published_date: latestStockBloc.publishedDate,
+              video_id: latestStockBloc.youtubeId,
+              video_url: latestStockBloc.videoUrl || `https://www.youtube.com/watch?v=${latestStockBloc.youtubeId}`,
+              embed_url: `https://www.youtube.com/embed/${latestStockBloc.youtubeId}`,
+              watch_url: latestStockBloc.videoUrl || `https://www.youtube.com/watch?v=${latestStockBloc.youtubeId}`,
+              thumbnail: latestStockBloc.thumbnailUrl || `https://img.youtube.com/vi/${latestStockBloc.youtubeId}/hqdefault.jpg`,
+              category: latestStockBloc.category || "Market Intelligence",
+              summary: latestStockBloc.description || "Official video from Stock Bloc (@stockbloc)."
+            };
+            if (sbIdx >= 0) {
+              updatedFeed[sbIdx] = sbItem;
+            } else {
+              updatedFeed.unshift(sbItem);
+            }
+          }
+
+          if (latestAlexWg && latestAlexWg.youtubeId) {
+            const alexIdx = updatedFeed.findIndex(item => (item.channel_name || "").toLowerCase().includes("alexwg") || (item.channel_name || "").toLowerCase().includes("wissner-gross"));
+            const alexItem = {
+              id: latestAlexWg.id || "alexwg_live",
+              title: latestAlexWg.title,
+              channel_name: "Alexander Wissner-Gross",
+              published_date: latestAlexWg.publishedDate,
+              video_id: latestAlexWg.youtubeId,
+              video_url: latestAlexWg.videoUrl || `https://www.youtube.com/watch?v=${latestAlexWg.youtubeId}`,
+              embed_url: `https://www.youtube.com/embed/${latestAlexWg.youtubeId}`,
+              watch_url: latestAlexWg.videoUrl || `https://www.youtube.com/watch?v=${latestAlexWg.youtubeId}`,
+              thumbnail: latestAlexWg.thumbnailUrl || `https://img.youtube.com/vi/${latestAlexWg.youtubeId}/hqdefault.jpg`,
+              category: latestAlexWg.category || "Frontier Science",
+              summary: latestAlexWg.description || "Latest dispatch from Dr. Alexander Wissner-Gross."
+            };
+            if (alexIdx >= 0) {
+              updatedFeed[alexIdx] = alexItem;
+            } else {
+              updatedFeed.splice(1, 0, alexItem);
+            }
+          }
+
+          if (latestAllIn && latestAllIn.youtubeId) {
+            const allInIdx = updatedFeed.findIndex(item => (item.channel_name || "").toLowerCase().includes("all-in"));
+            if (allInIdx >= 0) {
+              updatedFeed[allInIdx] = {
+                ...updatedFeed[allInIdx],
+                title: latestAllIn.title,
+                video_id: latestAllIn.youtubeId,
+                video_url: latestAllIn.videoUrl || `https://www.youtube.com/watch?v=${latestAllIn.youtubeId}`,
+                embed_url: `https://www.youtube.com/embed/${latestAllIn.youtubeId}`,
+                watch_url: latestAllIn.videoUrl || `https://www.youtube.com/watch?v=${latestAllIn.youtubeId}`,
+                thumbnail: latestAllIn.thumbnailUrl || `https://img.youtube.com/vi/${latestAllIn.youtubeId}/hqdefault.jpg`
+              };
+            }
+          }
+
+          if (latestDiamandis && latestDiamandis.youtubeId) {
+            const dIdx = updatedFeed.findIndex(item => (item.channel_name || "").toLowerCase().includes("diamandis"));
+            if (dIdx >= 0) {
+              updatedFeed[dIdx] = {
+                ...updatedFeed[dIdx],
+                title: latestDiamandis.title,
+                video_id: latestDiamandis.youtubeId,
+                video_url: latestDiamandis.videoUrl || `https://www.youtube.com/watch?v=${latestDiamandis.youtubeId}`,
+                embed_url: `https://www.youtube.com/embed/${latestDiamandis.youtubeId}`,
+                watch_url: latestDiamandis.videoUrl || `https://www.youtube.com/watch?v=${latestDiamandis.youtubeId}`,
+                thumbnail: latestDiamandis.thumbnailUrl || `https://img.youtube.com/vi/${latestDiamandis.youtubeId}/hqdefault.jpg`
+              };
+            }
+          }
+
+          return updatedFeed;
+        });
       }
       if (res.syncedAt) {
         setLastSyncedAt(res.syncedAt);

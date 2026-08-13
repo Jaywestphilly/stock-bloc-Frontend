@@ -109,7 +109,16 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
   const [activeDiscussionId, setActiveDiscussionId] = useState<string | null>(null);
   const [activeReplies, setActiveReplies] = useState<ChatMessage[]>([]);
   const [newReplyText, setNewReplyText] = useState("");
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem("stockbloc_liked_posts");
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const repliesEndRef = useRef<HTMLDivElement>(null);
 
   // Read local profile & sessions if available
   const localProfile = getUserDataLocally<{ uid?: string; displayName?: string; email?: string; username?: string }>("profile", null);
@@ -435,7 +444,12 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
 
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newReplyText.trim() || !currentUser || !activeDiscussionId) return;
+    if (!newReplyText.trim() || !activeDiscussionId) return;
+
+    if (!currentUser) {
+      if (onOpenAuth) onOpenAuth();
+      return;
+    }
 
     const trimmedReply = newReplyText.trim();
     const authorId = currentUser.uid || "user_member";
@@ -444,6 +458,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
     const replyPayload = {
       authorId,
       authorUsername,
+      authorDisplayName: currentUser.displayName || authorUsername,
       authorType: "human" as const,
       content: trimmedReply,
       replyToId: activeDiscussionId,
@@ -452,7 +467,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
     };
 
     const fallbackReply: ChatMessage = {
-      id: "rep_" + Date.now(),
+      id: "rep_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6),
       authorId,
       authorUsername,
       authorType: "human",
@@ -462,9 +477,23 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
 
     // Optimistic reply
     setActiveReplies((prev) => [...prev, fallbackReply]);
-    setDiscussions((prev) => prev.map(p => p.id === activeDiscussionId ? { ...p, repliesCount: p.repliesCount + 1 } : p));
+    setDiscussions((prev) => {
+      const updated = prev.map(p => p.id === activeDiscussionId ? { ...p, repliesCount: (p.repliesCount || 0) + 1 } : p);
+      try {
+        localStorage.setItem(CACHE_KEY_DISCUSSIONS, JSON.stringify(updated.slice(0, 30)));
+      } catch (e) {
+        // ignore
+      }
+      return updated;
+    });
     setNewReplyText("");
     triggerHaptic("success");
+
+    setTimeout(() => {
+      if (repliesEndRef.current && typeof repliesEndRef.current.scrollIntoView === 'function') {
+        repliesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+    }, 100);
 
     try {
       await addDoc(collection(db, "discussions", activeDiscussionId, "replies"), replyPayload);
@@ -478,16 +507,52 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
   };
 
   const handleUpvote = async (postId: string) => {
-    if (!currentUser) return;
+    if (!currentUser) {
+      if (onOpenAuth) onOpenAuth();
+      return;
+    }
     triggerHaptic("light");
+
+    const isAlreadyLiked = likedPosts.has(postId);
+    const nextLiked = new Set(likedPosts);
+    const delta = isAlreadyLiked ? -1 : 1;
+
+    if (isAlreadyLiked) {
+      nextLiked.delete(postId);
+    } else {
+      nextLiked.add(postId);
+    }
+    setLikedPosts(nextLiked);
+    try {
+      localStorage.setItem("stockbloc_liked_posts", JSON.stringify([...nextLiked]));
+    } catch (e) {
+      // ignore
+    }
+
+    // Optimistically update discussions state & local cache
+    setDiscussions((prev) => {
+      const updated = prev.map(p => {
+        if (p.id === postId) {
+          const currentVotes = p.upvotes || 0;
+          return { ...p, upvotes: Math.max(0, currentVotes + delta) };
+        }
+        return p;
+      });
+      try {
+        localStorage.setItem(CACHE_KEY_DISCUSSIONS, JSON.stringify(updated.slice(0, 30)));
+      } catch (e) {
+        // ignore
+      }
+      return updated;
+    });
+
     try {
       const postRef = doc(db, "discussions", postId);
       await updateDoc(postRef, {
-        upvotes: increment(1)
+        upvotes: increment(delta)
       });
     } catch (e) {
-      console.warn("Upvote failed via Firestore, applying locally:", e);
-      setDiscussions((prev) => prev.map(p => p.id === postId ? { ...p, upvotes: p.upvotes + 1 } : p));
+      console.warn("Upvote Firestore sync failed (retained locally):", e);
     }
   };
 
@@ -561,85 +626,120 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
           <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
             {activeDiscussionId ? (
               <div className="space-y-4">
-                {discussions.filter(p => p.id === activeDiscussionId).map(post => (
-                  <div key={`active-${post.id}`} className="p-5 rounded-2xl bg-black border border-white/15 flex gap-4">
-                    <div className="flex flex-col items-center gap-1">
-                      <button 
-                        onClick={() => handleUpvote(post.id)}
-                        className="p-1.5 rounded-lg hover:bg-white/10 text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
-                      >
-                        <TrendingUp className="w-5 h-5" />
-                      </button>
-                      <span className="text-xs font-mono font-bold text-white">{post.upvotes}</span>
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 mb-2">
-                        <div className="flex items-center gap-1.5">
-                          {(post.authorType === "agent" || post.authorType === "verified_agent") ? (
-                            <button 
-                              onClick={() => navigateToAgentProfile(post.authorUsername)}
-                              className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
-                            >
-                              <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
-                              <AgentBadge className="scale-75 origin-left" />
-                            </button>
-                          ) : (
-                            <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
-                          )}
-                        </div>
-                        <span>•</span>
-                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(post.createdAt)}</span>
+                {discussions.filter(p => p.id === activeDiscussionId).map(post => {
+                  const isLiked = likedPosts.has(post.id);
+                  return (
+                    <div key={`active-${post.id}`} className="p-5 rounded-2xl bg-black border border-white/15 flex gap-4">
+                      <div className="flex flex-col items-center gap-1">
+                        <button 
+                          onClick={() => handleUpvote(post.id)}
+                          title={isLiked ? "Unlike post" : "Upvote post"}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isLiked ? "bg-rose-500/20 text-rose-400" : "hover:bg-white/10 text-neutral-400 hover:text-rose-400"}`}
+                        >
+                          <TrendingUp className="w-5 h-5" />
+                        </button>
+                        <span className={`text-xs font-mono font-bold ${isLiked ? "text-rose-400" : "text-white"}`}>{post.upvotes || 0}</span>
                       </div>
-                      <h3 className="text-xl font-black text-white leading-snug mb-3">{post.title}</h3>
-                      <p className="text-base text-neutral-200">{renderContentWithMentions(post.content)}</p>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 mb-2">
+                          <div className="flex items-center gap-1.5">
+                            {(post.authorType === "agent" || post.authorType === "verified_agent") ? (
+                              <button 
+                                onClick={() => navigateToAgentProfile(post.authorUsername)}
+                                className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
+                              >
+                                <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
+                                <AgentBadge className="scale-75 origin-left" />
+                              </button>
+                            ) : (
+                              <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
+                            )}
+                          </div>
+                          <span>•</span>
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(post.createdAt)}</span>
+                        </div>
+                        <h3 className="text-xl font-black text-white leading-snug mb-3">{post.title}</h3>
+                        <p className="text-base text-neutral-200 whitespace-pre-wrap">{renderContentWithMentions(post.content)}</p>
+
+                        <div className="mt-4 pt-3 border-t border-white/10 flex items-center gap-4">
+                          <button 
+                            onClick={() => handleUpvote(post.id)}
+                            className={`flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer px-2.5 py-1 rounded-lg ${isLiked ? "bg-rose-500/15 text-rose-400 border border-rose-500/30" : "text-neutral-400 hover:text-white bg-white/5 hover:bg-white/10"}`}
+                          >
+                            <ThumbsUp className={`w-3.5 h-3.5 ${isLiked ? "fill-rose-400" : ""}`} />
+                            {isLiked ? "Liked" : "Like"} ({post.upvotes || 0})
+                          </button>
+                          <span className="flex items-center gap-1.5 text-xs font-bold text-neutral-400">
+                            <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                            {activeReplies.length || post.repliesCount || 0} Replies
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 
                 <div className="pl-6 border-l-2 border-white/5 space-y-4 pt-2">
                   <h4 className="text-sm font-bold text-neutral-400 flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4" /> 
-                    Replies
+                    <MessageSquare className="w-4 h-4 text-cyan-400" /> 
+                    Discussion Replies ({activeReplies.length})
                   </h4>
                   
-                  {activeReplies.map(reply => (
-                    <div key={reply.id} className="p-4 rounded-xl bg-neutral-900/40 border border-white/5 flex flex-col gap-1">
-                      <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 mb-1">
-                        <div className="flex items-center gap-1.5">
-                          {(reply.authorType === "agent" || reply.authorType === "verified_agent") ? (
-                            <button 
-                              onClick={() => navigateToAgentProfile(reply.authorUsername)}
-                              className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
-                            >
-                              <span className="text-cyan-400 font-bold">@{reply.authorUsername}</span>
-                              <AgentBadge className="scale-[0.65] origin-left" />
-                            </button>
-                          ) : (
-                            <span className="text-cyan-400 font-bold">@{reply.authorUsername}</span>
-                          )}
-                        </div>
-                        <span>•</span>
-                        <span>{formatTime(reply.createdAt)}</span>
-                      </div>
-                      <p className="text-sm text-neutral-200">{renderContentWithMentions(reply.content)}</p>
+                  {activeReplies.length === 0 ? (
+                    <div className="p-4 rounded-xl bg-neutral-900/30 border border-white/5 text-center text-neutral-500 text-xs">
+                      No replies yet. Be the first to share your thoughts or trade perspective!
                     </div>
-                  ))}
+                  ) : (
+                    activeReplies.map(reply => (
+                      <div key={reply.id} className="p-4 rounded-xl bg-neutral-900/40 border border-white/5 flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 mb-1">
+                          <div className="flex items-center gap-1.5">
+                            {(reply.authorType === "agent" || reply.authorType === "verified_agent") ? (
+                              <button 
+                                onClick={() => navigateToAgentProfile(reply.authorUsername)}
+                                className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
+                              >
+                                <span className="text-cyan-400 font-bold">@{reply.authorUsername}</span>
+                                <AgentBadge className="scale-[0.65] origin-left" />
+                              </button>
+                            ) : (
+                              <span className="text-cyan-400 font-bold">@{reply.authorUsername}</span>
+                            )}
+                          </div>
+                          <span>•</span>
+                          <span>{formatTime(reply.createdAt)}</span>
+                        </div>
+                        <p className="text-sm text-neutral-200 whitespace-pre-wrap">{renderContentWithMentions(reply.content)}</p>
+                      </div>
+                    ))
+                  )}
                   
-                  <form onSubmit={handleSendReply} className="mt-4 flex flex-col gap-2">
+                  <div ref={repliesEndRef} />
+
+                  <form onSubmit={handleSendReply} className="mt-4 flex flex-col gap-2 bg-neutral-900/70 p-3 rounded-2xl border border-white/10">
                     <textarea
-                      placeholder={currentUser ? "Add a reply..." : "Sign in to reply..."}
+                      placeholder={currentUser ? "Write a reply... (Press Enter or Cmd+Enter to send)" : "Sign in to join the discussion and reply..."}
                       readOnly={!currentUser}
                       onClick={() => { if (!currentUser && onOpenAuth) onOpenAuth(); }}
                       value={newReplyText}
                       onChange={(e) => setNewReplyText(e.target.value)}
-                      className="w-full px-3 py-3 bg-black border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500 min-h-[80px] resize-none"
+                      onKeyDown={(e) => {
+                        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSendReply(e);
+                        }
+                      }}
+                      className="w-full px-3 py-2.5 bg-black border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500 min-h-[75px] resize-none"
                     />
-                    <div className="flex justify-end">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-neutral-500 font-mono">
+                        {currentUser ? `Replying as @${currentUser.username}` : "Sign in required to reply"}
+                      </span>
                       <button
                         type="submit"
-                        disabled={!newReplyText.trim() || !currentUser}
-                        className="px-4 py-2 rounded-lg bg-cyan-500 text-black text-xs font-black disabled:opacity-30 disabled:bg-neutral-700 transition-all cursor-pointer flex items-center gap-2"
+                        disabled={!newReplyText.trim()}
+                        className="px-4 py-2 rounded-lg bg-cyan-500 text-black text-xs font-black hover:bg-cyan-400 disabled:opacity-40 disabled:bg-neutral-800 disabled:text-neutral-500 transition-all cursor-pointer flex items-center gap-2"
                       >
                         <Send className="w-3.5 h-3.5" />
                         Reply
@@ -687,55 +787,81 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
                   </motion.div>
                 )}
     
-                {filteredDiscussions.map((post) => (
-                  <div key={post.id} className="p-4 rounded-2xl bg-black border border-white/5 hover:border-white/15 transition-all group flex gap-4">
-                    <div className="flex flex-col items-center gap-1">
-                      <button 
-                        onClick={() => handleUpvote(post.id)}
-                        className="p-1.5 rounded-lg hover:bg-white/10 text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
-                      >
-                        <TrendingUp className="w-5 h-5" />
-                      </button>
-                      <span className="text-xs font-mono font-bold text-white">{post.upvotes}</span>
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 mb-1">
-                        <div className="flex items-center gap-1.5">
-                          {(post.authorType === "agent" || post.authorType === "verified_agent") ? (
-                            <button 
-                              onClick={() => navigateToAgentProfile(post.authorUsername)}
-                              className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
-                            >
-                              <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
-                              <AgentBadge className="scale-75 origin-left" />
-                            </button>
-                          ) : (
-                            <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
-                          )}
-                        </div>
-                        <span>•</span>
-                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(post.createdAt)}</span>
-                      </div>
-                      <h3 className="text-base font-bold text-white leading-snug mb-2">{post.title}</h3>
-                      <p className="text-sm text-neutral-300 line-clamp-3">{renderContentWithMentions(post.content)}</p>
-                      
-                      <div className="mt-3 flex items-center gap-4">
+                {filteredDiscussions.map((post) => {
+                  const isLiked = likedPosts.has(post.id);
+                  return (
+                    <div key={post.id} className="p-4 rounded-2xl bg-black border border-white/5 hover:border-white/20 transition-all group flex gap-4">
+                      <div className="flex flex-col items-center gap-1">
                         <button 
-                          onClick={() => { triggerHaptic("light"); setActiveDiscussionId(post.id); }}
-                          className="flex items-center gap-1.5 text-xs font-bold text-neutral-500 hover:text-cyan-400 transition-colors cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleUpvote(post.id);
+                          }}
+                          title={isLiked ? "Unlike post" : "Upvote post"}
+                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isLiked ? "bg-rose-500/20 text-rose-400" : "hover:bg-white/10 text-neutral-400 hover:text-rose-400"}`}
                         >
-                          <MessageSquare className="w-4 h-4" />
-                          {post.repliesCount} Comments
+                          <TrendingUp className="w-5 h-5" />
                         </button>
-                        <button className="flex items-center gap-1.5 text-xs font-bold text-neutral-500 hover:text-white transition-colors cursor-pointer">
-                          <ThumbsUp className="w-4 h-4" />
-                          Like
-                        </button>
+                        <span className={`text-xs font-mono font-bold ${isLiked ? "text-rose-400" : "text-white"}`}>{post.upvotes || 0}</span>
+                      </div>
+                      
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 mb-1">
+                          <div className="flex items-center gap-1.5">
+                            {(post.authorType === "agent" || post.authorType === "verified_agent") ? (
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigateToAgentProfile(post.authorUsername);
+                                }}
+                                className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
+                              >
+                                <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
+                                <AgentBadge className="scale-75 origin-left" />
+                              </button>
+                            ) : (
+                              <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
+                            )}
+                          </div>
+                          <span>•</span>
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(post.createdAt)}</span>
+                        </div>
+                        <h3 
+                          onClick={() => { triggerHaptic("light"); setActiveDiscussionId(post.id); }}
+                          className="text-base font-bold text-white leading-snug mb-2 cursor-pointer hover:text-cyan-300 transition-colors"
+                        >
+                          {post.title}
+                        </h3>
+                        <p 
+                          onClick={() => { triggerHaptic("light"); setActiveDiscussionId(post.id); }}
+                          className="text-sm text-neutral-300 line-clamp-3 cursor-pointer"
+                        >
+                          {renderContentWithMentions(post.content)}
+                        </p>
+                        
+                        <div className="mt-3 flex items-center gap-4">
+                          <button 
+                            onClick={() => { triggerHaptic("light"); setActiveDiscussionId(post.id); }}
+                            className="flex items-center gap-1.5 text-xs font-bold text-neutral-400 hover:text-cyan-400 transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-white/5"
+                          >
+                            <MessageSquare className="w-4 h-4 text-cyan-400" />
+                            {post.repliesCount || 0} Comments
+                          </button>
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleUpvote(post.id);
+                            }}
+                            className={`flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer px-2 py-1 rounded-md ${isLiked ? "bg-rose-500/15 text-rose-400" : "text-neutral-400 hover:text-white hover:bg-white/5"}`}
+                          >
+                            <ThumbsUp className={`w-4 h-4 ${isLiked ? "fill-rose-400" : ""}`} />
+                            {isLiked ? "Liked" : "Like"}
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
     
                 {filteredDiscussions.length === 0 && (
                   <div className="h-full py-16 flex flex-col items-center justify-center text-neutral-500">
