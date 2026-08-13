@@ -35,7 +35,7 @@ import { triggerHaptic } from "../../utils/haptics";
 import { getStoredYouTubeVideos, syncYouTubeFeeds, formatTimeSinceSync } from "../../utils/youtubeSync";
 
 export type CombinedFeedItem =
-  | (YouTubeVideo & { itemCategory: "youtube" | "news_video"; type: "youtube_video"; timestamp: string });
+  | (Omit<YouTubeVideo, "timestamp"> & { itemCategory: "youtube" | "news_video"; type: "youtube_video"; timestamp: string });
 
 const getItemTags = (item: CombinedFeedItem): string[] => {
   const tags: string[] = [];
@@ -120,7 +120,7 @@ export const NewsHub: React.FC = () => {
   const [activeVideoModal, setActiveVideoModal] = useState<YouTubeVideo | null>(null);
   const [feedVideos, setFeedVideos] = useState<YouTubeVideo[]>(() => getStoredYouTubeVideos());
   const [lastSyncedAt, setLastSyncedAt] = useState<number>(0);
-  const [intelFeed, setIntelFeed] = useState<IntelFeedItem[]>([]);
+  const [intelFeed, setIntelFeed] = useState<any[]>([]);
 
   // State for saved/bookmarked news item IDs
   const [bookmarkedIds, setBookmarkedIds] = useState<string[]>(() => {
@@ -565,7 +565,7 @@ export const NewsHub: React.FC = () => {
           filteredStream.map((item) => {
             // RENDER YOUTUBE OR NEWS VIDEO ITEM
             if (item.itemCategory === "youtube" || item.itemCategory === "news_video") {
-              const video = item as YouTubeVideo;
+              const video = item as unknown as YouTubeVideo;
               const isNews = item.itemCategory === "news_video";
               const borderColor = isNews ? "border-cyan-500/30 hover:border-cyan-500/60" : "border-rose-500/30 hover:border-rose-500/60";
               const bgColor = isNews ? "bg-[#050b14]/90" : "bg-[#0b0306]/90";

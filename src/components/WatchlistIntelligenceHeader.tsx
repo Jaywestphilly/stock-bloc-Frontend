@@ -1,4 +1,5 @@
 import React from "react";
+import { SortField } from "../types";
 import {
   RefreshCw,
   SlidersHorizontal,
@@ -19,7 +20,7 @@ import { triggerHaptic } from "../utils/haptics";
 interface WatchlistIntelligenceHeaderProps {
   searchQuery?: string;
   setSearchQuery?: (q: string) => void;
-  sortField: "changePercent" | "signal" | "volume" | "marketCap" | "price" | "name" | "rsi" | "volatility";
+  sortField: SortField;
   setSortField: (field: any) => void;
   sortDirection: "asc" | "desc";
   setSortDirection: (dir: "asc" | "desc") => void;

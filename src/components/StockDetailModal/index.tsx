@@ -769,7 +769,7 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
               : benchmarkSymbol === "QQQ"
                 ? 518
                 : 440;
-          const hist = stock.history?.[timeframe] || [];
+          const hist: any[] = stock.history?.[timeframe] || [];
           const fallbackPts = hist.map((pt, i) => ({
             time: pt.time,
             price:
@@ -790,7 +790,7 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
               : benchmarkSymbol === "QQQ"
                 ? 518
                 : 440;
-          const hist = stock.history?.[timeframe] || [];
+          const hist: any[] = stock.history?.[timeframe] || [];
           const fallbackPts = hist.map((pt, i) => ({
             time: pt.time,
             price:
@@ -810,8 +810,8 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
 
   // Calculate Relative Strength Index (RSI 14)
   const rsiData = useMemo(() => {
-    if (!stock) return [];
-    const hist =
+    if (!stock) return { rsi: 50, status: "Neutral" as const };
+    const hist: any[] =
       realHistory && realHistory.length > 0
         ? realHistory
         : stock.history?.[timeframe] || [];
@@ -843,7 +843,7 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
   // Generate Full Candlestick OHLC Data from history points (Heikin Ashi)
   const fullCandleOHLCData = useMemo(() => {
     if (!stock) return [];
-    const hist =
+    const hist: any[] =
       realHistory && realHistory.length > 0
         ? realHistory
         : stock.history?.[timeframe] || [];
@@ -853,7 +853,7 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
 
     // Check if hist items already contain full OHLC properties
     const hasFullOHLC = hist.every(
-      (p: { open?: number; high?: number; low?: number }) =>
+      (p: any) =>
         p.open !== undefined && p.high !== undefined && p.low !== undefined,
     );
 

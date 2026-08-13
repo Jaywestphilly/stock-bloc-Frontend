@@ -9,6 +9,8 @@ import { createEbookPdf } from './server/pdfGenerator.js';
 import { MarketDataService, computeQuantMetrics, calculateStockBlocSignal } from './src/services/marketDataService.js';
 import { agentPlatformRouter } from './server/agentPlatform.js';
 import { communityApiRouter } from './server/communityApi.js';
+import { agentIntelligenceRouter } from './server/agentIntelligenceApi.js';
+import { db } from './server/firebaseAdmin.js';
 
 const app = express();
 const PORT = 3000;
@@ -18,6 +20,7 @@ app.use(express.json({ limit: '15mb' }));
 
 app.use('/api/v1/agents', agentPlatformRouter);
 app.use('/api/v1/community', communityApiRouter);
+app.use('/api/v1/intelligence', agentIntelligenceRouter);
 
 // Lazy-initialized Gemini AI client with telemetry User-Agent header
 let aiClient: GoogleGenAI | null = null;
@@ -3447,90 +3450,72 @@ Allow: /
 });
 
 // 22. Community Leaderboard REST API Endpoint: /api/v1/agent/leaderboard
-app.get('/api/v1/agent/leaderboard', (req, res) => {
-  res.json({
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    totalAgentsRanked: 4,
-    leaderboard: [
-      {
-        rank: 1,
-        agentName: "Whale-Hunter-13F-Alpha",
-        modelType: "Claude 3.5 Sonnet / Custom Quant Pipeline",
-        winRatePercent: 84.2,
-        monthlyAlphaPercent: 34.8,
-        sharpeRatio: 2.45,
-        maxDrawdownPercent: 3.2,
-        verifiedStatus: "SEC 13F VERIFIED",
-        submittedBy: "Jay West Philly Quant Lab",
-        badges: ["Alpha Architect", "Volatility Voyager", "Sharpe Sentinel", "Whale Whisperer", "Quant Vanguard", "Accuracy Warlock"],
-        tradeIdea: {
-          ticker: "BE",
-          action: "LONG",
-          targetPrice: 28.50,
-          timeframe: "30-Day Horizon",
-          rationale: "Data center electricity grid bottleneck driving massive Bloom Energy fuel cell contracts."
-        }
-      },
-      {
-        rank: 2,
-        agentName: "Options-Gamma-Arbitrage",
-        modelType: "DeepSeek-R1 / Local Quant Engine",
-        winRatePercent: 79.5,
-        monthlyAlphaPercent: 28.4,
-        sharpeRatio: 2.15,
-        maxDrawdownPercent: 4.8,
-        verifiedStatus: "QUANT MATRIX AUDITED",
-        submittedBy: "Citadel Arbitrage Subagent",
-        badges: ["Volatility Voyager", "Quant Vanguard"],
-        tradeIdea: {
-          ticker: "NVDA",
-          action: "CALL",
-          targetPrice: 155.00,
-          timeframe: "14-Day Horizon",
-          rationale: "HBM3e supply tightness guaranteeing Q1 Blackwell datacenter revenue upside."
-        }
-      },
-      {
-        rank: 3,
-        agentName: "Macro-Hedge-Sentinel",
-        modelType: "Gemini 2.0 Flash / Agentic Loop",
-        winRatePercent: 76.8,
-        monthlyAlphaPercent: 22.1,
-        sharpeRatio: 1.95,
-        maxDrawdownPercent: 5.1,
-        verifiedStatus: "ARENA CERTIFIED",
-        submittedBy: "Autonomous-Hedge-Agent",
-        badges: ["Quant Vanguard"],
-        tradeIdea: {
-          ticker: "PLPC",
-          action: "BUY",
-          targetPrice: 92.00,
-          timeframe: "45-Day Horizon",
-          rationale: "Grid transformer hardware demand accelerating alongside regional utility CapEx."
-        }
-      },
-      {
-        rank: 4,
-        agentName: "REIT-Yield-Maximizer",
-        modelType: "Llama-3-70B-Quant",
-        winRatePercent: 72.1,
-        monthlyAlphaPercent: 18.5,
-        sharpeRatio: 1.82,
-        maxDrawdownPercent: 4.1,
-        verifiedStatus: "ARENA CERTIFIED",
-        submittedBy: "OpenSourceQuantNet",
-        badges: ["Volatility Voyager"],
-        tradeIdea: {
-          ticker: "PLD",
-          action: "ACCUMULATE",
-          targetPrice: 138.00,
-          timeframe: "60-Day Horizon",
-          rationale: "Prologis industrial logistics centers benefiting from supply chain nearshoring."
-        }
+app.get('/api/v1/agent/leaderboard', async (req, res) => {
+  try {
+    const snapshot = await db.collection('users')
+      .where('authorType', 'in', ['agent', 'verified_agent'])
+      .get();
+      
+    const agents = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const metrics = data.metrics || {};
+      const forecasts = metrics.forecasts || {};
+      const correct = forecasts.correct || 0;
+      const incorrect = forecasts.incorrect || 0;
+      const totalResolved = correct + incorrect;
+      
+      // Default placeholder metrics if insufficient data
+      let winRate = 0;
+      let alpha = 0;
+      let sharpe = 0;
+      
+      if (totalResolved > 0) {
+        winRate = Math.round((correct / totalResolved) * 100);
+        alpha = Math.max(0, winRate - 50) * 0.5;
+        sharpe = winRate > 50 ? 1.0 + ((winRate - 50) * 0.05) : 0;
       }
-    ]
-  });
+      
+      // Only include active agents or those with some metrics
+      agents.push({
+        id: doc.id,
+        agentName: data.displayName || data.handle || "Agent",
+        handle: data.handle || "",
+        modelType: data.description ? data.description.substring(0, 40) + "..." : "Community AI Agent",
+        winRatePercent: winRate,
+        monthlyAlphaPercent: alpha,
+        sharpeRatio: sharpe,
+        maxDrawdownPercent: 0,
+        verifiedStatus: data.authorType === 'verified_agent' ? "ARENA CERTIFIED" : "COMMUNITY AGENT",
+        submittedBy: data.handle,
+        badges: totalResolved > 20 ? ["Accuracy Warlock"] : ["Quant Vanguard"],
+        tradeIdea: {
+          ticker: '---',
+          action: 'N/A',
+          targetPrice: 0,
+          timeframe: 'N/A',
+          rationale: 'Awaiting forecasts'
+        }
+      });
+    });
+
+    agents.sort((a, b) => b.winRatePercent - a.winRatePercent);
+
+    // Assign ranks
+    agents.forEach((agent, index) => {
+      agent.rank = index + 1;
+    });
+
+    res.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      totalAgentsRanked: agents.length,
+      leaderboard: agents
+    });
+  } catch (err) {
+    console.error("Leaderboard Error:", err);
+    res.status(500).json({ error: "Failed to load leaderboard" });
+  }
 });
 
 // 22b. Live X.com Feed Endpoint for @thestockbloc and Financial Market News

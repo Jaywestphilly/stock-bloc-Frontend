@@ -32,6 +32,7 @@ export interface StockTicker {
   high52: number;
   low52: number;
   volume: string;
+  sentimentScore?: number;
   description: string;
   rsi?: number;
   isPinned?: boolean;
@@ -219,7 +220,6 @@ export interface StoreProduct {
   downloadUrl?: string;
   creditsGranted?: number;
 }
-
 
 // 13F Hedge Fund Filings Interfaces
 export interface HedgeFundProfile {
@@ -561,6 +561,7 @@ export interface DysonLiveData {
   dyson_stories?: DysonStory[];
   videos?: DysonVideo[];
   updated_at?: string;
+  fleet_metrics?: any;
 }
 
 // StockDetailModal SubComponent Shared Props
@@ -571,7 +572,7 @@ export interface StockDetailSubProps {
   onClose: () => void;
   onTogglePin?: (symbol: string) => void;
   onShare?: (stock: StockTicker) => void;
-  onOpenBloombergTerminal?: () => void;
+  onOpenBloombergTerminal?: (stock: StockTicker) => void;
   onOpenBrokerages?: (stock: StockTicker) => void;
   timeframe: TimeFrame;
   setTimeframe: (tf: TimeFrame) => void;
@@ -598,3 +599,124 @@ export interface StockDetailSubProps {
   [key: string]: any;
 }
 
+// --- Phase 4 Types: Agent Intelligence, Reputation, Research and Performance System ---
+
+export interface Forecast {
+  id: string;
+  agentId: string;
+  question: string;
+  asset: string;
+  direction: "Bullish" | "Bearish" | "Neutral" | "Range" | "Other";
+  target: string;
+  probability: number;
+  timeHorizon:
+    | "Intraday"
+    | "1 day"
+    | "1 week"
+    | "1 month"
+    | "3 months"
+    | "6 months"
+    | "1 year"
+    | "Long term";
+  createdAt: any;
+  resolutionCriteria: string;
+  sourceEvidence: string;
+  status:
+    | "OPEN"
+    | "RESOLVED_CORRECT"
+    | "RESOLVED_INCORRECT"
+    | "INVALID"
+    | "CANCELLED";
+  resolution?: string;
+  resolvedAt?: any;
+}
+
+export interface ResearchEvidence {
+  source: string;
+  title: string;
+  publisher: string;
+  publicationDate: string;
+  url: string;
+  claimSupported: string;
+  sourceType:
+    | "Company Filing"
+    | "Earnings Release"
+    | "Transcript"
+    | "Government Data"
+    | "Economic Data"
+    | "Academic Research"
+    | "News"
+    | "Market Data"
+    | "Company Website"
+    | "Other";
+}
+
+export interface ResearchArticle {
+  id: string;
+  agentId: string;
+  title: string;
+  summary: string;
+  thesis: string;
+  bullCase: string;
+  bearCase: string;
+  catalysts: string[];
+  risks: string[];
+  evidence: ResearchEvidence[];
+  timeHorizon: string;
+  relatedAssets: string[];
+  createdAt: any;
+  updatedAt: any;
+  version: number;
+}
+
+export interface InvestmentThesis {
+  id: string;
+  agentId: string;
+  asset: string;
+  direction: "Bullish" | "Bearish" | "Neutral";
+  timeHorizon: string;
+  thesis: string;
+  catalysts: string[];
+  risks: string[];
+  bullCase: string;
+  baseCase: string;
+  bearCase: string;
+  keyMetrics: string[];
+  invalidationConditions: string[];
+  evidence: ResearchEvidence[];
+  createdAt: any;
+  updatedAt: any;
+}
+
+export interface AgentReputation {
+  reputationStatus:
+    "INSUFFICIENT_DATA" | "EMERGING" | "ESTABLISHED" | "HIGH_CONFIDENCE";
+  score?: number;
+  forecastRecord: {
+    total: number;
+    correct: number;
+    incorrect: number;
+    open: number;
+    accuracy?: number;
+    calibrationScore?: number;
+  };
+  researchCount: number;
+  communityInteractions: number;
+}
+
+export interface AgentFeedback {
+  id: string;
+  agentId: string;
+  userId: string;
+  targetId: string;
+  targetType: "forecast" | "research" | "thesis" | "post";
+  feedbackType:
+    | "Helpful"
+    | "Not Helpful"
+    | "Good Evidence"
+    | "Poor Evidence"
+    | "Good Explanation"
+    | "Incorrect"
+    | "Outdated";
+  createdAt: any;
+}

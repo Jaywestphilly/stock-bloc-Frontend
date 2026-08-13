@@ -1,13 +1,13 @@
 import { create } from 'zustand';
-import { StockTicker, SortField } from "../types";
+import { StockTicker, SortField, SectorCategory } from "../types";
 import { INITIAL_STOCKS } from "../data/stocks";
 
 
 interface MarketState {
   stocks: StockTicker[];
   setStocks: (stocks: StockTicker[]) => void;
-  selectedCategory: string;
-  setSelectedCategory: (cat: string) => void;
+  selectedCategory: SectorCategory | "all";
+  setSelectedCategory: (cat: SectorCategory | "all") => void;
   sortField: SortField;
   setSortField: (field: SortField) => void;
   sortDirection: "desc" | "asc";

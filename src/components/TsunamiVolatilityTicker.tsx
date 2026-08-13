@@ -105,12 +105,15 @@ export const TsunamiVolatilityTicker: React.FC<TsunamiVolatilityTickerProps> = (
           changePercent: spike.changePercent,
           volume: `${spike.volumeMillions}M`,
           marketCap: "N/A",
-          pe: 25,
+          peRatio: "25",
           high52: spike.price * 1.2,
           low52: spike.price * 0.7,
-          sector: "High Volatility",
+          category: "tsunami",
+          sparkline: [],
+          history: { "1D": [], "1W": [], "1M": [], "1Y": [], "ALL": [] },
+          tags: [],
           description: spike.catalyst,
-          momentumScore: 92,
+          quantMetrics: { momentumScore: 92 },
         });
       }
     }

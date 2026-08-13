@@ -34,9 +34,9 @@ interface HeaderProps {
   onOpenAiAssistant: () => void;
   onOpenLinktree: () => void;
   onOpenShare: () => void;
-  onOpenImageScanner: () => void;
-  onOpenGroundingSearch: () => void;
-  onOpenMusicPlayer: () => void;
+  onOpenImageScanner?: () => void;
+  onOpenGroundingSearch?: () => void;
+  onOpenMusicPlayer?: () => void;
   onOpenAuth: () => void;
   onOpenBloombergTerminal?: () => void;
   onOpenProSubscription?: () => void;

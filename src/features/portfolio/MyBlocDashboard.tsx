@@ -1059,7 +1059,7 @@ export const MyBlocDashboard: React.FC<MyBlocDashboardProps> = ({
           <button
             onClick={() => {
               triggerHaptic("selection");
-              onSelectTab("books");
+              onSelectTab("playbooks");
             }}
             className="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black font-black font-tech text-xs uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer shadow-lg shadow-amber-400/20 shrink-0"
           >

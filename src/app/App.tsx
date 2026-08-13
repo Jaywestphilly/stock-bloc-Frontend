@@ -28,10 +28,10 @@ import { Footer } from "../components/Footer";
 import { UsernamePromptModal } from "../components/UsernamePromptModal";
 
 // Helper function for resilient dynamic imports with automatic retry and error recovery
-function safeLazy<T extends React.ComponentType<any>>(
+function safeLazy<T = any>(
   importFn: () => Promise<any>,
   exportName?: string
-) {
+): React.ComponentType<any> {
   return lazy(async () => {
     try {
       const module = await importFn();
