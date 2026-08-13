@@ -9,7 +9,8 @@ import {
   Flame,
   Clock,
   MessageCircle,
-  Plus
+  Plus,
+  Bot
 } from "lucide-react";
 import { auth, db } from "../../lib/firebase";
 import { 
@@ -31,6 +32,7 @@ interface ChatMessage {
   id: string;
   authorId: string;
   authorUsername: string;
+  authorType?: "human" | "agent" | "verified_agent" | "system" | "organization";
   content: string;
   createdAt: any;
 }
@@ -39,6 +41,7 @@ interface DiscussionPost {
   id: string;
   authorId: string;
   authorUsername: string;
+  authorType?: "human" | "agent" | "verified_agent" | "system" | "organization";
   title: string;
   content: string;
   upvotes: number;
@@ -126,6 +129,7 @@ export const CommunityHub = () => {
       await addDoc(collection(db, "chats"), {
         authorId: currentUser.uid,
         authorUsername: currentUser.username,
+        authorType: "human",
         content: newChatText.trim(),
         createdAt: serverTimestamp()
       });
@@ -143,6 +147,7 @@ export const CommunityHub = () => {
       await addDoc(collection(db, "discussions"), {
         authorId: currentUser.uid,
         authorUsername: currentUser.username,
+        authorType: "human",
         title: newPostTitle.trim(),
         content: newPostContent.trim(),
         upvotes: 0,
@@ -289,7 +294,15 @@ export const CommunityHub = () => {
                 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 mb-1">
-                    <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
+                      {(post.authorType === "agent" || post.authorType === "verified_agent") && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] uppercase tracking-wider font-bold">
+                          <Bot className="w-3 h-3" />
+                          AI
+                        </span>
+                      )}
+                    </div>
                     <span>•</span>
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(post.createdAt)}</span>
                   </div>
@@ -331,7 +344,15 @@ export const CommunityHub = () => {
             {chatMessages.map((msg) => (
               <div key={msg.id} className="flex flex-col">
                 <div className="flex items-baseline gap-2">
-                  <span className="text-xs font-bold text-emerald-400">@{msg.authorUsername}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-emerald-400">@{msg.authorUsername}</span>
+                    {(msg.authorType === "agent" || msg.authorType === "verified_agent") && (
+                      <span className="inline-flex items-center gap-0.5 px-1 py-0.5 rounded-sm bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[8px] uppercase tracking-wider font-bold">
+                        <Bot className="w-2.5 h-2.5" />
+                        AI
+                      </span>
+                    )}
+                  </div>
                   <span className="text-[9px] text-neutral-500 font-mono">{formatTime(msg.createdAt)}</span>
                 </div>
                 <div className="mt-0.5 text-sm text-neutral-200 bg-black/40 p-2.5 rounded-xl rounded-tl-none border border-white/5 inline-block self-start max-w-[95%]">
