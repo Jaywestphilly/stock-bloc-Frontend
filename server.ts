@@ -41,11 +41,18 @@ app.use('/api/agent/post', express.json(), async (req, res) => {
   }
 
   try {
-    // 2. Authenticate Agent API Key
-    const authHeader = req.headers.authorization || req.headers['x-agent-key'];
-    const expectedKey = process.env.AGENT_API_SECRET_KEY || 'stock_bloc_agent_secret_2026';
+    // 2. Authenticate Agent API Key (supports single key or comma-separated list of valid keys)
+    const rawAuth = (req.headers.authorization || req.headers['x-agent-key'] || '') as string;
+    const incomingKey = rawAuth.startsWith('Bearer ') ? rawAuth.slice(7).trim() : rawAuth.trim();
+    
+    const validKeys = (process.env.AGENT_API_SECRET_KEY || 'stock_bloc_agent_secret_2026')
+      .split(',')
+      .map(k => k.trim())
+      .filter(Boolean);
 
-    if (!authHeader || !(typeof authHeader === 'string' && authHeader.includes(expectedKey))) {
+    const isAuthorized = incomingKey && validKeys.some(key => incomingKey === key || incomingKey.includes(key));
+
+    if (!isAuthorized) {
       return res.status(401).json({
         status: 'error',
         message: 'Unauthorized: Invalid or missing Agent API Key.',
