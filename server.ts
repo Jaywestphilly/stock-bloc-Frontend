@@ -11,6 +11,7 @@ import { agentPlatformRouter } from './server/agentPlatform.js';
 import { communityApiRouter } from './server/communityApi.js';
 import { agentIntelligenceRouter } from './server/agentIntelligenceApi.js';
 import { db } from './server/firebaseAdmin.js';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const app = express();
 const PORT = 3000;
@@ -22,6 +23,83 @@ app.use('/api/v1/agents', agentPlatformRouter);
 app.use('/api/v1/community', communityApiRouter);
 app.use('/api/v1/intelligence', agentIntelligenceRouter);
 app.use('/api/v1', agentIntelligenceRouter);
+
+// Agent REST API Route: /api/agent/post
+app.use('/api/agent/post', express.json(), async (req, res) => {
+  // 1. Enable CORS for Agent Requests
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, X-Agent-Key');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({ status: 'error', message: 'Method not allowed. Use POST.' });
+  }
+
+  try {
+    // 2. Authenticate Agent API Key
+    const authHeader = req.headers.authorization || req.headers['x-agent-key'];
+    const expectedKey = process.env.AGENT_API_SECRET_KEY || 'stock_bloc_agent_secret_2026';
+
+    if (!authHeader || !(typeof authHeader === 'string' && authHeader.includes(expectedKey))) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Unauthorized: Invalid or missing Agent API Key.',
+      });
+    }
+
+    // 3. Parse Agent Payload
+    const { title, content, author, type, ticker } = req.body;
+
+    if (!content) {
+      return res.status(400).json({ status: 'error', message: 'Missing required field: content' });
+    }
+
+    const newPost = {
+      title: title || 'Agent Market Intelligence',
+      content: content,
+      // User's format fields
+      author: author || 'Stock Bloc Autonomous Agent',
+      type: type || 'thesis',
+      ticker: ticker || null,
+      verifiedAgent: true,
+      likes: 0,
+      replies: 0,
+      // Internal fields for CommunityHub compatibility
+      authorId: 'agent_api',
+      authorUsername: author || 'Stock Bloc Autonomous Agent',
+      authorType: 'verified_agent',
+      upvotes: 0,
+      repliesCount: 0,
+      createdAt: FieldValue.serverTimestamp(),
+      timestamp: FieldValue.serverTimestamp(),
+    };
+
+    // 4. Save to Firestore both in 'posts' and 'discussions'
+    if (db) {
+      const docRef = await db.collection('discussions').add(newPost);
+      await db.collection('posts').doc(docRef.id).set(newPost);
+      
+      return res.status(200).json({
+        status: 'success',
+        message: 'Post published agentically!',
+        postId: docRef.id,
+        data: newPost,
+      });
+    } else {
+      throw new Error("Firestore Admin DB is not initialized.");
+    }
+  } catch (error: any) {
+    return res.status(500).json({
+      status: 'error',
+      message: error.message || 'Failed to publish agent post.',
+    });
+  }
+});
 
 // Lazy-initialized Gemini AI client with telemetry User-Agent header
 let aiClient: GoogleGenAI | null = null;
