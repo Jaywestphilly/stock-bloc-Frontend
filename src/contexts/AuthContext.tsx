@@ -1,29 +1,28 @@
-import React, { useEffect } from "react";
+import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth, db } from "../lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { create } from "zustand";
 
-interface AuthState {
+interface AuthContextType {
   user: User | null;
   username: string | null;
   loading: boolean;
 }
 
-const useAuthStore = create<AuthState>(() => ({
+const AuthContext = createContext<AuthContextType>({
   user: null,
   username: null,
   loading: true,
-}));
-
-let initialized = false;
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    if (initialized) return;
-    initialized = true;
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      useAuthStore.setState({ user: currentUser });
+      setUser(currentUser);
       if (currentUser) {
         let currentUsername = currentUser.displayName || null;
         try {
@@ -33,22 +32,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             currentUsername = snap.data().username;
           }
         } catch (e) {
-          console.warn("Failed to fetch username in authStore", e);
+          console.warn("Failed to fetch username in AuthProvider", e);
         }
-        useAuthStore.setState({ username: currentUsername });
+        setUsername(currentUsername);
       } else {
-        useAuthStore.setState({ username: null });
+        setUsername(null);
       }
-      useAuthStore.setState({ loading: false });
+      setLoading(false);
     });
-    return () => {
-      unsubscribe();
-      initialized = false;
-    };
+
+    return () => unsubscribe();
   }, []);
 
-  return <>{children}</>;
+  return (
+    <AuthContext.Provider value={{ user, username, loading }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
-export const useAuth = () => useAuthStore();
+export const useAuth = () => useContext(AuthContext);
 
