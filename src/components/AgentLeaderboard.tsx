@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Trophy,
   TrendingUp,
@@ -249,6 +249,9 @@ export const AgentLeaderboard: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<AgentLeaderboardItem[]>(INITIAL_AGENT_LEADERBOARD);
   const [copiedTradeId, setCopiedTradeId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"cards" | "table">("table");
+  const [category, setCategory] = useState<"brier" | "winrate" | "recent" | "specialty">("brier");
+  const [specialtyFilter, setSpecialtyFilter] = useState<string>("TECH_AI");
+  const [isLoading, setIsLoading] = useState(false);
   
   // Simulation Form State
   const [isSimModalOpen, setIsSimModalOpen] = useState(false);
@@ -259,6 +262,55 @@ export const AgentLeaderboard: React.FC = () => {
   const [simRationale, setSimRationale] = useState("Momentum breakout based on 14-day RSI and 13F whale data.");
   const [isSimulating, setIsSimulating] = useState(false);
   const [simSuccessMsg, setSimSuccessMsg] = useState<string | null>(null);
+
+  // Fetch real leaderboard data from backend API
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      setIsLoading(true);
+      try {
+        const url = `/api/v1/leaderboards?category=${category}${category === 'specialty' ? `&specialty=${specialtyFilter}` : ''}`;
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.agents) && data.agents.length > 0) {
+            const apiItems: AgentLeaderboardItem[] = data.agents.map((ag: any, idx: number) => ({
+              id: ag.id,
+              rank: idx + 1,
+              agentName: ag.agentName || ag.handle,
+              modelType: ag.specialties?.[0] || "Gemini Quant Agent",
+              winRate: ag.winRate ?? 0,
+              monthlyAlpha: ag.metrics?.recent30d?.winRate ? Number((ag.metrics.recent30d.winRate - 50).toFixed(1)) : 15.0,
+              sharpeRatio: ag.brierScore !== null ? Number((2.5 * (1 - ag.brierScore)).toFixed(2)) : 1.5,
+              maxDrawdown: ag.metrics?.calibrationError ? Number((ag.metrics.calibrationError * 100).toFixed(1)) : 4.0,
+              tradeIdea: {
+                ticker: ag.specialties?.[0] || "NVDA",
+                action: "LONG",
+                targetPrice: 150,
+                timeframe: "30-Day CapEx Breakout",
+                rationale: `Objective Brier score: ${ag.brierScore ?? 'N/A'}. Reputation Status: ${ag.reputationStatus}.`,
+              },
+              verifiedStatus: ag.verificationStatus === 'SEC 13F VERIFIED' ? 'SEC 13F VERIFIED' : 'ARENA CERTIFIED',
+              submittedBy: ag.handle || 'Verified Agent',
+              badges: computeAgentBadges({
+                monthlyAlpha: ag.winRate,
+                maxDrawdown: ag.metrics?.calibrationError ? ag.metrics.calibrationError * 100 : 4,
+                sharpeRatio: ag.brierScore !== null ? 2.5 * (1 - ag.brierScore) : 1.5,
+                verifiedStatus: ag.verificationStatus,
+                rank: idx + 1,
+                winRate: ag.winRate
+              })
+            }));
+            setLeaderboard(apiItems);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load backend leaderboard, using static arena fallback", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchLeaderboard();
+  }, [category, specialtyFilter]);
 
   const handleCopyTradeIdea = (agentId: string, tradeText: string) => {
     triggerHaptic("selection");

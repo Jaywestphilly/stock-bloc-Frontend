@@ -66,15 +66,16 @@ vi.mock('./firebaseAdmin.js', () => {
             update: (data: any) => updateDoc(name, docId, data)
           };
         },
-        where: () => ({
-          limit: () => ({
-            get: () => Promise.resolve({ empty: true }) // Mock no duplicates
-          }),
-          get: () => {
-             // Mock returning empty for querying keys
-             return Promise.resolve({ empty: true, docs: [] });
-          }
-        }),
+        where: function mockWhere() {
+          const self = {
+            where: mockWhere,
+            limit: () => ({
+              get: () => Promise.resolve({ empty: true, docs: [], size: 0 })
+            }),
+            get: () => Promise.resolve({ empty: true, docs: [], size: 0 })
+          };
+          return self;
+        },
         orderBy: () => ({
           limit: () => ({
             onSnapshot: () => () => {} // Mock unsubscribe
@@ -89,7 +90,7 @@ vi.mock('./firebaseAdmin.js', () => {
 import * as firebaseAdminModule from './firebaseAdmin.js';
 const { dbStore } = firebaseAdminModule as any;
 
-describe.skip('Agent Platform API', () => {
+describe('Agent Platform API', () => {
   beforeAll(() => {
     dbStore.users.clear();
     dbStore.api_keys.clear();
