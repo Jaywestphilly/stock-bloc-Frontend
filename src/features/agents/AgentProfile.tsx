@@ -3,7 +3,7 @@ import { ViewTab } from "../../types";
 import { db } from "../../lib/firebase";
 import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
 import { AgentBadge, VerifiedOperatorBadge } from "../../components/AgentBadge";
-import { ArrowLeft, Activity, Users, MessageSquare, Clock, FileText, Target, ShieldCheck, TrendingUp, HelpCircle } from "lucide-react";
+import { ArrowLeft, Activity, Users, MessageSquare, Clock, FileText, Target, ShieldCheck, TrendingUp, HelpCircle, BarChart3, Layers, Star, CheckCircle2, AlertCircle, X, ShieldAlert, Scale, RefreshCw } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 interface AgentProfileProps {
@@ -19,6 +19,26 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Resolution Oracle Modal state
+  const [resolvingForecast, setResolvingForecast] = useState<any | null>(null);
+  const [resolutionOutcome, setResolutionOutcome] = useState<'RESOLVED_CORRECT' | 'RESOLVED_INCORRECT' | 'INVALID' | 'CANCELLED'>('RESOLVED_CORRECT');
+  const [resolutionNotes, setResolutionNotes] = useState('');
+  const [resolutionPrice, setResolutionPrice] = useState('');
+  const [isResolving, setIsResolving] = useState(false);
+
+  // Version History Modal state
+  const [versionHistoryItem, setVersionHistoryItem] = useState<{ type: 'research' | 'thesis'; item: any } | null>(null);
+  const [versionsList, setVersionsList] = useState<any[]>([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+
+  // Anti-Gaming Feedback Modal state
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackRating, setFeedbackRating] = useState(5);
+  const [feedbackCategory, setFeedbackCategory] = useState('ACCURACY');
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [feedbackStatus, setFeedbackStatus] = useState<{ success?: string; error?: string } | null>(null);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   // Extract handle from URL /agents/:handle
   const handle = typeof window !== "undefined" 
@@ -88,6 +108,82 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
     fetchAgentAndData();
   }, [handle]);
 
+  const handleResolveForecast = async () => {
+    if (!resolvingForecast) return;
+    try {
+      setIsResolving(true);
+      const res = await fetch(`/api/v1/forecasts/${resolvingForecast.id}/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          outcome: resolutionOutcome,
+          notes: resolutionNotes,
+          resolutionPrice: resolutionPrice ? Number(resolutionPrice) : undefined
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to resolve forecast');
+        return;
+      }
+      alert('Forecast successfully resolved! Brier score and calibration recalculated.');
+      setResolvingForecast(null);
+      window.location.reload();
+    } catch (e: any) {
+      alert('Error resolving forecast: ' + e.message);
+    } finally {
+      setIsResolving(false);
+    }
+  };
+
+  const handleFetchVersions = async (type: 'research' | 'thesis', item: any) => {
+    setVersionHistoryItem({ type, item });
+    setLoadingVersions(true);
+    setVersionsList([]);
+    try {
+      const endpoint = type === 'research' 
+        ? `/api/v1/research/${item.id}/versions`
+        : `/api/v1/theses/${item.id}/versions`;
+      const res = await fetch(endpoint);
+      if (res.ok) {
+        const data = await res.json();
+        setVersionsList(data.versions || []);
+      }
+    } catch (e) {
+      console.error('Failed to fetch versions', e);
+    } finally {
+      setLoadingVersions(false);
+    }
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!agent) return;
+    setIsSubmittingFeedback(true);
+    setFeedbackStatus(null);
+    try {
+      const res = await fetch(`/api/v1/agents/${agent.id}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: feedbackRating,
+          category: feedbackCategory,
+          comment: feedbackComment
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setFeedbackStatus({ error: data.error || 'Anti-gaming block: Feedback rejected.' });
+      } else {
+        setFeedbackStatus({ success: 'Feedback recorded successfully! Anti-gaming verification passed.' });
+        setTimeout(() => setShowFeedbackModal(false), 2000);
+      }
+    } catch (e: any) {
+      setFeedbackStatus({ error: 'Failed to submit feedback: ' + e.message });
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-24 flex justify-center">
@@ -147,7 +243,7 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
               <AgentBadge className="scale-110 origin-left" />
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {performance?.reputationStatus === 'HIGH_CONFIDENCE' && (
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-lg">
                   <ShieldCheck className="w-4 h-4" /> High Confidence
@@ -158,6 +254,18 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
                   <ShieldCheck className="w-4 h-4" /> Established
                 </div>
               )}
+              {performance?.reputationStatus === 'INSUFFICIENT_DATA' && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold rounded-lg" title="Sample Size Protection: Requires at least 5 resolved forecasts to qualify for competitive agent ranking">
+                  <AlertCircle className="w-4 h-4" /> Insufficient Data (N &lt; 5)
+                </div>
+              )}
+
+              <button
+                onClick={() => setShowFeedbackModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-300 text-xs font-bold rounded-lg transition-colors"
+              >
+                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" /> Audit Agent
+              </button>
             </div>
           </div>
           
@@ -382,6 +490,14 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
                       }`}>
                         {forecast.status === 'RESOLVED_CORRECT' ? '✓ Correct' : forecast.status === 'RESOLVED_INCORRECT' ? '✗ Incorrect' : forecast.status}
                       </span>
+                      {forecast.status === 'OPEN' && (
+                        <button
+                          onClick={() => setResolvingForecast(forecast)}
+                          className="px-2.5 py-0.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-800 text-cyan-300 text-xs font-bold rounded transition-colors flex items-center gap-1"
+                        >
+                          <Scale className="w-3 h-3" /> Resolve (Oracle)
+                        </button>
+                      )}
                     </div>
                     <h4 className="text-xl font-bold text-white mb-2">{forecast.question}</h4>
                     <div className="flex items-center gap-4 text-sm font-mono text-neutral-500">
@@ -512,6 +628,16 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
                      </div>
                   )}
 
+                  {/* Research Version History Button */}
+                  <div className="flex justify-end mt-4 pt-4 border-t border-neutral-800">
+                    <button
+                      onClick={() => handleFetchVersions('research', res)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-xs font-bold text-neutral-300 rounded-lg transition-colors"
+                    >
+                      <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                      View Version History ({res.version || 1})
+                    </button>
+                  </div>
                 </div>
               </div>
             )) : (
@@ -522,6 +648,251 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
           </div>
         )}
       </div>
+
+      {/* RESOLUTION ORACLE MODAL */}
+      {resolvingForecast && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+              <div className="flex items-center gap-2">
+                <Scale className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-lg font-bold text-white">Resolve Forecast (Oracle)</h3>
+              </div>
+              <button onClick={() => setResolvingForecast(null)} className="text-neutral-500 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-neutral-950 border border-neutral-800 rounded-xl space-y-1">
+              <span className="text-xs font-bold text-cyan-400 font-mono">{resolvingForecast.asset}</span>
+              <p className="text-sm font-bold text-white">{resolvingForecast.question}</p>
+              <p className="text-xs text-neutral-400">Model Probability: <strong className="text-cyan-400">{resolvingForecast.probability}%</strong></p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Resolution Outcome</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: 'RESOLVED_CORRECT', label: '✓ Correct', color: 'border-emerald-500/50 text-emerald-400 bg-emerald-500/10' },
+                    { id: 'RESOLVED_INCORRECT', label: '✗ Incorrect', color: 'border-red-500/50 text-red-400 bg-red-500/10' },
+                    { id: 'INVALID', label: '∅ Invalid', color: 'border-neutral-700 text-neutral-400 bg-neutral-800' },
+                    { id: 'CANCELLED', label: '⊘ Cancelled', color: 'border-amber-500/50 text-amber-400 bg-amber-500/10' }
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => setResolutionOutcome(opt.id as any)}
+                      className={`p-3 rounded-xl border text-xs font-bold transition-all ${
+                        resolutionOutcome === opt.id ? opt.color + ' ring-1 ring-cyan-500' : 'border-neutral-800 text-neutral-400 bg-neutral-950 hover:border-neutral-700'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Final Resolution Price ($)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 142.50"
+                  value={resolutionPrice}
+                  onChange={e => setResolutionPrice(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Oracle Resolution Notes</label>
+                <textarea
+                  placeholder="Provide resolution rationale and source link..."
+                  value={resolutionNotes}
+                  onChange={e => setResolutionNotes(e.target.value)}
+                  rows={3}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-800">
+              <button
+                onClick={() => setResolvingForecast(null)}
+                className="px-4 py-2 bg-neutral-800 text-neutral-300 text-xs font-bold rounded-xl hover:bg-neutral-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResolveForecast}
+                disabled={isResolving}
+                className="px-5 py-2 bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-lg disabled:opacity-50"
+              >
+                {isResolving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                Confirm Resolution
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VERSION HISTORY MODAL */}
+      {versionHistoryItem && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-2xl w-full p-6 space-y-5 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+              <div className="flex items-center gap-2">
+                <Layers className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-lg font-bold text-white">Immutable Version History</h3>
+              </div>
+              <button onClick={() => setVersionHistoryItem(null)} className="text-neutral-500 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-400 leading-relaxed">
+              Stock Bloc maintains an immutable version history subcollection for all research and investment theses to ensure full auditability and prevent post-hoc editing bias.
+            </p>
+
+            {loadingVersions ? (
+              <div className="py-12 flex justify-center">
+                <RefreshCw className="w-8 h-8 text-cyan-400 animate-spin" />
+              </div>
+            ) : versionsList.length > 0 ? (
+              <div className="space-y-4">
+                {versionsList.map((ver: any, idx: number) => (
+                  <div key={ver.id || idx} className="p-4 bg-neutral-950 border border-neutral-800 rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="px-2.5 py-1 bg-cyan-950 text-cyan-400 border border-cyan-900/50 text-xs font-bold rounded">
+                        Version {ver.version || (versionsList.length - idx)}
+                      </span>
+                      <span className="text-xs text-neutral-500 font-mono">
+                        {ver.archivedAt ? new Date(ver.archivedAt).toLocaleString() : ''}
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold text-white">{ver.title}</p>
+                    <p className="text-xs text-neutral-300 line-clamp-3">{ver.summary || ver.thesis}</p>
+                    {ver.updateReason && (
+                      <div className="text-[11px] text-purple-400 bg-purple-950/30 p-2 rounded border border-purple-900/40">
+                        <strong>Reason for update:</strong> {ver.updateReason}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-12 text-center bg-neutral-950 rounded-xl border border-neutral-800">
+                <p className="text-neutral-400 text-sm">No prior archived versions found. This item is on Version 1 (Original Publication).</p>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-4 border-t border-neutral-800">
+              <button
+                onClick={() => setVersionHistoryItem(null)}
+                className="px-4 py-2 bg-neutral-800 text-neutral-300 text-xs font-bold rounded-xl hover:bg-neutral-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ANTI-GAMING FEEDBACK MODAL */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+              <div className="flex items-center gap-2">
+                <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
+                <h3 className="text-lg font-bold text-white">Submit Agent Feedback & Audit</h3>
+              </div>
+              <button onClick={() => setShowFeedbackModal(false)} className="text-neutral-500 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-purple-950/20 border border-purple-900/50 rounded-xl flex items-start gap-3">
+              <ShieldAlert className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+              <p className="text-xs text-purple-200 leading-relaxed">
+                <strong>Anti-Gaming Guards Active:</strong> Self-rating, owner self-voting, and sibling agent cross-boosting are strictly blocked by Firestore security rules and backend validation.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Rating (1-5 Stars)</label>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      key={star}
+                      onClick={() => setFeedbackRating(star)}
+                      className="p-2 rounded-lg bg-neutral-950 border border-neutral-800 hover:border-amber-400 transition-all"
+                    >
+                      <Star className={`w-6 h-6 ${star <= feedbackRating ? 'text-amber-400 fill-amber-400' : 'text-neutral-700'}`} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-2">Feedback Category</label>
+                <select
+                  value={feedbackCategory}
+                  onChange={e => setFeedbackCategory(e.target.value)}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                >
+                  <option value="ACCURACY">Forecast Accuracy</option>
+                  <option value="TRANSPARENCY">Methodological Transparency</option>
+                  <option value="SPEED">Publication Speed</option>
+                  <option value="RISK_ANALYSIS">Risk Analysis Depth</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-400 uppercase tracking-wider mb-1">Detailed Audit Notes</label>
+                <textarea
+                  placeholder="Share specific details regarding this agent's research or forecast quality..."
+                  value={feedbackComment}
+                  onChange={e => setFeedbackComment(e.target.value)}
+                  rows={3}
+                  className="w-full bg-neutral-950 border border-neutral-800 rounded-xl p-3 text-sm text-white focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              {feedbackStatus?.error && (
+                <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {feedbackStatus.error}
+                </div>
+              )}
+
+              {feedbackStatus?.success && (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-400 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  {feedbackStatus.success}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-800">
+              <button
+                onClick={() => setShowFeedbackModal(false)}
+                className="px-4 py-2 bg-neutral-800 text-neutral-300 text-xs font-bold rounded-xl hover:bg-neutral-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmitFeedback}
+                disabled={isSubmittingFeedback}
+                className="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-lg disabled:opacity-50"
+              >
+                {isSubmittingFeedback ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}
+                Submit Verified Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -21,6 +21,7 @@ app.use(express.json({ limit: '15mb' }));
 app.use('/api/v1/agents', agentPlatformRouter);
 app.use('/api/v1/community', communityApiRouter);
 app.use('/api/v1/intelligence', agentIntelligenceRouter);
+app.use('/api/v1', agentIntelligenceRouter);
 
 // Lazy-initialized Gemini AI client with telemetry User-Agent header
 let aiClient: GoogleGenAI | null = null;

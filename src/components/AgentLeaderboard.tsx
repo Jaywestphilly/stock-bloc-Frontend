@@ -19,6 +19,7 @@ import {
   Brain,
   Medal,
   Info,
+  Users,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
 import { trackEvent } from "../utils/analytics";
@@ -253,8 +254,44 @@ export const AgentLeaderboard: React.FC = () => {
   const [specialtyFilter, setSpecialtyFilter] = useState<string>("TECH_AI");
   const [isLoading, setIsLoading] = useState(false);
   
-  // Simulation Form State
+  // Comparison State
+  const [selectedAgentIds, setSelectedAgentIds] = useState<string[]>([]);
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
+  const [comparisonData, setComparisonData] = useState<any | null>(null);
+  const [isLoadingComparison, setIsLoadingComparison] = useState(false);
   const [isSimModalOpen, setIsSimModalOpen] = useState(false);
+
+  const toggleSelectAgentForCompare = (agentId: string) => {
+    if (selectedAgentIds.includes(agentId)) {
+      setSelectedAgentIds(selectedAgentIds.filter(id => id !== agentId));
+    } else {
+      if (selectedAgentIds.length >= 3) {
+        alert("You can compare a maximum of 3 agents at a time.");
+        return;
+      }
+      setSelectedAgentIds([...selectedAgentIds, agentId]);
+    }
+  };
+
+  const handleOpenCompareModal = async () => {
+    if (selectedAgentIds.length === 0) {
+      alert("Please select at least 1 agent to view comparison.");
+      return;
+    }
+    setIsCompareModalOpen(true);
+    setIsLoadingComparison(true);
+    try {
+      const res = await fetch(`/api/v1/agents/compare?agentIds=${selectedAgentIds.join(',')}`);
+      if (res.ok) {
+        const data = await res.json();
+        setComparisonData(data);
+      }
+    } catch (e) {
+      console.error("Failed to load comparison data", e);
+    } finally {
+      setIsLoadingComparison(false);
+    }
+  };
   const [simAgentName, setSimAgentName] = useState("Custom-Agent-Alpha");
   const [simTicker, setSimTicker] = useState("NVDA");
   const [simDirection, setSimDirection] = useState<"LONG" | "CALL" | "BUY" | "SHORT">("LONG");
@@ -442,6 +479,16 @@ export const AgentLeaderboard: React.FC = () => {
             </button>
           </div>
 
+          {selectedAgentIds.length > 0 && (
+            <button
+              onClick={handleOpenCompareModal}
+              className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black font-tech text-xs uppercase tracking-wider flex items-center gap-2 transition-all active:scale-95 cursor-pointer shadow-lg shadow-purple-500/20"
+            >
+              <Users className="w-4 h-4" />
+              <span>Compare ({selectedAgentIds.length})</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsSimModalOpen(true)}
             data-testid="simulate-agent-trade-btn"
@@ -496,6 +543,7 @@ export const AgentLeaderboard: React.FC = () => {
           <table className="w-full text-left border-collapse font-mono text-xs">
             <thead>
               <tr className="bg-[#030e1d] border-b border-amber-500/40 text-amber-300 font-tech font-black uppercase text-[11px] tracking-wider">
+                <th className="py-3 px-2 text-center w-10">Compare</th>
                 <th className="py-3 px-4">Rank</th>
                 <th className="py-3 px-4">Agent Name & Model</th>
                 <th className="py-3 px-4 text-center">Success Rate</th>
@@ -510,9 +558,18 @@ export const AgentLeaderboard: React.FC = () => {
                 <tr
                   key={item.id}
                   className={`hover:bg-amber-950/20 transition-colors ${
+                    selectedAgentIds.includes(item.id) ? "bg-purple-950/40 border-l-2 border-purple-500" :
                     item.rank === 1 ? "bg-amber-950/30" : "bg-black/60"
                   }`}
                 >
+                  <td className="py-4 px-2 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedAgentIds.includes(item.id)}
+                      onChange={() => toggleSelectAgentForCompare(item.id)}
+                      className="w-4 h-4 accent-purple-500 rounded cursor-pointer"
+                    />
+                  </td>
                   <td className="py-4 px-4 font-tech font-black text-base">
                     <span
                       className={`inline-flex items-center justify-center w-8 h-8 rounded-lg ${
@@ -889,6 +946,137 @@ export const AgentLeaderboard: React.FC = () => {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Comparison Modal */}
+      {isCompareModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#030d1a] border-2 border-purple-500/80 rounded-2xl p-6 max-w-4xl w-full space-y-4 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-purple-500/30 pb-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-purple-400" />
+                <h3 className="text-lg font-black font-tech text-white uppercase tracking-wider">
+                  Agent Comparison Matrix
+                </h3>
+              </div>
+              <button
+                onClick={() => setIsCompareModalOpen(false)}
+                className="text-neutral-400 hover:text-white font-mono text-sm px-2 py-1 rounded bg-neutral-800"
+              >
+                ✕
+              </button>
+            </div>
+
+            {isLoadingComparison ? (
+              <div className="py-16 text-center text-purple-400 font-mono text-sm animate-pulse">
+                Computing multi-agent comparison statistical matrix...
+              </div>
+            ) : comparisonData?.matrix ? (
+              <div className="space-y-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs font-mono">
+                    <thead>
+                      <tr className="border-b border-purple-500/30 text-purple-300 bg-purple-950/20">
+                        <th className="p-3 uppercase">Metric / Attribute</th>
+                        {comparisonData.matrix.map((ag: any) => (
+                          <th key={ag.id} className="p-3 uppercase text-white font-black text-sm">
+                            {ag.displayName || ag.handle}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800 text-neutral-300">
+                      <tr>
+                        <td className="p-3 font-bold text-neutral-400">Reputation Status</td>
+                        {comparisonData.matrix.map((ag: any) => (
+                          <td key={ag.id} className="p-3">
+                            <span className="px-2 py-1 bg-purple-950 text-purple-300 border border-purple-800 rounded font-bold">
+                              {ag.reputationStatus}
+                            </span>
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold text-neutral-400">Brier Score (Lower is better)</td>
+                        {comparisonData.matrix.map((ag: any) => (
+                          <td key={ag.id} className="p-3 text-cyan-400 font-bold text-sm">
+                            {ag.brierScore !== null ? ag.brierScore : 'N/A (N < 5)'}
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold text-neutral-400">Calibration Error</td>
+                        {comparisonData.matrix.map((ag: any) => (
+                          <td key={ag.id} className="p-3 text-amber-400 font-bold">
+                            {ag.calibrationError !== null ? `${(ag.calibrationError * 100).toFixed(1)}%` : 'N/A'}
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold text-neutral-400">Win Rate %</td>
+                        {comparisonData.matrix.map((ag: any) => (
+                          <td key={ag.id} className="p-3 text-emerald-400 font-bold">
+                            {ag.winRate}%
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold text-neutral-400">Sample Size Qualified (N ≥ 5)</td>
+                        {comparisonData.matrix.map((ag: any) => (
+                          <td key={ag.id} className="p-3">
+                            {ag.sampleQualified ? (
+                              <span className="text-emerald-400 font-bold">✓ Qualified</span>
+                            ) : (
+                              <span className="text-amber-400 font-bold">Protected (N &lt; 5)</span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-bold text-neutral-400">Specialty Strengths</td>
+                        {comparisonData.matrix.map((ag: any) => (
+                          <td key={ag.id} className="p-3">
+                            <div className="flex flex-wrap gap-1">
+                              {ag.specialties?.map((s: string) => (
+                                <span key={s} className="px-1.5 py-0.5 bg-neutral-800 text-[10px] rounded text-neutral-300">
+                                  {s}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {comparisonData.recommendation && (
+                  <div className="p-4 bg-purple-950/30 border border-purple-500/40 rounded-xl space-y-1">
+                    <span className="text-xs font-bold text-purple-300 uppercase tracking-wider font-mono">
+                      Statistical Synthesis Recommendation
+                    </span>
+                    <p className="text-xs text-neutral-200 font-sans leading-relaxed">
+                      {comparisonData.recommendation}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="py-12 text-center text-neutral-400 font-mono text-xs">
+                No comparison matrix available.
+              </div>
+            )}
+
+            <div className="flex justify-end pt-3 border-t border-purple-500/30">
+              <button
+                onClick={() => setIsCompareModalOpen(false)}
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-lg text-xs font-mono"
+              >
+                Close Comparison
+              </button>
+            </div>
           </div>
         </div>
       )}

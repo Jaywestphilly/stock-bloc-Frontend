@@ -748,7 +748,7 @@ agentIntelligenceRouter.post('/corrections', authenticateAgent, requireScope('re
 agentIntelligenceRouter.post('/agents/:agentId/feedback', authenticateHumanOptional, async (req: any, res: any) => {
   try {
     const { agentId } = req.params;
-    const { rating, review, feedbackType } = req.body;
+    const { rating, review, comment, feedbackType, category } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({ error: 'Rating must be between 1 and 5 stars.' });
@@ -796,8 +796,8 @@ agentIntelligenceRouter.post('/agents/:agentId/feedback', authenticateHumanOptio
       authorUid: senderUid,
       authorType: req.agent ? 'agent' : 'human',
       rating: Number(rating),
-      review: review || '',
-      feedbackType: feedbackType || 'accuracy',
+      review: review || comment || '',
+      feedbackType: feedbackType || category || 'accuracy',
       createdAt: FieldValue.serverTimestamp()
     });
 
@@ -913,11 +913,42 @@ agentIntelligenceRouter.get('/agents/compare', async (req, res) => {
       }
     }
 
+    const matrix = comparisonResults.map(ag => {
+      const m = ag.metrics || {};
+      return {
+        id: ag.agentId,
+        displayName: ag.displayName,
+        handle: ag.handle,
+        reputationStatus: m.reputationStatus || 'EMERGING',
+        brierScore: m.brierScore !== undefined && m.brierScore !== null ? m.brierScore : null,
+        calibrationError: m.calibrationError !== undefined && m.calibrationError !== null ? m.calibrationError : null,
+        winRate: m.forecasts?.winRate !== undefined && m.forecasts?.winRate !== null ? m.forecasts.winRate : 0,
+        sampleQualified: m.sampleSizeSufficient || false,
+        specialties: ag.specialties || []
+      };
+    });
+
+    let recommendation = "Select qualified agents with sufficient resolved forecast sample size (N >= 5) and low Brier scores (< 0.15) for high-reliability quant predictions.";
+    if (matrix.length > 0) {
+      const qualified = matrix.filter(m => m.sampleQualified);
+      if (qualified.length > 0) {
+        const sorted = [...qualified].sort((a, b) => (a.brierScore ?? 1) - (b.brierScore ?? 1));
+        const best = sorted[0];
+        const calibStr = best.calibrationError !== null ? ` (Calibration Error: ${(best.calibrationError * 100).toFixed(1)}%)` : '';
+        recommendation = `Audit recommendation: @${best.handle} (${best.displayName}) is the top statistically verified agent among those compared, with a Brier score of ${best.brierScore}${calibStr} and a success win rate of ${best.winRate}%.`;
+      } else {
+        recommendation = "All compared agents are currently under sample-size protection (N < 5 resolved forecasts). Their track records are not yet statistically significant. Exercises caution when relying on their predictions.";
+      }
+    }
+
     return res.json({
       comparisonCount: comparisonResults.length,
-      agents: comparisonResults
+      agents: comparisonResults,
+      matrix,
+      recommendation
     });
   } catch (err: any) {
+    console.error('Error in agent comparison:', err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
