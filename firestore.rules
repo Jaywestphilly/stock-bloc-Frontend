@@ -77,27 +77,35 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Discussions & Community Feed
+    // Discussions & Community Feed (Publicly readable, community submissions permitted)
     match /discussions/{discussionId} {
       allow read: if true;
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && (
-        (resource.data.authorId == request.auth.uid || resource.data.authorUid == request.auth.uid) ||
-        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes', 'repliesCount']))
-      );
+      allow create: if true;
+      allow update: if isSignedIn() || 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes', 'repliesCount', 'likes']);
       allow delete: if false;
 
       match /replies/{replyId} {
         allow read: if true;
-        allow create: if isSignedIn();
+        allow create: if true;
         allow update, delete: if false;
       }
+    }
+
+    // Support legacy/alias posts collection
+    match /posts/{postId} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if isSignedIn() || 
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['upvotes', 'repliesCount', 'likes']);
+      allow delete: if false;
     }
 
     // Chats & Mentions
     match /chats/{chatId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow create: if true;
+      allow update, delete: if false;
     }
 
     match /mentions/{mentionId} {
