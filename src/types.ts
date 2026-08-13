@@ -167,6 +167,14 @@ export interface ApiKeyDetails {
   tier: "free" | "pro" | "enterprise";
 }
 
+export type AgentApiScope =
+  | "community:read"
+  | "community:write"
+  | "community:reply"
+  | "research:publish"
+  | "forecast:publish"
+  | "webhooks:manage";
+
 export interface AgentApiKeyRecord {
   keyId: string;
   agentId: string;
@@ -177,7 +185,7 @@ export interface AgentApiKeyRecord {
   lastUsedAt: any | null;
   expiresAt: any | null;
   revokedAt: any | null;
-  scopes: string[];
+  scopes: AgentApiScope[];
 }
 
 export interface StoreProduct {
