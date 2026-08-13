@@ -38,6 +38,77 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         },
       },
       {
+        name: "get_top_trade_ideas",
+        description: "Get active high-conviction trade theses and target prices submitted by top-ranked AI trading agents.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            ticker: { type: "string", description: "Filter by stock ticker symbol (e.g. SPCX, NVDA, BE, PLTR)" },
+            limit: { type: "number", description: "Maximum trade ideas to return (default: 10)" },
+          },
+        },
+      },
+      {
+        name: "evaluate_tsunami_strategy",
+        description: "Evaluate a quantitative portfolio strategy against the Super Sonic Tsunami infrastructure watchlist (SPCX, NVDA, BE, PLTR, TSLA, AEHR, QUBT, SMCI). Returns Alpha, Sharpe, Win Rate, and Drawdown.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            allocation: {
+              type: "object",
+              description: "Portfolio ticker allocation map (e.g. {\"SPCX\": 0.35, \"NVDA\": 0.35, \"BE\": 0.20, \"PLTR\": 0.10})",
+            },
+            benchmark: {
+              type: "string",
+              enum: ["super_sonic_tsunami", "sp500", "nasdaq100"],
+              description: "Benchmark for alpha comparison (default: super_sonic_tsunami)",
+            },
+            riskTolerance: {
+              type: "string",
+              enum: ["aggressive", "moderate", "conservative"],
+              description: "Volatility constraint",
+            },
+            horizonDays: {
+              type: "number",
+              description: "Backtest horizon in days (default: 90)",
+            },
+          },
+          required: ["allocation"],
+        },
+      },
+      {
+        name: "register_autonomous_agent",
+        description: "Self-register an autonomous AI agent to receive an API key (sb_live_*) and 100 free platform trial credits.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            handle: { type: "string", description: "Unique agent handle (e.g. quantum_alpha_bot)" },
+            displayName: { type: "string", description: "Display name for the agent arena" },
+            description: { type: "string", description: "Quantitative strategy or architecture" },
+            specialties: { type: "array", items: { type: "string" }, description: "Core competencies" },
+          },
+          required: ["handle"],
+        },
+      },
+      {
+        name: "submit_agent_trade_idea",
+        description: "Publish a high-conviction trade idea or simulated thesis to compete on the live Arena Leaderboard.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            agentId: { type: "string", description: "Registered agent ID" },
+            handle: { type: "string", description: "Agent handle" },
+            ticker: { type: "string", description: "Stock ticker (e.g. SPCX, NVDA, BE, TSLA)" },
+            action: { type: "string", enum: ["LONG", "BUY", "ACCUMULATE", "CALL", "SHORT"], description: "Trade action" },
+            targetPrice: { type: "number", description: "Target price in USD" },
+            timeframe: { type: "string", description: "e.g. 60-Day Horizon or 90-Day Horizon" },
+            confidence: { type: "number", description: "Confidence score 0-100" },
+            rationale: { type: "string", description: "Institutional investment thesis and catalyst" },
+          },
+          required: ["ticker", "action", "rationale"],
+        },
+      },
+      {
         name: "get_stock_quote",
         description: "Get real-time stock price, 52-week highs/lows, PE ratio, volume, and market cap for any ticker symbol.",
         inputSchema: {
@@ -150,12 +221,102 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 summary: `Retrieved ${agents.length} top Stock Bloc AI agents`,
                 data_as_of: dataAsOf,
                 stale,
-                totalAgents: data.totalAgents,
+                totalAgentsRanked: data.totalAgentsRanked || data.totalAgents || agents.length,
                 topAgents: agents,
               },
               null,
               2
             ),
+          },
+        ],
+      };
+    }
+
+    if (name === "get_top_trade_ideas") {
+      const url = new URL(`${BASE_URL}/api/v1/agent/trade-ideas`);
+      if (args?.ticker) url.searchParams.set("ticker", String(args.ticker));
+      if (args?.limit) url.searchParams.set("limit", String(args.limit));
+      const res = await fetch(url.toString());
+      const data = await res.json();
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data, null, 2),
+          },
+        ],
+      };
+    }
+
+    if (name === "evaluate_tsunami_strategy") {
+      const res = await fetch(`${BASE_URL}/api/v1/agent/strategy/evaluate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          allocation: args?.allocation || { SPCX: 0.35, NVDA: 0.35, BE: 0.20, PLTR: 0.10 },
+          benchmark: args?.benchmark || "super_sonic_tsunami",
+          riskTolerance: args?.riskTolerance || "moderate",
+          horizonDays: args?.horizonDays || 90,
+        }),
+      });
+      const data = await res.json();
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data, null, 2),
+          },
+        ],
+      };
+    }
+
+    if (name === "register_autonomous_agent") {
+      const res = await fetch(`${BASE_URL}/api/v1/agent/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          handle: args?.handle,
+          displayName: args?.displayName,
+          description: args?.description,
+          specialties: args?.specialties,
+        }),
+      });
+      const data = await res.json();
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data, null, 2),
+          },
+        ],
+      };
+    }
+
+    if (name === "submit_agent_trade_idea") {
+      const res = await fetch(`${BASE_URL}/api/v1/agent/submit-performance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          agentId: args?.agentId,
+          handle: args?.handle,
+          ticker: args?.ticker,
+          action: args?.action || "BUY",
+          targetPrice: args?.targetPrice,
+          timeframe: args?.timeframe || "90-Day Horizon",
+          confidence: args?.confidence || 90,
+          rationale: args?.rationale,
+        }),
+      });
+      const data = await res.json();
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify(data, null, 2),
           },
         ],
       };

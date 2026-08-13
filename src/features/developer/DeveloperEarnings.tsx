@@ -30,11 +30,19 @@ export const DeveloperEarnings: React.FC<DeveloperEarningsProps> = ({ onNavigate
   const [activeTab, setActiveTab] = useState<"overview" | "transactions" | "services" | "payouts">("overview");
   const [wallet, setWallet] = useState<AgentWalletBalance>({
     agentId: "agent_developer_operator",
-    creditsAvailable: 3450,
-    creditsEscrowed: 150,
-    creditsEarnedLifetime: 4800,
-    currency: "CREDITS",
-    updatedAt: new Date().toISOString()
+    creditsBalance: 3450,
+    usdPendingBalance: 150,
+    usdSettledBalance: 4800,
+    usdcPendingBalance: 0,
+    usdcSettledBalance: 0,
+    lifetimeGrossEarnings: 4800,
+    lifetimePlatformFeesPaid: 240,
+    lifetimeNetEarnings: 4560,
+    lifetimeSpent: 650,
+    maxSpendPerRequest: 50,
+    maxDailySpend: 200,
+    spentToday: 30,
+    spendingLimitsConfigured: true,
   });
 
   const [transactions, setTransactions] = useState<PlatformLedgerTransaction[]>([]);
@@ -51,32 +59,32 @@ export const DeveloperEarnings: React.FC<DeveloperEarningsProps> = ({ onNavigate
         {
           transactionId: "tx_settle_9941a",
           jobId: "job_sec_analysis_001",
-          buyerId: "agent_alpha_quant",
-          buyerType: "AGENT",
-          providerId: "agent_developer_operator",
-          providerType: "AGENT",
-          grossCredits: 100,
-          platformFeeCredits: 5,
-          netCredits: 95,
+          buyerAgentId: "agent_alpha_quant",
+          sellerAgentId: "agent_developer_operator",
+          grossAmount: 100,
+          platformFeeBps: 500,
+          platformFee: 5,
+          providerAmount: 95,
           currency: "CREDITS",
+          paymentRail: "PLATFORM_CREDITS",
           status: "SETTLED",
-          evidenceHash: "0x89f2a9108b894ec7102b4d",
-          settledAt: new Date(Date.now() - 3600000).toISOString()
+          createdAt: new Date(Date.now() - 3600000).toISOString(),
+          completedAt: new Date(Date.now() - 3600000).toISOString()
         },
         {
           transactionId: "tx_settle_8832b",
           jobId: "job_bounty_nvda_gross_margin",
-          buyerId: "market_demand_engine",
-          buyerType: "SYSTEM",
-          providerId: "agent_developer_operator",
-          providerType: "AGENT",
-          grossCredits: 150,
-          platformFeeCredits: 7.5,
-          netCredits: 142.5,
+          buyerAgentId: "market_demand_engine",
+          sellerAgentId: "agent_developer_operator",
+          grossAmount: 150,
+          platformFeeBps: 500,
+          platformFee: 7.5,
+          providerAmount: 142.5,
           currency: "CREDITS",
+          paymentRail: "PLATFORM_CREDITS",
           status: "SETTLED",
-          evidenceHash: "0x55a9b1c70e2849103e4811",
-          settledAt: new Date(Date.now() - 86400000).toISOString()
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          completedAt: new Date(Date.now() - 86400000).toISOString()
         }
       ]);
     } catch (e) {
@@ -179,7 +187,7 @@ export const DeveloperEarnings: React.FC<DeveloperEarningsProps> = ({ onNavigate
               <Wallet className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="text-3xl font-black text-white font-mono flex items-baseline gap-2">
-              {wallet.creditsAvailable.toLocaleString()}
+              {(wallet.creditsBalance ?? 0).toLocaleString()}
               <span className="text-sm font-bold text-emerald-400">CREDITS</span>
             </div>
             <div className="text-[11px] text-neutral-500 font-mono">
@@ -193,7 +201,7 @@ export const DeveloperEarnings: React.FC<DeveloperEarningsProps> = ({ onNavigate
               <Clock className="w-4 h-4 text-amber-400" />
             </div>
             <div className="text-3xl font-black text-amber-300 font-mono flex items-baseline gap-2">
-              {wallet.creditsEscrowed.toLocaleString()}
+              {(wallet.usdPendingBalance ?? 0).toLocaleString()}
               <span className="text-sm font-bold text-amber-400">CREDITS</span>
             </div>
             <div className="text-[11px] text-neutral-500 font-mono">
@@ -207,7 +215,7 @@ export const DeveloperEarnings: React.FC<DeveloperEarningsProps> = ({ onNavigate
               <TrendingUp className="w-4 h-4 text-cyan-400" />
             </div>
             <div className="text-3xl font-black text-white font-mono flex items-baseline gap-2">
-              {wallet.creditsEarnedLifetime.toLocaleString()}
+              {(wallet.lifetimeGrossEarnings ?? 0).toLocaleString()}
               <span className="text-sm font-bold text-cyan-400">CREDITS</span>
             </div>
             <div className="text-[11px] text-neutral-500 font-mono">
@@ -259,13 +267,13 @@ export const DeveloperEarnings: React.FC<DeveloperEarningsProps> = ({ onNavigate
                       </div>
                       <div>
                         <div className="text-white font-bold">{tx.jobId}</div>
-                        <div className="text-[10px] text-neutral-500">From: {tx.buyerId}</div>
+                        <div className="text-[10px] text-neutral-500">From: {tx.buyerAgentId}</div>
                       </div>
                     </div>
 
                     <div className="text-right">
-                      <div className="text-emerald-400 font-black">+{tx.netCredits} CREDITS</div>
-                      <div className="text-[10px] text-neutral-500">Fee: {tx.platformFeeCredits} CR</div>
+                      <div className="text-emerald-400 font-black">+{tx.providerAmount} CREDITS</div>
+                      <div className="text-[10px] text-neutral-500">Fee: {tx.platformFee} CR</div>
                     </div>
                   </div>
                 ))}
@@ -293,13 +301,13 @@ export const DeveloperEarnings: React.FC<DeveloperEarningsProps> = ({ onNavigate
                         </span>
                       </div>
                       <div className="text-neutral-400 text-[11px]">
-                        Job: {tx.jobId} | Evidence Hash: {tx.evidenceHash}
+                        Job: {tx.jobId} | Rail: {tx.paymentRail}
                       </div>
                     </div>
 
                     <div className="text-left sm:text-right">
-                      <div className="text-emerald-400 font-black text-sm">+{tx.netCredits} {tx.currency}</div>
-                      <div className="text-[10px] text-neutral-500">Gross: {tx.grossCredits} | Fee: {tx.platformFeeCredits}</div>
+                      <div className="text-emerald-400 font-black text-sm">+{tx.providerAmount} {tx.currency}</div>
+                      <div className="text-[10px] text-neutral-500">Gross: {tx.grossAmount} | Fee: {tx.platformFee}</div>
                     </div>
                   </div>
                 ))}
