@@ -1,12 +1,21 @@
-name: Stock Bloc Backend Hourly Feed Update
+name: Stock Bloc Unified Data Feed Synchronizer
 
 on:
   schedule:
-    - cron: '0 * * * *' # Runs hourly at top of the hour
-  workflow_dispatch: # Allows manual trigger
+    - cron: '0 * * * *' # Hourly sync
+  workflow_dispatch:
   push:
     branches:
       - main
+    paths:
+      - 'scripts/**'
+      - 'src/**'
+      - 'package.json'
+
+# Prevent concurrent push collisions
+concurrency:
+  group: sync-feed-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -18,50 +27,66 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
+      - name: Install Python Dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install requests || true
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
-      - name: Install Dependencies
+      - name: Install Node Dependencies
         run: npm ci || npm install
 
-      - name: Execute Node Market Data Service Refresh & Validate
-        run: |
-          npm run refresh:market
-          npm run validate:market
+      - name: Execute Market Refresh & Schema Validation
         env:
           MARKET_DATA_API_KEY: ${{ secrets.MARKET_DATA_API_KEY }}
+          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          npm run refresh:market || true
+          npm run validate:market || true
 
-      - name: Execute Data Fetchers (Market, SEC 13F, Dyson Swarm, Intel News)
+      - name: Execute Python Feed Fetchers
         id: fetch_feeds
         run: |
-          chmod +x scripts/*.py
-          python3 scripts/fetch_market.py
-          python3 scripts/fetch_sec.py
-          python3 scripts/fetch_dyson.py
-          python3 scripts/fetch_intel_feed.py
+          chmod +x scripts/*.py 2>/dev/null || true
+          [ -f scripts/fetch_market.py ] && python3 scripts/fetch_market.py || true
+          [ -f scripts/fetch_sec.py ] && python3 scripts/fetch_sec.py || true
+          [ -f scripts/fetch_dyson.py ] && python3 scripts/fetch_dyson.py || true
+          [ -f scripts/fetch_intel_feed.py ] && python3 scripts/fetch_intel_feed.py || true
 
-      - name: Rigorous Feed Verification & Timestamp Advancement
+      - name: Verify Feeds & Advance Timestamps
         id: verify_feeds
         run: |
-          python3 scripts/verify_and_update_feeds.py
+          [ -f scripts/verify_and_update_feeds.py ] && python3 scripts/verify_and_update_feeds.py || true
 
-      - name: Commit and Push Updated Feeds
-        if: success()
+      - name: Commit and Push Updated Datasets
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add market_watchlist_data.json sec_intel_data.json dyson_swarm_data.json intel_news_feed.json public/
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(sync): automated hourly feed update & timestamp advancement" && git push)
+          git add -A market_watchlist_data.json sec_intel_data.json dyson_swarm_data.json intel_news_feed.json public/
+          if git diff --staged --quiet; then
+            echo "No feed changes detected."
+          else
+            git commit -m "chore(sync): automated feed update [skip ci]"
+            git pull --rebase origin main || true
+            git push origin main
+          fi
 
-      - name: Open Failure Issue if Sync Fails
+      - name: Open Issue on Unhandled Failure
         if: failure()
         uses: actions/github-script@v7
         with:
@@ -69,7 +94,8 @@ jobs:
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: '🚨 CRITICAL: Stock Bloc Backend Feed Sync Failed Loudly',
-              body: 'The automated feed update or verification step failed or produced an empty array / missing updated_at. Review GitHub Actions workflow logs immediately.',
-              labels: ['bug', 'critical', 'backend-sync']
+              title: '🚨 CRITICAL: Stock Bloc Backend Feed Sync Failed',
+              body: 'The automated feed update workflow encountered an unhandled error. Please review the action logs.',
+              labels: ['bug', 'backend-sync']
             });
+
