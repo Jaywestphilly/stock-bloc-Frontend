@@ -36,7 +36,7 @@ function safeLazy<T = any>(
     try {
       const module = await importFn();
       try { sessionStorage.removeItem("app_script_reload_attempt"); } catch (e) {}
-      const Component = exportName ? module[exportName] : (module.default || module);
+      const Component = exportName ? (module[exportName] || module.default || module) : (module.default || module);
       return { default: Component };
     } catch (error) {
       console.warn("Module script import failed, retrying...", error);
@@ -44,7 +44,7 @@ function safeLazy<T = any>(
       try {
         const module = await importFn();
         try { sessionStorage.removeItem("app_script_reload_attempt"); } catch (e) {}
-        const Component = exportName ? module[exportName] : (module.default || module);
+        const Component = exportName ? (module[exportName] || module.default || module) : (module.default || module);
         return { default: Component };
       } catch (retryError) {
         console.error("Secondary module script import failed:", retryError);
