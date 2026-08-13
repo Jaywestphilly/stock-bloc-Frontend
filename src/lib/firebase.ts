@@ -51,7 +51,21 @@ export interface UserProfile {
 // Local persistence fallback if Firebase isn't fully provisioned in current environment
 export const saveUserDataLocally = <T>(key: string, data: T) => {
   try {
-    localStorage.setItem(`stockbloc_user_${key}`, JSON.stringify(data));
+    if (data === null || data === undefined) {
+      localStorage.removeItem(`stockbloc_user_${key}`);
+      if (key === "profile") {
+        localStorage.removeItem("user_session");
+      }
+    } else {
+      localStorage.setItem(`stockbloc_user_${key}`, JSON.stringify(data));
+      if (key === "profile") {
+        localStorage.setItem("user_session", typeof data === 'object' ? JSON.stringify(data) : String(data));
+      }
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("stockbloc_auth_changed", { detail: { key, data } }));
+      window.dispatchEvent(new Event("storage"));
+    }
   } catch (e) {
     console.warn("Unable to save locally", e);
   }
@@ -59,7 +73,7 @@ export const saveUserDataLocally = <T>(key: string, data: T) => {
 
 export const getUserDataLocally = <T>(key: string, fallback: T | null = null): T | null => {
   try {
-    const raw = localStorage.getItem(`stockbloc_user_${key}`);
+    const raw = localStorage.getItem(`stockbloc_user_${key}`) || (key === "profile" ? (localStorage.getItem("user_session") || localStorage.getItem("stock_bloc_profile")) : null);
     return raw ? (JSON.parse(raw) as T) : fallback;
   } catch (e) {
     return fallback;

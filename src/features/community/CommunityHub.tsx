@@ -13,7 +13,7 @@ import {
   Bot,
   ChevronLeft
 } from "lucide-react";
-import { db } from "../../lib/firebase";
+import { db, getUserDataLocally } from "../../lib/firebase";
 import { 
   collection, 
   query, 
@@ -56,9 +56,25 @@ interface CommunityHubProps {
 }
 
 export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
-  const { user: authUser, username, loading } = useAuth();
-  // Provide a safe fallback object similar to the old currentUser state so the rest of the component continues functioning cleanly
-  const currentUser = authUser ? { uid: authUser.uid, username: username || authUser.displayName || "Anonymous" } : null;
+  const { user: authUser, currentUser: contextUser, username, loading, isAuthenticated: contextAuth } = useAuth();
+  
+  // Read local profile & sessions if available
+  const localProfile = getUserDataLocally<{ uid?: string; displayName?: string; email?: string; username?: string }>("profile", null);
+  const rawUserSession = typeof window !== 'undefined' ? (localStorage.getItem('user_session') || localStorage.getItem('stockbloc_user_profile') || localStorage.getItem('stock_bloc_profile')) : null;
+
+  const isAuthenticated = Boolean(
+    contextAuth ||
+    authUser || 
+    contextUser || 
+    localProfile || 
+    rawUserSession
+  );
+
+  const currentUser = isAuthenticated ? {
+    uid: authUser?.uid || contextUser?.uid || localProfile?.uid || (rawUserSession ? "user_" + btoa(rawUserSession).slice(0, 8) : "user_member"),
+    username: username || contextUser?.username || contextUser?.displayName || authUser?.displayName || localProfile?.displayName || localProfile?.username || localProfile?.email?.split('@')[0] || "StockBlocMember",
+    displayName: contextUser?.displayName || authUser?.displayName || localProfile?.displayName || username || "Stock Bloc Member",
+  } : null;
 
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [discussions, setDiscussions] = useState<DiscussionPost[]>([]);
@@ -74,6 +90,15 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
   const [activeDiscussionId, setActiveDiscussionId] = useState<string | null>(null);
   const [activeReplies, setActiveReplies] = useState<ChatMessage[]>([]);
   const [newReplyText, setNewReplyText] = useState("");
+
+  const handleNewPost = () => {
+    triggerHaptic("selection");
+    if (!isAuthenticated) {
+      if (onOpenAuth) onOpenAuth();
+      return;
+    }
+    setIsComposingPost((prev) => !prev);
+  };
 
   const renderContentWithMentions = (text: string) => {
     if (!text) return null;
@@ -153,7 +178,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
   }, [activeDiscussionId]);
 
   useEffect(() => {
-    if (chatEndRef.current) {
+    if (chatEndRef.current && typeof chatEndRef.current.scrollIntoView === 'function') {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatMessages]);
@@ -293,7 +318,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
         </div>
       </div>
 
-      {!currentUser && (
+      {!isAuthenticated && (
         <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-amber-200">
           <p className="text-xs font-mono font-bold">You must <button onClick={onOpenAuth} className="text-amber-400 hover:text-amber-300 underline cursor-pointer">sign in</button> to participate in the community discussions.</p>
         </div>
@@ -324,14 +349,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
             
             {!activeDiscussionId && (
               <button 
-                onClick={() => {
-                  triggerHaptic("selection");
-                  if (!currentUser && onOpenAuth) {
-                    onOpenAuth();
-                    return;
-                  }
-                  setIsComposingPost(!isComposingPost);
-                }}
+                onClick={handleNewPost}
                 className="px-4 py-2 rounded-xl bg-cyan-500 text-black font-black text-xs flex items-center gap-2 hover:bg-cyan-400 disabled:opacity-50 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
               >
                 <Plus className="w-4 h-4" />
