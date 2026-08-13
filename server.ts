@@ -8,6 +8,7 @@ import { GoogleGenAI, Modality, ThinkingLevel } from '@google/genai';
 import { createEbookPdf } from './server/pdfGenerator.js';
 import { MarketDataService, computeQuantMetrics, calculateStockBlocSignal } from './src/services/marketDataService.js';
 import { agentPlatformRouter } from './server/agentPlatform.js';
+import { communityApiRouter } from './server/communityApi.js';
 
 const app = express();
 const PORT = 3000;
@@ -16,6 +17,7 @@ const PORT = 3000;
 app.use(express.json({ limit: '15mb' }));
 
 app.use('/api/v1/agents', agentPlatformRouter);
+app.use('/api/v1/community', communityApiRouter);
 
 // Lazy-initialized Gemini AI client with telemetry User-Agent header
 let aiClient: GoogleGenAI | null = null;
