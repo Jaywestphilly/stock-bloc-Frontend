@@ -71,8 +71,8 @@ const formatPublicAuthor = (authorData: any, overrides?: any) => {
   };
 };
 
-// GET /api/v1/community/posts
-communityApiRouter.get('/posts', authenticateAgent, requireScope('community:read'), async (req, res) => {
+// GET /api/v1/community/posts or /api/v1/community/discussions
+communityApiRouter.get(['/posts', '/discussions'], authenticateAgent, requireScope('community:read'), async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 20;
     const snap = await db.collection('discussions')
@@ -82,6 +82,8 @@ communityApiRouter.get('/posts', authenticateAgent, requireScope('community:read
       
     const posts = snap.docs.map(doc => {
       const data = doc.data();
+      const createdIso = data.createdAt?.toDate?.()?.toISOString?.() || 
+        (data.createdAt?._seconds ? new Date(data.createdAt._seconds * 1000).toISOString() : (typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString()));
       return {
         id: doc.id,
         type: 'post',
@@ -92,7 +94,7 @@ communityApiRouter.get('/posts', authenticateAgent, requireScope('community:read
           displayName: data.authorDisplayName
         }),
         content: data.content,
-        createdAt: data.createdAt?.toDate()?.toISOString(),
+        createdAt: createdIso,
         upvotes: data.upvotes || 0,
         replies: data.repliesCount || data.replies || 0
       };
@@ -104,8 +106,8 @@ communityApiRouter.get('/posts', authenticateAgent, requireScope('community:read
   }
 });
 
-// GET /api/v1/community/posts/:postId
-communityApiRouter.get('/posts/:postId', authenticateAgent, requireScope('community:read'), async (req, res) => {
+// GET /api/v1/community/posts/:postId or /api/v1/community/discussions/:postId
+communityApiRouter.get(['/posts/:postId', '/discussions/:postId'], authenticateAgent, requireScope('community:read'), async (req, res) => {
   try {
     const { postId } = req.params;
     const snap = await db.collection('discussions').doc(postId).get();
@@ -115,6 +117,8 @@ communityApiRouter.get('/posts/:postId', authenticateAgent, requireScope('commun
     }
     
     const data = snap.data()!;
+    const createdIso = data.createdAt?.toDate?.()?.toISOString?.() || 
+      (data.createdAt?._seconds ? new Date(data.createdAt._seconds * 1000).toISOString() : (typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString()));
     return res.json({
       id: snap.id,
       type: 'post',
@@ -125,7 +129,7 @@ communityApiRouter.get('/posts/:postId', authenticateAgent, requireScope('commun
         displayName: data.authorDisplayName
       }),
       content: data.content,
-      createdAt: data.createdAt?.toDate()?.toISOString(),
+      createdAt: createdIso,
       upvotes: data.upvotes || 0,
       replies: data.repliesCount || data.replies || 0
     });
@@ -135,8 +139,8 @@ communityApiRouter.get('/posts/:postId', authenticateAgent, requireScope('commun
   }
 });
 
-// GET /api/v1/community/posts/:postId/replies
-communityApiRouter.get('/posts/:postId/replies', authenticateAgent, requireScope('community:read'), async (req, res) => {
+// GET /api/v1/community/posts/:postId/replies or /api/v1/community/discussions/:postId/replies
+communityApiRouter.get(['/posts/:postId/replies', '/discussions/:postId/replies'], authenticateAgent, requireScope('community:read'), async (req, res) => {
   try {
     const { postId } = req.params;
     const limit = parseInt(req.query.limit as string) || 50;
@@ -147,6 +151,8 @@ communityApiRouter.get('/posts/:postId/replies', authenticateAgent, requireScope
       
     const replies = snap.docs.map(doc => {
       const data = doc.data();
+      const createdIso = data.createdAt?.toDate?.()?.toISOString?.() || 
+        (data.createdAt?._seconds ? new Date(data.createdAt._seconds * 1000).toISOString() : (typeof data.createdAt === 'string' ? data.createdAt : new Date().toISOString()));
       return {
         id: doc.id,
         type: 'reply',
@@ -159,7 +165,7 @@ communityApiRouter.get('/posts/:postId/replies', authenticateAgent, requireScope
           displayName: data.authorDisplayName
         }),
         content: data.content,
-        createdAt: data.createdAt?.toDate()?.toISOString()
+        createdAt: createdIso
       };
     });
     return res.json(replies);
@@ -169,8 +175,8 @@ communityApiRouter.get('/posts/:postId/replies', authenticateAgent, requireScope
   }
 });
 
-// POST /api/v1/community/posts
-communityApiRouter.post('/posts', authenticateAgent, requireScope('community:write'), discussionRateLimiter, async (req, res) => {
+// POST /api/v1/community/posts or /api/v1/community/discussions
+communityApiRouter.post(['/posts', '/discussions'], authenticateAgent, requireScope('community:write'), discussionRateLimiter, async (req, res) => {
   try {
     const agent = (req as any).agent;
     const { content } = req.body;
