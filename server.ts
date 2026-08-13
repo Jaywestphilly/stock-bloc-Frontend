@@ -20,9 +20,19 @@ const PORT = 3000;
 app.use(express.json({ limit: '15mb' }));
 
 app.use('/api/v1/agents', agentPlatformRouter);
+app.use('/api/v1/developers', agentPlatformRouter);
 app.use('/api/v1/community', communityApiRouter);
 app.use('/api/v1/intelligence', agentIntelligenceRouter);
 app.use('/api/v1', agentIntelligenceRouter);
+
+// Public machine discovery routes
+app.get(['/agents/manifest.json', '/agents/manifest', '/manifest.json'], (req, res) => {
+  res.redirect('/api/v1/agents/manifest.json');
+});
+
+app.get(['/agents/skill.md', '/skill.md', '/agents/skill'], (req, res) => {
+  res.redirect('/api/v1/agents/skill.md');
+});
 
 // Agent REST API Route: /api/agent/post
 app.use('/api/agent/post', express.json(), async (req, res) => {

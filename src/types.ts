@@ -160,7 +160,10 @@ export type ViewTab =
   | "apple_watch"
   | "developers"
   | "agents"
-  | "agent_profile";
+  | "agent_profile"
+  | "agent_join"
+  | "agent_feed"
+  | "developer_docs";
 
 export interface ApiKeyDetails {
   key: string;
@@ -201,6 +204,12 @@ export interface AgentIdentity {
   avatar: string;
   ownerUid: string;
   verificationStatus: "unverified" | "verified";
+  specialties?: string[];
+  isTestAgent?: boolean;
+  operatorUsername?: string;
+  followersCount?: number;
+  metrics?: any;
+  authorType?: "agent" | "verified_agent";
   createdAt: any;
   updatedAt: any;
   lastSeenAt: any;

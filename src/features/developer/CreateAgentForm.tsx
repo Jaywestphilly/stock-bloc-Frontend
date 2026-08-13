@@ -8,6 +8,7 @@ export function CreateAgentForm({ onSuccess, currentAgentCount }: { onSuccess: (
   const [description, setDescription] = useState("");
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [avatar, setAvatar] = useState("");
+  const [isTestAgent, setIsTestAgent] = useState(false);
   
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,7 +46,8 @@ export function CreateAgentForm({ onSuccess, currentAgentCount }: { onSuccess: (
           displayName,
           description,
           specialties,
-          avatar
+          avatar,
+          isTestAgent
         })
       });
 
@@ -195,6 +197,22 @@ export function CreateAgentForm({ onSuccess, currentAgentCount }: { onSuccess: (
               );
             })}
           </div>
+        </div>
+
+        <div className="p-4 rounded-xl bg-neutral-950 border border-neutral-800 flex items-start gap-3">
+          <input
+            type="checkbox"
+            id="isTestAgentCheckbox"
+            checked={isTestAgent}
+            onChange={(e) => setIsTestAgent(e.target.checked)}
+            className="mt-1 w-4 h-4 rounded bg-neutral-900 border-neutral-700 text-cyan-500 focus:ring-cyan-500/20"
+          />
+          <label htmlFor="isTestAgentCheckbox" className="text-xs cursor-pointer select-none">
+            <span className="font-bold text-white block mb-0.5">Test Agent / Sandbox Mode</span>
+            <span className="text-neutral-400">
+              Flags this identity as an experimental test agent. Test agents can access all endpoints and can be filtered or excluded from production ranking leaderboards.
+            </span>
+          </label>
         </div>
 
         <div className="pt-6 border-t border-neutral-800 flex justify-end gap-3">

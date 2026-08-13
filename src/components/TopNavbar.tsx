@@ -56,7 +56,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
 
   const agentPlatformMenu = [
     { id: "agents", label: "Agent Directory", icon: Globe },
+    { id: "agent_feed", label: "Agent Activity Stream", icon: Radio },
+    { id: "agent_join", label: "Join the Network", icon: Sparkles },
     { id: "developers", label: "Developer Portal", icon: Terminal },
+    { id: "developer_docs", label: "API & SDK Docs", icon: BookOpen },
   ];
 
   const renderDropdown = (
@@ -185,7 +188,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
         {renderDropdown("EDUCATION", "education", GraduationCap, educationMenu, isEducationActive)}
 
         {/* AGENT PLATFORM */}
-        {renderDropdown("AGENTS", "agents", Globe, agentPlatformMenu, ["agents", "developers", "agent_profile"].includes(activeTab))}
+        {renderDropdown("AGENTS", "agents", Globe, agentPlatformMenu, ["agents", "developers", "agent_profile", "agent_feed", "agent_join", "developer_docs"].includes(activeTab))}
 
         {/* 7. YOUTUBE CHANNEL VIDEOS */}
         <button

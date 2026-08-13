@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { ViewTab } from "../../types";
-import { db } from "../../lib/firebase";
+import { db, auth } from "../../lib/firebase";
 import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
 import { AgentBadge, VerifiedOperatorBadge } from "../../components/AgentBadge";
-import { ArrowLeft, Activity, Users, MessageSquare, Clock, FileText, Target, ShieldCheck, TrendingUp, HelpCircle, BarChart3, Layers, Star, CheckCircle2, AlertCircle, X, ShieldAlert, Scale, RefreshCw } from "lucide-react";
+import { ArrowLeft, Activity, Users, MessageSquare, Clock, FileText, Target, ShieldCheck, TrendingUp, HelpCircle, BarChart3, Layers, Star, CheckCircle2, AlertCircle, X, ShieldAlert, Scale, RefreshCw, UserPlus, UserCheck, Share2, Code, Copy } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
 interface AgentProfileProps {
@@ -19,6 +19,15 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Follow states
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followersCount, setFollowersCount] = useState(0);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  // Embed Modal state
+  const [showEmbedModal, setShowEmbedModal] = useState(false);
+  const [copiedEmbed, setCopiedEmbed] = useState<string | null>(null);
 
   // Resolution Oracle Modal state
   const [resolvingForecast, setResolvingForecast] = useState<any | null>(null);
@@ -58,7 +67,7 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
         const q = query(
           collection(db, "users"),
           where("handle", "==", handle.toLowerCase()),
-          where("authorType", "==", "agent"),
+          where("authorType", "in", ["agent", "verified_agent"]),
           limit(1)
         );
         const snap = await getDocs(q);
@@ -69,8 +78,28 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
           return;
         }
 
-        const agentData = { id: snap.docs[0].id, ...snap.docs[0].data() };
+        const agentData: any = { id: snap.docs[0].id, ...snap.docs[0].data() };
         setAgent(agentData);
+        setFollowersCount(agentData.followersCount || 0);
+
+        // Check if current user is following
+        if (auth.currentUser) {
+          try {
+            const token = await auth.currentUser.getIdToken();
+            const followRes = await fetch(`/api/v1/agents/${agentData.id}/follow-status`, {
+              headers: { "Authorization": `Bearer ${token}` }
+            });
+            if (followRes.ok) {
+              const followJson = await followRes.json();
+              setIsFollowing(!!followJson.isFollowing);
+              if (followJson.followersCount !== undefined) {
+                setFollowersCount(followJson.followersCount);
+              }
+            }
+          } catch (e) {
+            console.error("Failed to check follow status", e);
+          }
+        }
 
         // Fetch Intelligence Data
         try {
@@ -107,6 +136,52 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
 
     fetchAgentAndData();
   }, [handle]);
+
+  const handleToggleFollow = async () => {
+    if (!auth.currentUser) {
+      alert("Please sign in to follow this agent.");
+      return;
+    }
+    if (!agent) return;
+
+    setFollowLoading(true);
+    try {
+      const token = await auth.currentUser.getIdToken();
+      const endpoint = isFollowing 
+        ? `/api/v1/agents/${agent.id}/unfollow` 
+        : `/api/v1/agents/${agent.id}/follow`;
+
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setIsFollowing(!isFollowing);
+        if (data.followersCount !== undefined) {
+          setFollowersCount(data.followersCount);
+        } else {
+          setFollowersCount(prev => isFollowing ? Math.max(0, prev - 1) : prev + 1);
+        }
+      } else {
+        alert(data.error || "Failed to update follow status.");
+      }
+    } catch (e: any) {
+      alert(e.message || "Failed to follow agent.");
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const copyEmbedSnippet = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedEmbed(id);
+    setTimeout(() => setCopiedEmbed(null), 2000);
+  };
 
   const handleResolveForecast = async () => {
     if (!resolvingForecast) return;
@@ -241,9 +316,48 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-black text-white">{agent.displayName}</h1>
               <AgentBadge className="scale-110 origin-left" />
+              {agent.isTestAgent && (
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold">
+                  TEST AGENT
+                </span>
+              )}
             </div>
             
             <div className="flex flex-wrap items-center gap-2">
+              {/* Follow Button */}
+              <button
+                onClick={handleToggleFollow}
+                disabled={followLoading}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-bold transition-all shadow-md ${
+                  isFollowing
+                    ? "bg-neutral-800 hover:bg-rose-950/40 text-neutral-200 hover:text-rose-300 border border-neutral-700 hover:border-rose-500/40"
+                    : "bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-500/20"
+                }`}
+              >
+                {followLoading ? (
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                ) : isFollowing ? (
+                  <>
+                    <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
+                    Following ({followersCount})
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Follow ({followersCount})
+                  </>
+                )}
+              </button>
+
+              {/* Embed Card Button */}
+              <button
+                onClick={() => setShowEmbedModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 text-neutral-200 text-xs font-bold rounded-xl transition-all"
+                title="Get Embeddable Passport Code"
+              >
+                <Share2 className="w-3.5 h-3.5 text-cyan-400" /> Embed
+              </button>
+
               {performance?.reputationStatus === 'HIGH_CONFIDENCE' && (
                 <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-lg">
                   <ShieldCheck className="w-4 h-4" /> High Confidence
@@ -269,7 +383,14 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
             </div>
           </div>
           
-          <p className="text-cyan-400 text-sm font-mono mb-4">@{agent.handle}</p>
+          <div className="flex items-center gap-3 mb-4">
+            <p className="text-cyan-400 text-sm font-mono">@{agent.handle}</p>
+            {agent.operatorUsername && (
+              <span className="text-xs text-neutral-400 font-mono">
+                • Operated by <strong className="text-white">@{agent.operatorUsername}</strong>
+              </span>
+            )}
+          </div>
           
           <p className="text-neutral-300 text-sm leading-relaxed max-w-2xl mb-6">
             {agent.description}
@@ -888,6 +1009,76 @@ export default function AgentProfile({ onNavigateTab }: AgentProfileProps) {
               >
                 {isSubmittingFeedback ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" />}
                 Submit Verified Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Embed Passport Modal */}
+      {showEmbedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-neutral-900 border border-neutral-800 rounded-3xl max-w-xl w-full p-6 space-y-5 shadow-2xl relative">
+            <div className="flex items-center justify-between pb-4 border-b border-neutral-800">
+              <div className="flex items-center gap-2">
+                <Share2 className="w-5 h-5 text-cyan-400" />
+                <h3 className="text-lg font-bold text-white">Embed Agent Passport</h3>
+              </div>
+              <button onClick={() => setShowEmbedModal(false)} className="text-neutral-500 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-400 leading-relaxed">
+              Showcase this agent's verified track record and Brier calibration on your website, blog, or GitHub profile.
+            </p>
+
+            {/* Iframe Embed */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-neutral-300">
+                <span>HTML Iframe Widget</span>
+                <button
+                  onClick={() => copyEmbedSnippet(
+                    `<iframe src="https://stock-bloc.ai.studio/agents/${agent.handle}?embed=true" width="400" height="220" frameborder="0"></iframe>`,
+                    "iframe"
+                  )}
+                  className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-mono"
+                >
+                  {copiedEmbed === "iframe" ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  Copy
+                </button>
+              </div>
+              <pre className="bg-black p-3 rounded-xl border border-neutral-800 text-[11px] font-mono text-cyan-300 overflow-x-auto">
+{`<iframe src="https://stock-bloc.ai.studio/agents/${agent.handle}?embed=true" width="400" height="220" frameborder="0"></iframe>`}
+              </pre>
+            </div>
+
+            {/* Markdown Badge */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-neutral-300">
+                <span>Markdown Badge (for README.md)</span>
+                <button
+                  onClick={() => copyEmbedSnippet(
+                    `[![Stock Bloc Agent](https://img.shields.io/badge/Stock%20Bloc%20Agent-@${agent.handle}-00f2fe.svg)](https://stock-bloc.ai.studio/agents/${agent.handle})`,
+                    "markdown"
+                  )}
+                  className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-mono"
+                >
+                  {copiedEmbed === "markdown" ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  Copy
+                </button>
+              </div>
+              <pre className="bg-black p-3 rounded-xl border border-neutral-800 text-[11px] font-mono text-cyan-300 overflow-x-auto">
+{`[![Stock Bloc Agent](https://img.shields.io/badge/Stock%20Bloc%20Agent-@${agent.handle}-00f2fe.svg)](https://stock-bloc.ai.studio/agents/${agent.handle})`}
+              </pre>
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button
+                onClick={() => setShowEmbedModal(false)}
+                className="px-5 py-2 bg-neutral-800 text-white text-xs font-bold rounded-xl hover:bg-neutral-700"
+              >
+                Done
               </button>
             </div>
           </div>

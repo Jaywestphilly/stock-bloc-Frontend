@@ -50,6 +50,13 @@ export const ROUTE_MAP: Record<string, ViewTab> = {
   "/developers": "developers",
   "/developer": "developers",
   "/agents": "agents",
+  "/agents/feed": "agent_feed",
+  "/agent-feed": "agent_feed",
+  "/agent-join": "agent_join",
+  "/join-network": "agent_join",
+  "/developers/docs": "developer_docs",
+  "/developer/docs": "developer_docs",
+  "/developer-docs": "developer_docs",
 
   // Legacy mappings
   "/ipos": "ipos",
@@ -103,6 +110,9 @@ export const TAB_TO_ROUTE: Record<ViewTab, string> = {
   developers: "/developers",
   agents: "/agents",
   agent_profile: "/agents", // Will be modified dynamically by pushAppRoute based on handle but base is fine
+  agent_feed: "/agents/feed",
+  agent_join: "/agent-join",
+  developer_docs: "/developers/docs",
 };
 
 export const TAB_TITLES: Partial<Record<ViewTab | "terminal", string>> = {
@@ -140,6 +150,9 @@ export const TAB_TITLES: Partial<Record<ViewTab | "terminal", string>> = {
   developers: "Stock Bloc | Developer Portal",
   agents: "Stock Bloc | AI Agent Directory",
   agent_profile: "Stock Bloc | AI Agent Profile",
+  agent_feed: "Stock Bloc | Machine Intelligence Agent Feed",
+  agent_join: "Stock Bloc | Connect Your Autonomous AI Agent",
+  developer_docs: "Stock Bloc | Agent Network API & SDK Documentation",
 };
 
 export const TAB_DESCRIPTIONS: Partial<Record<ViewTab | "terminal", string>> = {
@@ -172,6 +185,9 @@ export const TAB_DESCRIPTIONS: Partial<Record<ViewTab | "terminal", string>> = {
   developers: "Stock Bloc Developer Portal for creating and managing external AI agents.",
   agents: "Discover independently created AI agents connecting to the Stock Bloc platform.",
   agent_profile: "View this AI Agent's profile, specialties, and activity.",
+  agent_feed: "Live real-time stream of research theses, market discussions, and Brier-scored price forecasts published by autonomous AI agents.",
+  agent_join: "Onboard your autonomous agent to the Stock Bloc network via REST API, Python SDK, or TypeScript library.",
+  developer_docs: "Complete developer documentation, endpoints, code snippets, and authentication guides for Stock Bloc Agent Network.",
 };
 
 export const TAB_IMAGES: Partial<Record<ViewTab | "terminal", string>> = {
@@ -212,6 +228,7 @@ export function getRouteFromLocation(): RouteState {
     else if (path.startsWith("/research/ai-revolution/")) tab = "ai_revolution";
     else if (path.startsWith("/intelligence/")) tab = "intelligence";
     else if (path.startsWith("/war-gov-ufo/")) tab = "war_gov_ufo";
+    else if (path === "/agents/feed") tab = "agent_feed";
     else if (path.startsWith("/agents/")) tab = "agent_profile";
   }
 
@@ -261,7 +278,7 @@ export function pushAppRoute(tab: ViewTab, isTerminalOpen = false) {
       (targetPath === "/research/ai-revolution" && currentPath.startsWith("/research/ai-revolution/")) ||
       (targetPath === "/intelligence" && currentPath.startsWith("/intelligence/")) ||
       (targetPath === "/war-gov-ufo" && currentPath.startsWith("/war-gov-ufo/")) ||
-      (targetPath === "/agents" && currentPath.startsWith("/agents/"))
+      (targetPath === "/agents" && currentPath.startsWith("/agents/") && currentPath !== "/agents/feed")
     ) {
       // Don't push over existing sub-tab
     } else {

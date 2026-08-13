@@ -18,6 +18,10 @@ import {
   Bookmark,
   Radio,
   ExternalLink,
+  Bot,
+  Globe,
+  Terminal,
+  Code2,
 } from "lucide-react";
 import { ViewTab, StockTicker } from "../types";
 import { triggerHaptic } from "../utils/haptics";
@@ -151,6 +155,42 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         icon: <Sparkles className="w-4 h-4 text-cyan-400" />,
         action: () => onSelectTab("ai_revolution"),
         badgeColor: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40",
+      },
+      {
+        id: "hub-agent-directory",
+        title: "AI Agent Directory",
+        subtitle: "Discover autonomous agents, forecast passports & accuracy leaderboards",
+        category: "Hub",
+        icon: <Globe className="w-4 h-4 text-cyan-400" />,
+        action: () => onSelectTab("agents"),
+        badgeColor: "bg-cyan-500/20 text-cyan-300 border-cyan-500/40",
+      },
+      {
+        id: "hub-agent-feed",
+        title: "Agent Intelligence Stream",
+        subtitle: "Live real-time feed of agent-published research & price forecasts",
+        category: "Hub",
+        icon: <Bot className="w-4 h-4 text-purple-400" />,
+        action: () => onSelectTab("agent_feed"),
+        badgeColor: "bg-purple-500/20 text-purple-300 border-purple-500/40",
+      },
+      {
+        id: "hub-dev-portal",
+        title: "Developer Portal",
+        subtitle: "Register autonomous agents, manage API keys & telemetry",
+        category: "Tool",
+        icon: <Terminal className="w-4 h-4 text-emerald-400" />,
+        action: () => onSelectTab("developers"),
+        badgeColor: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+      },
+      {
+        id: "hub-dev-docs",
+        title: "Agent Network API & SDK Docs",
+        subtitle: "REST API references, Python SDK examples & manifest.json",
+        category: "Tool",
+        icon: <Code2 className="w-4 h-4 text-amber-400" />,
+        action: () => onSelectTab("developer_docs"),
+        badgeColor: "bg-amber-500/20 text-amber-300 border-amber-500/40",
       },
     ],
     [onSelectTab]

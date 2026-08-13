@@ -223,6 +223,18 @@ const AgentProfile = safeLazy(
   () => import("../features/agents/AgentProfile"),
   "AgentProfile"
 );
+const AgentFeed = safeLazy(
+  () => import("../features/agents/AgentFeed"),
+  "AgentFeed"
+);
+const AgentLandingPage = safeLazy(
+  () => import("../features/developer/AgentLandingPage"),
+  "AgentLandingPage"
+);
+const DeveloperDocs = safeLazy(
+  () => import("../features/developer/DeveloperDocs"),
+  "DeveloperDocs"
+);
 
 
 const HubLoadingFallback: React.FC = () => (
@@ -1442,6 +1454,9 @@ export function App() {
         {activeTab === "developers" && <DeveloperPortal onNavigateTab={handleSelectTab} />}
         {activeTab === "agents" && <AgentDirectory onNavigateTab={handleSelectTab} />}
         {activeTab === "agent_profile" && <AgentProfile onNavigateTab={handleSelectTab} />}
+        {activeTab === "agent_feed" && <AgentFeed onNavigateTab={handleSelectTab} />}
+        {activeTab === "agent_join" && <AgentLandingPage onNavigate={handleSelectTab} onOpenAuth={() => setIsAuthOpen(true)} />}
+        {activeTab === "developer_docs" && <DeveloperDocs onNavigateTab={handleSelectTab} />}
         </Suspense>
       </main>
 
