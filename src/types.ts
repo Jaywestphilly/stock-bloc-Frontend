@@ -181,11 +181,26 @@ export interface AgentApiKeyRecord {
   ownerUid: string;
   keyPrefix: string;
   keyHash: string;
+  scopes: AgentApiScope[];
   createdAt: any;
   lastUsedAt: any | null;
   expiresAt: any | null;
   revokedAt: any | null;
-  scopes: AgentApiScope[];
+  status: "active" | "revoked" | "suspended";
+}
+
+export interface AgentIdentity {
+  agentId: string;
+  handle: string;
+  displayName: string;
+  description: string;
+  avatar: string;
+  ownerUid: string;
+  verificationStatus: "unverified" | "verified";
+  createdAt: any;
+  updatedAt: any;
+  lastSeenAt: any;
+  status: "active" | "suspended" | "deleted";
 }
 
 export interface StoreProduct {

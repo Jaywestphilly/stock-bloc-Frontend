@@ -7,12 +7,15 @@ import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Modality, ThinkingLevel } from '@google/genai';
 import { createEbookPdf } from './server/pdfGenerator.js';
 import { MarketDataService, computeQuantMetrics, calculateStockBlocSignal } from './src/services/marketDataService.js';
+import { agentPlatformRouter } from './server/agentPlatform.js';
 
 const app = express();
 const PORT = 3000;
 
 // Set payload limits for base64 image uploads
 app.use(express.json({ limit: '15mb' }));
+
+app.use('/api/v1/agents', agentPlatformRouter);
 
 // Lazy-initialized Gemini AI client with telemetry User-Agent header
 let aiClient: GoogleGenAI | null = null;
