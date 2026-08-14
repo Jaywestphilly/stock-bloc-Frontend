@@ -28,6 +28,7 @@ vi.mock('./firebaseAdmin.js', () => {
   };
 
   const getDoc = vi.fn((collection: string, id: string) => {
+    if (!dbStore[collection]) dbStore[collection] = new Map();
     const data = dbStore[collection].get(id);
     return Promise.resolve({
       exists: !!data,
@@ -37,11 +38,13 @@ vi.mock('./firebaseAdmin.js', () => {
   });
 
   const setDoc = vi.fn((collection: string, id: string, data: any) => {
+    if (!dbStore[collection]) dbStore[collection] = new Map();
     dbStore[collection].set(id, data);
     return Promise.resolve();
   });
 
   const updateDoc = vi.fn((collection: string, id: string, data: any) => {
+    if (!dbStore[collection]) dbStore[collection] = new Map();
     if(dbStore[collection].has(id)) {
       dbStore[collection].set(id, { ...dbStore[collection].get(id), ...data });
     }
@@ -243,5 +246,63 @@ describe('Agent Platform API', () => {
        .get('/api/v1/community/stream')
        .set('Authorization', `Bearer ${sseKey}`);
      expect(res2.status).toBe(200);
+  });
+
+  it('12. Autonomous Agent self-registration grants full marketplace and arena scopes', async () => {
+    const { registerAutonomousAgentHandler, authenticateAgent, requireScope } = await import('./agentPlatform.js');
+    const autoApp = express();
+    autoApp.use(express.json());
+    autoApp.post('/api/v1/agent/register', registerAutonomousAgentHandler);
+    
+    // Add dummy marketplace endpoints to verify scope access
+    autoApp.post('/api/v1/exchange/services', authenticateAgent, requireScope('services:write'), (req, res) => res.status(201).json({ success: true, action: 'service_published' }));
+    autoApp.post('/api/v1/exchange/requests', authenticateAgent, requireScope('requests:write'), (req, res) => res.status(201).json({ success: true, action: 'request_created' }));
+    autoApp.post('/api/v1/exchange/jobs', authenticateAgent, requireScope('jobs:execute'), (req, res) => res.status(201).json({ success: true, action: 'job_executed' }));
+
+    const regRes = await request(autoApp)
+      .post('/api/v1/agent/register')
+      .send({
+        handle: 'tsunami_auto_quant',
+        displayName: 'Tsunami Auto Quant Agent',
+        specialties: ['Super Sonic Tsunami', 'Marketplace Services']
+      });
+
+    expect(regRes.status).toBe(201);
+    expect(regRes.body.status).toBe('registered');
+    expect(regRes.body.apiKey).toContain('sb_live_');
+    expect(regRes.body.trialCredits).toBe(100);
+    expect(regRes.body.scopes).toContain('services:write');
+    expect(regRes.body.scopes).toContain('requests:write');
+    expect(regRes.body.scopes).toContain('jobs:execute');
+    expect(regRes.body.scopes).toContain('payments:transact');
+    expect(regRes.body.scopes).toContain('community:read');
+    expect(regRes.body.marketplace).toBeDefined();
+    expect(regRes.body.marketplace.enabled).toBe(true);
+
+    const apiKey = regRes.body.apiKey;
+
+    // Verify services:write access
+    const srvRes = await request(autoApp)
+      .post('/api/v1/exchange/services')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .send({ name: '13F Whale Tracking Service' });
+    expect(srvRes.status).toBe(201);
+    expect(srvRes.body.action).toBe('service_published');
+
+    // Verify requests:write access
+    const reqRes = await request(autoApp)
+      .post('/api/v1/exchange/requests')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .send({ title: 'Quantum Compute Deep Dive' });
+    expect(reqRes.status).toBe(201);
+    expect(reqRes.body.action).toBe('request_created');
+
+    // Verify jobs:execute access
+    const jobRes = await request(autoApp)
+      .post('/api/v1/exchange/jobs')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .send({ taskId: 'task_001' });
+    expect(jobRes.status).toBe(201);
+    expect(jobRes.body.action).toBe('job_executed');
   });
 });

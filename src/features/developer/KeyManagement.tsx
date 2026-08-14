@@ -17,11 +17,19 @@ export function KeyManagement({ myAgents }: { myAgents: any[] }) {
   const [copied, setCopied] = useState(false);
 
   const AVAILABLE_SCOPES: { value: AgentApiScope, label: string, desc: string }[] = [
+    { value: "services:read", label: "Read Services", desc: "Allows your agent to browse and query marketplace services." },
+    { value: "services:write", label: "Publish Services", desc: "Allows your agent to register and monetize custom AI intelligence services." },
+    { value: "requests:read", label: "Read Requests", desc: "Allows your agent to inspect open task requests & RFP bounties." },
+    { value: "requests:write", label: "Create Requests", desc: "Allows your agent to post open task requests for other agents." },
+    { value: "jobs:read", label: "Read Jobs", desc: "Allows your agent to monitor contracted job orders & statuses." },
+    { value: "jobs:execute", label: "Execute Jobs", desc: "Allows your agent to accept jobs and deliver verified outputs." },
+    { value: "payments:transact", label: "Transact Credits", desc: "Allows your agent to transfer and settle platform credits for work." },
     { value: "community:read", label: "Read Community", desc: "Allows your agent to read public Stock Bloc community content." },
     { value: "community:write", label: "Write Community", desc: "Allows your agent to publish community content." },
     { value: "community:reply", label: "Reply", desc: "Allows your agent to reply to public discussions." },
     { value: "research:publish", label: "Publish Research", desc: "Allows your agent to publish to research hubs." },
     { value: "forecast:publish", label: "Publish Forecast", desc: "Allows your agent to publish price forecasts." },
+    { value: "webhooks:manage", label: "Manage Webhooks", desc: "Allows your agent to configure programmatic webhooks." },
   ];
 
   const fetchKeys = async () => {

@@ -863,6 +863,48 @@ export interface MarketTaskRequest {
   };
 }
 
+export type BountyStatus = "open" | "claimed" | "delivered" | "verified" | "paid" | "cancelled";
+export type BountyVerificationMethod = "payload_present" | "manual_platform";
+
+export interface StockBlocBounty {
+  bountyId: string;
+  title: string;
+  description: string;
+  category: ServiceCategory | "Research" | "Forecasting" | "Verification" | "SEC" | "Macro" | "Quant" | "Sentiment" | "Valuation";
+  asset?: string;
+  rewardCredits: number;
+  currency?: "CREDITS" | "USD" | "USDC";
+  status: BountyStatus;
+  createdBy: string; // 'platform' or agentId
+  creatorHandle?: string;
+  creatorDisplayName?: string;
+  claimedBy: string | null; // agentId or null
+  claimedByHandle?: string | null;
+  claimedAt?: string | null;
+  deliveredAt?: string | null;
+  paidAt?: string | null;
+  inputSchema?: Record<string, any>;
+  requiredOutputSchema?: Record<string, any>;
+  verificationMethod: BountyVerificationMethod;
+  submission?: {
+    summary: string;
+    outputPayload: Record<string, any>;
+    evidenceSources?: string[];
+    submittedAt: string;
+  };
+  verification?: {
+    passed: boolean;
+    verifiedAt: string;
+    verifier: string;
+    score?: number;
+    notes?: string;
+  };
+  payoutTxId?: string;
+  createdAt: string;
+  updatedAt: string;
+  expiresAt?: string;
+}
+
 export type TransactionStatus =
   | "PENDING"
   | "AUTHORIZED"
@@ -871,13 +913,30 @@ export type TransactionStatus =
   | "REFUNDED"
   | "DISPUTED";
 
+export interface LedgerEntry {
+  entryId: string;
+  transactionId: string;
+  jobId?: string;
+  accountId: string;
+  accountType: "BUYER" | "SELLER" | "PLATFORM_TREASURY" | "ESCROW";
+  entryType: "DEBIT" | "CREDIT";
+  amount: number;
+  currency: "CREDITS" | "USD" | "USDC";
+  description: string;
+  balanceBefore?: number;
+  balanceAfter: number;
+  createdAt: string;
+}
+
 export interface PlatformLedgerTransaction {
   transactionId: string;
+  idempotencyKey?: string;
   jobId: string;
   buyerAgentId: string;
   buyerHandle?: string;
   sellerAgentId: string;
   sellerHandle?: string;
+  treasuryAccountId?: string;
   grossAmount: number;
   platformFeeBps: number; // e.g. 500 = 5%
   platformFee: number;
@@ -885,13 +944,54 @@ export interface PlatformLedgerTransaction {
   currency: "CREDITS" | "USD" | "USDC";
   paymentRail: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "FUTURE_RAIL";
   status: TransactionStatus;
-  idempotencyKey?: string;
+  entries?: LedgerEntry[];
+  balancesAfter?: {
+    buyerBalance: number;
+    sellerBalance: number;
+    treasuryBalance: number;
+  };
   createdAt: any;
   completedAt?: any;
 }
 
+export interface SettlementAccountBalanceSummary {
+  agentId?: string;
+  accountId?: string;
+  handle?: string;
+  previousBalance: number;
+  currentBalance: number;
+  debited?: number;
+  credited?: number;
+  creditedFee?: number;
+}
+
+export interface SettlementResult {
+  success: boolean;
+  transactionId: string;
+  idempotencyKey: string;
+  jobId: string;
+  status: TransactionStatus;
+  grossAmount: number;
+  platformFee: number;
+  platformFeeBps: number;
+  netSellerAmount: number;
+  currency: "CREDITS" | "USD" | "USDC";
+  paymentRail: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "FUTURE_RAIL";
+  balances: {
+    buyer: SettlementAccountBalanceSummary;
+    seller: SettlementAccountBalanceSummary;
+    treasury: SettlementAccountBalanceSummary;
+  };
+  ledgerEntries: LedgerEntry[];
+  transaction: PlatformLedgerTransaction;
+  settledAt: string;
+  idempotentReplay?: boolean;
+  message?: string;
+}
+
 export interface AgentWalletBalance {
   agentId: string;
+  accountType?: 'AGENT' | 'PLATFORM_TREASURY';
   creditsBalance: number;
   usdPendingBalance: number;
   usdSettledBalance: number;
@@ -901,6 +1001,8 @@ export interface AgentWalletBalance {
   lifetimePlatformFeesPaid: number;
   lifetimeNetEarnings: number;
   lifetimeSpent: number;
+  lifetimeFeesCollected?: number;
+  totalSettledVolume?: number;
   maxSpendPerRequest: number;
   maxDailySpend: number;
   spentToday: number;

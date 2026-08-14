@@ -303,5 +303,286 @@
   "research_articles": {},
   "forecasts": {},
   "theses": {},
-  "chats": {}
+  "chats": {},
+  "agent_wallets": {
+    "agent_ledger_buyer": {
+      "agentId": "agent_ledger_buyer",
+      "creditsBalance": 50,
+      "usdPendingBalance": 0,
+      "usdSettledBalance": 0,
+      "usdcPendingBalance": 0,
+      "usdcSettledBalance": 0,
+      "lifetimeGrossEarnings": 0,
+      "lifetimePlatformFeesPaid": 0,
+      "lifetimeNetEarnings": 0,
+      "lifetimeSpent": 50,
+      "maxSpendPerRequest": 50,
+      "maxDailySpend": 250,
+      "spentToday": 0,
+      "spendingLimitsConfigured": true,
+      "updatedAt": "2026-08-14T12:45:49.583Z"
+    },
+    "agent_ledger_seller": {
+      "agentId": "agent_ledger_seller",
+      "creditsBalance": 47,
+      "usdPendingBalance": 0,
+      "usdSettledBalance": 0,
+      "usdcPendingBalance": 0,
+      "usdcSettledBalance": 0,
+      "lifetimeGrossEarnings": 50,
+      "lifetimePlatformFeesPaid": 3,
+      "lifetimeNetEarnings": 47,
+      "lifetimeSpent": 0,
+      "maxSpendPerRequest": 50,
+      "maxDailySpend": 250,
+      "spentToday": 0,
+      "spendingLimitsConfigured": true,
+      "updatedAt": "2026-08-14T12:45:49.583Z"
+    },
+    "platform_treasury": {
+      "agentId": "platform_treasury",
+      "creditsBalance": 3,
+      "lifetimeGrossEarnings": 3,
+      "lifetimeFeesCollected": 3,
+      "totalSettledVolume": 50,
+      "accountType": "PLATFORM_TREASURY",
+      "updatedAt": "2026-08-14T12:45:49.583Z"
+    }
+  },
+  "platform_transactions": {
+    "tx_a4c61f7909b159e8": {
+      "transactionId": "tx_a4c61f7909b159e8",
+      "idempotencyKey": "idemp_ledger_1",
+      "jobId": "job_ledger_1",
+      "buyerAgentId": "agent_ledger_buyer",
+      "sellerAgentId": "agent_ledger_seller",
+      "treasuryAccountId": "platform_treasury",
+      "grossAmount": 20,
+      "platformFeeBps": 500,
+      "platformFee": 1,
+      "providerAmount": 19,
+      "currency": "CREDITS",
+      "paymentRail": "PLATFORM_CREDITS",
+      "status": "SETTLED",
+      "entries": [
+        {
+          "entryId": "ent_d57cdd1d703b",
+          "transactionId": "tx_a4c61f7909b159e8",
+          "jobId": "job_ledger_1",
+          "accountId": "agent_ledger_buyer",
+          "accountType": "BUYER",
+          "entryType": "DEBIT",
+          "amount": 20,
+          "currency": "CREDITS",
+          "description": "Debit buyer for job settlement: job_ledger_1",
+          "balanceBefore": 100,
+          "balanceAfter": 80,
+          "createdAt": "2026-08-14T12:45:49.385Z"
+        },
+        {
+          "entryId": "ent_a317275b7ab2",
+          "transactionId": "tx_a4c61f7909b159e8",
+          "jobId": "job_ledger_1",
+          "accountId": "agent_ledger_seller",
+          "accountType": "SELLER",
+          "entryType": "CREDIT",
+          "amount": 19,
+          "currency": "CREDITS",
+          "description": "Credit seller net earnings (net of 5% platform fee) for job: job_ledger_1",
+          "balanceBefore": 0,
+          "balanceAfter": 19,
+          "createdAt": "2026-08-14T12:45:49.385Z"
+        },
+        {
+          "entryId": "ent_cd3b37bd55a0",
+          "transactionId": "tx_a4c61f7909b159e8",
+          "jobId": "job_ledger_1",
+          "accountId": "platform_treasury",
+          "accountType": "PLATFORM_TREASURY",
+          "entryType": "CREDIT",
+          "amount": 1,
+          "currency": "CREDITS",
+          "description": "Platform treasury fee revenue (5%) for job: job_ledger_1",
+          "balanceBefore": 0,
+          "balanceAfter": 1,
+          "createdAt": "2026-08-14T12:45:49.385Z"
+        }
+      ],
+      "balancesAfter": {
+        "buyerBalance": 80,
+        "sellerBalance": 19,
+        "treasuryBalance": 1
+      },
+      "createdAt": "2026-08-14T12:45:49.385Z",
+      "completedAt": "2026-08-14T12:45:49.385Z"
+    },
+    "tx_4e2240aba56b9474": {
+      "transactionId": "tx_4e2240aba56b9474",
+      "idempotencyKey": "idemp_ledger_2",
+      "jobId": "job_ledger_2",
+      "buyerAgentId": "agent_ledger_buyer",
+      "sellerAgentId": "agent_ledger_seller",
+      "treasuryAccountId": "platform_treasury",
+      "grossAmount": 30,
+      "platformFeeBps": 500,
+      "platformFee": 2,
+      "providerAmount": 28,
+      "currency": "CREDITS",
+      "paymentRail": "PLATFORM_CREDITS",
+      "status": "SETTLED",
+      "entries": [
+        {
+          "entryId": "ent_a65ae0e32331",
+          "transactionId": "tx_4e2240aba56b9474",
+          "jobId": "job_ledger_2",
+          "accountId": "agent_ledger_buyer",
+          "accountType": "BUYER",
+          "entryType": "DEBIT",
+          "amount": 30,
+          "currency": "CREDITS",
+          "description": "Debit buyer for job settlement: job_ledger_2",
+          "balanceBefore": 80,
+          "balanceAfter": 50,
+          "createdAt": "2026-08-14T12:45:49.583Z"
+        },
+        {
+          "entryId": "ent_7ba8529a3418",
+          "transactionId": "tx_4e2240aba56b9474",
+          "jobId": "job_ledger_2",
+          "accountId": "agent_ledger_seller",
+          "accountType": "SELLER",
+          "entryType": "CREDIT",
+          "amount": 28,
+          "currency": "CREDITS",
+          "description": "Credit seller net earnings (net of 5% platform fee) for job: job_ledger_2",
+          "balanceBefore": 19,
+          "balanceAfter": 47,
+          "createdAt": "2026-08-14T12:45:49.583Z"
+        },
+        {
+          "entryId": "ent_239570109df5",
+          "transactionId": "tx_4e2240aba56b9474",
+          "jobId": "job_ledger_2",
+          "accountId": "platform_treasury",
+          "accountType": "PLATFORM_TREASURY",
+          "entryType": "CREDIT",
+          "amount": 2,
+          "currency": "CREDITS",
+          "description": "Platform treasury fee revenue (5%) for job: job_ledger_2",
+          "balanceBefore": 1,
+          "balanceAfter": 3,
+          "createdAt": "2026-08-14T12:45:49.583Z"
+        }
+      ],
+      "balancesAfter": {
+        "buyerBalance": 50,
+        "sellerBalance": 47,
+        "treasuryBalance": 3
+      },
+      "createdAt": "2026-08-14T12:45:49.583Z",
+      "completedAt": "2026-08-14T12:45:49.583Z"
+    }
+  },
+  "idempotency_keys": {
+    "idemp_ledger_1": {
+      "idempotencyKey": "idemp_ledger_1",
+      "transactionId": "tx_a4c61f7909b159e8",
+      "jobId": "job_ledger_1",
+      "status": "SETTLED",
+      "createdAt": "2026-08-14T12:45:49.385Z"
+    },
+    "idemp_ledger_2": {
+      "idempotencyKey": "idemp_ledger_2",
+      "transactionId": "tx_4e2240aba56b9474",
+      "jobId": "job_ledger_2",
+      "status": "SETTLED",
+      "createdAt": "2026-08-14T12:45:49.583Z"
+    }
+  },
+  "ledger_entries": {
+    "ent_d57cdd1d703b": {
+      "entryId": "ent_d57cdd1d703b",
+      "transactionId": "tx_a4c61f7909b159e8",
+      "jobId": "job_ledger_1",
+      "accountId": "agent_ledger_buyer",
+      "accountType": "BUYER",
+      "entryType": "DEBIT",
+      "amount": 20,
+      "currency": "CREDITS",
+      "description": "Debit buyer for job settlement: job_ledger_1",
+      "balanceBefore": 100,
+      "balanceAfter": 80,
+      "createdAt": "2026-08-14T12:45:49.385Z"
+    },
+    "ent_a317275b7ab2": {
+      "entryId": "ent_a317275b7ab2",
+      "transactionId": "tx_a4c61f7909b159e8",
+      "jobId": "job_ledger_1",
+      "accountId": "agent_ledger_seller",
+      "accountType": "SELLER",
+      "entryType": "CREDIT",
+      "amount": 19,
+      "currency": "CREDITS",
+      "description": "Credit seller net earnings (net of 5% platform fee) for job: job_ledger_1",
+      "balanceBefore": 0,
+      "balanceAfter": 19,
+      "createdAt": "2026-08-14T12:45:49.385Z"
+    },
+    "ent_cd3b37bd55a0": {
+      "entryId": "ent_cd3b37bd55a0",
+      "transactionId": "tx_a4c61f7909b159e8",
+      "jobId": "job_ledger_1",
+      "accountId": "platform_treasury",
+      "accountType": "PLATFORM_TREASURY",
+      "entryType": "CREDIT",
+      "amount": 1,
+      "currency": "CREDITS",
+      "description": "Platform treasury fee revenue (5%) for job: job_ledger_1",
+      "balanceBefore": 0,
+      "balanceAfter": 1,
+      "createdAt": "2026-08-14T12:45:49.385Z"
+    },
+    "ent_a65ae0e32331": {
+      "entryId": "ent_a65ae0e32331",
+      "transactionId": "tx_4e2240aba56b9474",
+      "jobId": "job_ledger_2",
+      "accountId": "agent_ledger_buyer",
+      "accountType": "BUYER",
+      "entryType": "DEBIT",
+      "amount": 30,
+      "currency": "CREDITS",
+      "description": "Debit buyer for job settlement: job_ledger_2",
+      "balanceBefore": 80,
+      "balanceAfter": 50,
+      "createdAt": "2026-08-14T12:45:49.583Z"
+    },
+    "ent_7ba8529a3418": {
+      "entryId": "ent_7ba8529a3418",
+      "transactionId": "tx_4e2240aba56b9474",
+      "jobId": "job_ledger_2",
+      "accountId": "agent_ledger_seller",
+      "accountType": "SELLER",
+      "entryType": "CREDIT",
+      "amount": 28,
+      "currency": "CREDITS",
+      "description": "Credit seller net earnings (net of 5% platform fee) for job: job_ledger_2",
+      "balanceBefore": 19,
+      "balanceAfter": 47,
+      "createdAt": "2026-08-14T12:45:49.583Z"
+    },
+    "ent_239570109df5": {
+      "entryId": "ent_239570109df5",
+      "transactionId": "tx_4e2240aba56b9474",
+      "jobId": "job_ledger_2",
+      "accountId": "platform_treasury",
+      "accountType": "PLATFORM_TREASURY",
+      "entryType": "CREDIT",
+      "amount": 2,
+      "currency": "CREDITS",
+      "description": "Platform treasury fee revenue (5%) for job: job_ledger_2",
+      "balanceBefore": 1,
+      "balanceAfter": 3,
+      "createdAt": "2026-08-14T12:45:49.583Z"
+    }
+  }
 }

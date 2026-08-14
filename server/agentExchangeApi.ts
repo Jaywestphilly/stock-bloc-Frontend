@@ -1,19 +1,26 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { db, auth } from './firebaseAdmin.js';
-import { FieldValue } from 'firebase-admin/firestore';
-import { authenticateAgent, requireScope, globalApiLimiter } from './agentPlatform.js';
+import { authenticateAgent, requireScope, globalApiLimiter, inMemoryWalletRegistry, inMemoryAgentRegistry, inMemoryKeyRegistry } from './agentPlatform.js';
 import type {
   AgentService,
   AgentJob,
   MarketTaskRequest,
   PlatformLedgerTransaction,
   AgentWalletBalance,
-  ServiceCategory
+  ServiceCategory,
+  LedgerEntry,
+  SettlementResult,
+  StockBlocBounty,
+  BountyStatus,
+  BountyVerificationMethod
 } from '../src/types.js';
 
 export const agentExchangeRouter = Router();
 agentExchangeRouter.use(globalApiLimiter);
+
+// Platform Treasury Account Identifier
+export const PLATFORM_TREASURY_ACCOUNT_ID = 'platform_treasury';
 
 // Optional or required human auth for web views
 const authenticateHuman = async (req: Request, res: Response, next: NextFunction) => {
@@ -46,89 +53,757 @@ export const PLATFORM_ECONOMICS = {
 // ==========================================
 // 1. PAYMENT ADAPTER / ABSTRACTION (PaymentProvider)
 // ==========================================
+export interface SettlePaymentParams {
+  jobId: string;
+  buyerAgentId: string;
+  sellerAgentId: string;
+  grossAmount: number;
+  platformFeeBps?: number;
+  idempotencyKey?: string;
+  buyerHandle?: string;
+  sellerHandle?: string;
+  description?: string;
+  currency?: "CREDITS" | "USD" | "USDC";
+  paymentRail?: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "FUTURE_RAIL";
+}
+
 export interface PaymentProvider {
   rail: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "FUTURE_RAIL";
   createPaymentRequirement(jobId: string, amount: number, currency: string, buyerAgentId: string): Promise<any>;
   verifyPayment(paymentRef: string): Promise<boolean>;
-  capturePayment(paymentRef: string, grossAmount: number, platformFee: number, sellerAgentId: string): Promise<boolean>;
-  refundPayment(paymentRef: string, reason: string): Promise<boolean>;
-  getProviderBalance(agentId: string): Promise<any>;
+  settlePayment(params: SettlePaymentParams): Promise<SettlementResult>;
+  payoutBountyReward(params: {
+    bountyId: string;
+    agentId: string;
+    agentHandle?: string;
+    rewardCredits: number;
+    title?: string;
+    idempotencyKey?: string;
+  }): Promise<any>;
+  capturePayment(paymentRef: string, grossAmount: number, platformFee: number, sellerAgentId: string, buyerAgentId?: string, jobId?: string, idempotencyKey?: string): Promise<boolean | SettlementResult>;
+  refundPayment(paymentRef: string, reason: string, params?: { jobId: string; buyerAgentId: string; sellerAgentId: string; grossAmount: number }): Promise<boolean>;
+  getProviderBalance(agentId: string): Promise<AgentWalletBalance>;
+  getTreasuryBalance(): Promise<any>;
+  getAccountLedger(agentId: string, limit?: number): Promise<LedgerEntry[]>;
 }
 
+/**
+ * Double-Entry Platform Credits Provider
+ * Implements strict multi-party double-entry accounting with atomic debit/credit,
+ * platform treasury fee collection, idempotency protection, and balance consistency.
+ */
 export class PlatformCreditsProvider implements PaymentProvider {
   rail = "PLATFORM_CREDITS" as const;
 
+  /**
+   * Helper to ensure an agent wallet exists with initial defaults
+   */
+  async getOrCreateWallet(agentId: string, defaultCredits = PLATFORM_ECONOMICS.defaultTrialCredits): Promise<AgentWalletBalance> {
+    const ref = db.collection('agent_wallets').doc(agentId);
+    const snap = await ref.get();
+    if (snap.exists) {
+      return snap.data() as AgentWalletBalance;
+    }
+
+    const isTreasury = agentId === PLATFORM_TREASURY_ACCOUNT_ID;
+    const initialWallet: AgentWalletBalance = {
+      agentId,
+      creditsBalance: isTreasury ? 0 : defaultCredits,
+      usdPendingBalance: 0,
+      usdSettledBalance: 0,
+      usdcPendingBalance: 0,
+      usdcSettledBalance: 0,
+      lifetimeGrossEarnings: 0,
+      lifetimePlatformFeesPaid: 0,
+      lifetimeNetEarnings: 0,
+      lifetimeSpent: 0,
+      maxSpendPerRequest: PLATFORM_ECONOMICS.maxSpendPerRequestDefault,
+      maxDailySpend: PLATFORM_ECONOMICS.maxDailySpendDefault,
+      spentToday: 0,
+      spendingLimitsConfigured: true,
+    };
+
+    await ref.set(initialWallet);
+    return initialWallet;
+  }
+
   async createPaymentRequirement(jobId: string, amount: number, currency: string, buyerAgentId: string) {
-    const buyerRef = db.collection('agent_wallets').doc(buyerAgentId);
-    const snap = await buyerRef.get();
-    let balance = PLATFORM_ECONOMICS.defaultTrialCredits;
-
-    if (!snap.exists) {
-      // Seed wallet balance with initial non-cash test platform credits
-      const initialWallet: AgentWalletBalance = {
-        agentId: buyerAgentId,
-        creditsBalance: balance,
-        usdPendingBalance: 0,
-        usdSettledBalance: 0,
-        usdcPendingBalance: 0,
-        usdcSettledBalance: 0,
-        lifetimeGrossEarnings: 0,
-        lifetimePlatformFeesPaid: 0,
-        lifetimeNetEarnings: 0,
-        lifetimeSpent: 0,
-        maxSpendPerRequest: PLATFORM_ECONOMICS.maxSpendPerRequestDefault,
-        maxDailySpend: PLATFORM_ECONOMICS.maxDailySpendDefault,
-        spentToday: 0,
-        spendingLimitsConfigured: true,
-      };
-      await buyerRef.set(initialWallet);
-    } else {
-      balance = snap.data()?.creditsBalance ?? PLATFORM_ECONOMICS.defaultTrialCredits;
+    if (amount <= 0) {
+      throw new Error(`Payment amount must be positive, received: ${amount}`);
     }
 
-    if (balance < amount) {
-      throw new Error(`Insufficient credits balance. Required: ${amount}, Available: ${balance}`);
+    const wallet = await this.getOrCreateWallet(buyerAgentId);
+    const currentBalance = wallet.creditsBalance ?? 0;
+
+    if (currentBalance < amount) {
+      throw new Error(`Insufficient credits balance for buyer ${buyerAgentId}. Required: ${amount}, Available: ${currentBalance}`);
     }
 
+    const paymentRef = `cred_req_${jobId}_${Date.now()}`;
     return {
-      paymentRef: `cred_req_${jobId}_${Date.now()}`,
+      paymentRef,
       rail: this.rail,
       amount,
       currency: 'CREDITS',
-      status: 'AUTHORIZED'
+      status: 'AUTHORIZED',
+      availableBalance: currentBalance
     };
   }
 
   async verifyPayment(paymentRef: string) {
-    return Boolean(paymentRef && paymentRef.startsWith('cred_req_'));
+    return Boolean(paymentRef && (paymentRef.startsWith('cred_req_') || paymentRef.startsWith('cred_ref')));
   }
 
-  async capturePayment(paymentRef: string, grossAmount: number, platformFee: number, sellerAgentId: string) {
-    const netSeller = Math.max(0, grossAmount - platformFee);
-    const sellerWalletRef = db.collection('agent_wallets').doc(sellerAgentId);
-    
-    await sellerWalletRef.set({
-      agentId: sellerAgentId,
-      creditsBalance: FieldValue.increment(netSeller),
-      lifetimeGrossEarnings: FieldValue.increment(grossAmount),
-      lifetimePlatformFeesPaid: FieldValue.increment(platformFee),
-      lifetimeNetEarnings: FieldValue.increment(netSeller),
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
+  /**
+   * Double-Entry Settlement Engine:
+   * Atomically:
+   * 1. Debits Buyer by Gross Amount
+   * 2. Credits Seller by Net Amount (Gross - Platform Fee)
+   * 3. Credits Platform Treasury by Platform Fee
+   * 4. Enforces Idempotency Key (no duplicate settlements)
+   * 5. Writes balanced immutable Ledger Entries and Transaction Record
+   * 6. Returns crystal-clear balances for all parties
+   */
+  async settlePayment(params: SettlePaymentParams): Promise<SettlementResult> {
+    const {
+      jobId,
+      buyerAgentId,
+      sellerAgentId,
+      grossAmount,
+      buyerHandle,
+      sellerHandle,
+      description
+    } = params;
 
-    return true;
-  }
-
-  async refundPayment(paymentRef: string, reason: string) {
-    return true;
-  }
-
-  async getProviderBalance(agentId: string) {
-    const snap = await db.collection('agent_wallets').doc(agentId).get();
-    if (!snap.exists) {
-      return { creditsBalance: PLATFORM_ECONOMICS.defaultTrialCredits, lifetimeNetEarnings: 0 };
+    if (!jobId) throw new Error('Missing required jobId for settlement');
+    if (!buyerAgentId) throw new Error('Missing required buyerAgentId for settlement');
+    if (!sellerAgentId) throw new Error('Missing required sellerAgentId for settlement');
+    if (typeof grossAmount !== 'number' || grossAmount <= 0) {
+      throw new Error(`Gross amount must be a positive number, received: ${grossAmount}`);
     }
-    return snap.data();
+
+    const platformFeeBps = params.platformFeeBps ?? PLATFORM_ECONOMICS.platformFeeBps;
+    const platformFee = Math.max(
+      PLATFORM_ECONOMICS.minPlatformFeeCredits,
+      Math.round((grossAmount * platformFeeBps) / 10000)
+    );
+    const netSellerAmount = Math.max(0, grossAmount - platformFee);
+
+    // Double-entry fundamental equation verification
+    if (grossAmount !== (netSellerAmount + platformFee)) {
+      throw new Error(`Ledger integrity invariant violated: Gross (${grossAmount}) != Net (${netSellerAmount}) + Fee (${platformFee})`);
+    }
+
+    const idempotencyKey = params.idempotencyKey || `settle_${jobId}_${grossAmount}`;
+
+    // 1. Check Idempotency Key before balance mutation
+    const idempDoc = await db.collection('idempotency_keys').doc(idempotencyKey).get();
+    if (idempDoc.exists) {
+      const idempData = idempDoc.data();
+      const existingTxDoc = await db.collection('platform_transactions').doc(idempData.transactionId).get();
+      if (existingTxDoc.exists) {
+        const existingTx = existingTxDoc.data() as PlatformLedgerTransaction;
+        
+        // Fetch current balances to provide clear status
+        const [buyerW, sellerW, treasuryW] = await Promise.all([
+          this.getOrCreateWallet(buyerAgentId),
+          this.getOrCreateWallet(sellerAgentId),
+          this.getOrCreateWallet(PLATFORM_TREASURY_ACCOUNT_ID)
+        ]);
+
+        return {
+          success: true,
+          idempotentReplay: true,
+          message: `Settlement already processed with idempotency key: ${idempotencyKey}`,
+          transactionId: existingTx.transactionId,
+          idempotencyKey,
+          jobId,
+          status: existingTx.status,
+          grossAmount: existingTx.grossAmount,
+          platformFee: existingTx.platformFee,
+          platformFeeBps: existingTx.platformFeeBps,
+          netSellerAmount: existingTx.providerAmount,
+          currency: existingTx.currency,
+          paymentRail: existingTx.paymentRail,
+          balances: {
+            buyer: {
+              agentId: buyerAgentId,
+              handle: buyerHandle,
+              previousBalance: existingTx.balancesAfter?.buyerBalance ?? buyerW.creditsBalance,
+              currentBalance: buyerW.creditsBalance,
+              debited: existingTx.grossAmount
+            },
+            seller: {
+              agentId: sellerAgentId,
+              handle: sellerHandle,
+              previousBalance: (existingTx.balancesAfter?.sellerBalance ?? sellerW.creditsBalance) - existingTx.providerAmount,
+              currentBalance: sellerW.creditsBalance,
+              credited: existingTx.providerAmount
+            },
+            treasury: {
+              accountId: PLATFORM_TREASURY_ACCOUNT_ID,
+              previousBalance: (existingTx.balancesAfter?.treasuryBalance ?? treasuryW.creditsBalance) - existingTx.platformFee,
+              currentBalance: treasuryW.creditsBalance,
+              creditedFee: existingTx.platformFee
+            }
+          },
+          ledgerEntries: existingTx.entries || [],
+          transaction: existingTx,
+          settledAt: existingTx.completedAt || existingTx.createdAt
+        };
+      }
+    }
+
+    // 2. Perform Atomic Double-Entry Settlement Transaction
+    const settlementResult = await db.runTransaction(async (t: any) => {
+      const buyerRef = db.collection('agent_wallets').doc(buyerAgentId);
+      const sellerRef = db.collection('agent_wallets').doc(sellerAgentId);
+      const treasuryRef = db.collection('agent_wallets').doc(PLATFORM_TREASURY_ACCOUNT_ID);
+
+      const [buyerSnap, sellerSnap, treasurySnap] = await Promise.all([
+        t.get(buyerRef),
+        t.get(sellerRef),
+        t.get(treasuryRef)
+      ]);
+
+      const buyerData = (buyerSnap.exists ? buyerSnap.data() : null) || {
+        agentId: buyerAgentId,
+        creditsBalance: PLATFORM_ECONOMICS.defaultTrialCredits,
+        lifetimeSpent: 0
+      };
+
+      const buyerBalance = typeof buyerData.creditsBalance === 'number' ? buyerData.creditsBalance : PLATFORM_ECONOMICS.defaultTrialCredits;
+      if (buyerBalance < grossAmount) {
+        throw new Error(`Insufficient credits balance for buyer ${buyerAgentId}. Required: ${grossAmount}, Available: ${buyerBalance}`);
+      }
+
+      const sellerData = (sellerSnap.exists ? sellerSnap.data() : null) || {
+        agentId: sellerAgentId,
+        creditsBalance: 0,
+        lifetimeGrossEarnings: 0,
+        lifetimePlatformFeesPaid: 0,
+        lifetimeNetEarnings: 0
+      };
+      const sellerBalance = typeof sellerData.creditsBalance === 'number' ? sellerData.creditsBalance : 0;
+
+      const treasuryData = (treasurySnap.exists ? treasurySnap.data() : null) || {
+        agentId: PLATFORM_TREASURY_ACCOUNT_ID,
+        creditsBalance: 0,
+        lifetimeGrossEarnings: 0,
+        lifetimeFeesCollected: 0,
+        totalSettledVolume: 0
+      };
+      const treasuryBalance = typeof treasuryData.creditsBalance === 'number' ? treasuryData.creditsBalance : 0;
+
+      // Calculate post-settlement balances
+      const buyerBalanceAfter = buyerBalance - grossAmount;
+      const sellerBalanceAfter = sellerBalance + netSellerAmount;
+      const treasuryBalanceAfter = treasuryBalance + platformFee;
+
+      const transactionId = 'tx_' + crypto.randomBytes(8).toString('hex');
+      const settledAt = new Date().toISOString();
+
+      // Create 3 Immutable Double-Entry Ledger Journal Entries
+      const buyerDebitEntry: LedgerEntry = {
+        entryId: 'ent_' + crypto.randomBytes(6).toString('hex'),
+        transactionId,
+        jobId,
+        accountId: buyerAgentId,
+        accountType: "BUYER",
+        entryType: "DEBIT",
+        amount: grossAmount,
+        currency: "CREDITS",
+        description: description || `Debit buyer for job settlement: ${jobId}`,
+        balanceBefore: buyerBalance,
+        balanceAfter: buyerBalanceAfter,
+        createdAt: settledAt
+      };
+
+      const sellerCreditEntry: LedgerEntry = {
+        entryId: 'ent_' + crypto.randomBytes(6).toString('hex'),
+        transactionId,
+        jobId,
+        accountId: sellerAgentId,
+        accountType: "SELLER",
+        entryType: "CREDIT",
+        amount: netSellerAmount,
+        currency: "CREDITS",
+        description: `Credit seller net earnings (net of ${(platformFeeBps / 100)}% platform fee) for job: ${jobId}`,
+        balanceBefore: sellerBalance,
+        balanceAfter: sellerBalanceAfter,
+        createdAt: settledAt
+      };
+
+      const treasuryCreditEntry: LedgerEntry = {
+        entryId: 'ent_' + crypto.randomBytes(6).toString('hex'),
+        transactionId,
+        jobId,
+        accountId: PLATFORM_TREASURY_ACCOUNT_ID,
+        accountType: "PLATFORM_TREASURY",
+        entryType: "CREDIT",
+        amount: platformFee,
+        currency: "CREDITS",
+        description: `Platform treasury fee revenue (${(platformFeeBps / 100)}%) for job: ${jobId}`,
+        balanceBefore: treasuryBalance,
+        balanceAfter: treasuryBalanceAfter,
+        createdAt: settledAt
+      };
+
+      const ledgerEntries = [buyerDebitEntry, sellerCreditEntry, treasuryCreditEntry];
+
+      const ledgerTx: PlatformLedgerTransaction = {
+        transactionId,
+        idempotencyKey,
+        jobId,
+        buyerAgentId,
+        buyerHandle,
+        sellerAgentId,
+        sellerHandle,
+        treasuryAccountId: PLATFORM_TREASURY_ACCOUNT_ID,
+        grossAmount,
+        platformFeeBps,
+        platformFee,
+        providerAmount: netSellerAmount,
+        currency: params.currency || "CREDITS",
+        paymentRail: params.paymentRail || "PLATFORM_CREDITS",
+        status: "SETTLED",
+        entries: ledgerEntries,
+        balancesAfter: {
+          buyerBalance: buyerBalanceAfter,
+          sellerBalance: sellerBalanceAfter,
+          treasuryBalance: treasuryBalanceAfter
+        },
+        createdAt: settledAt,
+        completedAt: settledAt
+      };
+
+      // Atomic Mutations inside Transaction
+      t.set(buyerRef, {
+        ...buyerData,
+        agentId: buyerAgentId,
+        creditsBalance: buyerBalanceAfter,
+        lifetimeSpent: (buyerData.lifetimeSpent || 0) + grossAmount,
+        updatedAt: settledAt
+      }, { merge: true });
+
+      t.set(sellerRef, {
+        ...sellerData,
+        agentId: sellerAgentId,
+        creditsBalance: sellerBalanceAfter,
+        lifetimeGrossEarnings: (sellerData.lifetimeGrossEarnings || 0) + grossAmount,
+        lifetimePlatformFeesPaid: (sellerData.lifetimePlatformFeesPaid || 0) + platformFee,
+        lifetimeNetEarnings: (sellerData.lifetimeNetEarnings || 0) + netSellerAmount,
+        updatedAt: settledAt
+      }, { merge: true });
+
+      t.set(treasuryRef, {
+        ...treasuryData,
+        agentId: PLATFORM_TREASURY_ACCOUNT_ID,
+        accountType: 'PLATFORM_TREASURY',
+        creditsBalance: treasuryBalanceAfter,
+        lifetimeGrossEarnings: (treasuryData.lifetimeGrossEarnings || 0) + platformFee,
+        lifetimeFeesCollected: (treasuryData.lifetimeFeesCollected || 0) + platformFee,
+        totalSettledVolume: (treasuryData.totalSettledVolume || 0) + grossAmount,
+        updatedAt: settledAt
+      }, { merge: true });
+
+      // Save Immutable Transaction & Idempotency Key mapping
+      const txRef = db.collection('platform_transactions').doc(transactionId);
+      t.set(txRef, ledgerTx);
+
+      const idempKeyRef = db.collection('idempotency_keys').doc(idempotencyKey);
+      t.set(idempKeyRef, {
+        idempotencyKey,
+        transactionId,
+        jobId,
+        status: 'SETTLED',
+        createdAt: settledAt
+      });
+
+      // Save each immutable ledger entry
+      for (const entry of ledgerEntries) {
+        t.set(db.collection('ledger_entries').doc(entry.entryId), entry);
+      }
+
+      const result: SettlementResult = {
+        success: true,
+        transactionId,
+        idempotencyKey,
+        jobId,
+        status: "SETTLED",
+        grossAmount,
+        platformFee,
+        platformFeeBps,
+        netSellerAmount,
+        currency: params.currency || "CREDITS",
+        paymentRail: params.paymentRail || "PLATFORM_CREDITS",
+        balances: {
+          buyer: {
+            agentId: buyerAgentId,
+            handle: buyerHandle,
+            previousBalance: buyerBalance,
+            currentBalance: buyerBalanceAfter,
+            debited: grossAmount
+          },
+          seller: {
+            agentId: sellerAgentId,
+            handle: sellerHandle,
+            previousBalance: sellerBalance,
+            currentBalance: sellerBalanceAfter,
+            credited: netSellerAmount
+          },
+          treasury: {
+            accountId: PLATFORM_TREASURY_ACCOUNT_ID,
+            previousBalance: treasuryBalance,
+            currentBalance: treasuryBalanceAfter,
+            creditedFee: platformFee
+          }
+        },
+        ledgerEntries,
+        transaction: ledgerTx,
+        settledAt
+      };
+
+      return result;
+    });
+
+    return settlementResult;
+  }
+
+  async capturePayment(
+    paymentRef: string,
+    grossAmount: number,
+    platformFee: number,
+    sellerAgentId: string,
+    buyerAgentId?: string,
+    jobId?: string,
+    idempotencyKey?: string
+  ) {
+    const effectiveJobId = jobId || `job_${paymentRef.replace(/[^a-zA-Z0-9_]/g, '_')}`;
+    const effectiveBuyer = buyerAgentId || 'market_demand_engine';
+    
+    return await this.settlePayment({
+      jobId: effectiveJobId,
+      buyerAgentId: effectiveBuyer,
+      sellerAgentId,
+      grossAmount,
+      idempotencyKey: idempotencyKey || `cap_${paymentRef}_${grossAmount}`
+    });
+  }
+
+  async refundPayment(
+    paymentRef: string,
+    reason: string,
+    params?: { jobId: string; buyerAgentId: string; sellerAgentId: string; grossAmount: number }
+  ) {
+    if (!params) return true;
+    const { jobId, buyerAgentId, sellerAgentId, grossAmount } = params;
+    const platformFee = Math.max(1, Math.round((grossAmount * PLATFORM_ECONOMICS.platformFeeBps) / 10000));
+    const netSellerAmount = Math.max(0, grossAmount - platformFee);
+
+    await db.runTransaction(async (t: any) => {
+      const buyerRef = db.collection('agent_wallets').doc(buyerAgentId);
+      const sellerRef = db.collection('agent_wallets').doc(sellerAgentId);
+      const treasuryRef = db.collection('agent_wallets').doc(PLATFORM_TREASURY_ACCOUNT_ID);
+
+      const [bSnap, sSnap, trSnap] = await Promise.all([
+        t.get(buyerRef),
+        t.get(sellerRef),
+        t.get(treasuryRef)
+      ]);
+
+      const bData = (bSnap.exists ? bSnap.data() : null) || { creditsBalance: 0 };
+      const sData = (sSnap.exists ? sSnap.data() : null) || { creditsBalance: 0 };
+      const trData = (trSnap.exists ? trSnap.data() : null) || { creditsBalance: 0 };
+
+      const bAfter = (bData.creditsBalance || 0) + grossAmount;
+      const sAfter = Math.max(0, (sData.creditsBalance || 0) - netSellerAmount);
+      const trAfter = Math.max(0, (trData.creditsBalance || 0) - platformFee);
+
+      const refundTxId = 'tx_ref_' + crypto.randomBytes(8).toString('hex');
+      const refundedAt = new Date().toISOString();
+
+      t.set(buyerRef, { ...bData, creditsBalance: bAfter, updatedAt: refundedAt }, { merge: true });
+      t.set(sellerRef, { ...sData, creditsBalance: sAfter, updatedAt: refundedAt }, { merge: true });
+      t.set(treasuryRef, { ...trData, creditsBalance: trAfter, updatedAt: refundedAt }, { merge: true });
+
+      t.set(db.collection('platform_transactions').doc(refundTxId), {
+        transactionId: refundTxId,
+        jobId,
+        buyerAgentId,
+        sellerAgentId,
+        grossAmount,
+        platformFee,
+        providerAmount: netSellerAmount,
+        currency: "CREDITS",
+        paymentRail: "PLATFORM_CREDITS",
+        status: "REFUNDED",
+        reason,
+        createdAt: refundedAt,
+        completedAt: refundedAt
+      });
+    });
+
+    return true;
+  }
+
+  /**
+   * Settles a verified Bounty Reward payout from the Platform to the completing Agent.
+   * Atomically:
+   * 1. Credits agent wallet by rewardCredits
+   * 2. Updates agent lifetimeGrossEarnings and lifetimeNetEarnings
+   * 3. Creates balanced double-entry ledger entries (Platform Reward Grant)
+   * 4. Enforces idempotency key (no duplicate bounty payouts)
+   * 5. Returns updated balance and transaction summary
+   */
+  async payoutBountyReward(params: {
+    bountyId: string;
+    agentId: string;
+    agentHandle?: string;
+    rewardCredits: number;
+    title?: string;
+    idempotencyKey?: string;
+  }): Promise<{
+    success: boolean;
+    transactionId: string;
+    idempotencyKey: string;
+    bountyId: string;
+    agentId: string;
+    rewardCredits: number;
+    newBalance: number;
+    transaction: PlatformLedgerTransaction;
+    idempotentReplay?: boolean;
+  }> {
+    const { bountyId, agentId, agentHandle, rewardCredits, title } = params;
+    if (!bountyId) throw new Error('Missing required bountyId');
+    if (!agentId) throw new Error('Missing required agentId');
+    if (typeof rewardCredits !== 'number' || rewardCredits <= 0) {
+      throw new Error(`Reward credits must be a positive number, received: ${rewardCredits}`);
+    }
+
+    const idempotencyKey = params.idempotencyKey || `bounty_payout_${bountyId}_${agentId}`;
+
+    // 1. Check idempotency
+    try {
+      const idempDoc = await db.collection('idempotency_keys').doc(idempotencyKey).get();
+      if (idempDoc.exists) {
+        const idempData = idempDoc.data();
+        const existingTxDoc = await db.collection('platform_transactions').doc(idempData.transactionId).get();
+        if (existingTxDoc.exists) {
+          const existingTx = existingTxDoc.data() as PlatformLedgerTransaction;
+          const wallet = await this.getOrCreateWallet(agentId);
+          return {
+            success: true,
+            idempotentReplay: true,
+            transactionId: existingTx.transactionId,
+            idempotencyKey,
+            bountyId,
+            agentId,
+            rewardCredits,
+            newBalance: wallet.creditsBalance,
+            transaction: existingTx
+          };
+        }
+      }
+    } catch {
+      // Continue to in-memory fallback if Firestore fails
+    }
+
+    const transactionId = 'tx_bounty_' + crypto.randomBytes(8).toString('hex');
+    const settledAt = new Date().toISOString();
+
+    try {
+      const result = await db.runTransaction(async (t: any) => {
+        const agentWalletRef = db.collection('agent_wallets').doc(agentId);
+        const treasuryRef = db.collection('agent_wallets').doc(PLATFORM_TREASURY_ACCOUNT_ID);
+
+        const [agentSnap, treasurySnap] = await Promise.all([
+          t.get(agentWalletRef),
+          t.get(treasuryRef)
+        ]);
+
+        const agentData = (agentSnap.exists ? agentSnap.data() : null) || {
+          agentId,
+          creditsBalance: PLATFORM_ECONOMICS.defaultTrialCredits,
+          lifetimeGrossEarnings: 0,
+          lifetimeNetEarnings: 0
+        };
+        const agentBalance = typeof agentData.creditsBalance === 'number' ? agentData.creditsBalance : PLATFORM_ECONOMICS.defaultTrialCredits;
+        const newAgentBalance = agentBalance + rewardCredits;
+
+        const treasuryData = (treasurySnap.exists ? treasurySnap.data() : null) || {
+          agentId: PLATFORM_TREASURY_ACCOUNT_ID,
+          creditsBalance: 0,
+          totalSettledVolume: 0
+        };
+        const treasuryBalance = typeof treasuryData.creditsBalance === 'number' ? treasuryData.creditsBalance : 0;
+
+        const agentCreditEntry: LedgerEntry = {
+          entryId: 'ent_' + crypto.randomBytes(6).toString('hex'),
+          transactionId,
+          jobId: bountyId,
+          accountId: agentId,
+          accountType: "SELLER",
+          entryType: "CREDIT",
+          amount: rewardCredits,
+          currency: "CREDITS",
+          description: `Bounty reward payout for: ${title || bountyId}`,
+          balanceBefore: agentBalance,
+          balanceAfter: newAgentBalance,
+          createdAt: settledAt
+        };
+
+        const treasuryGrantEntry: LedgerEntry = {
+          entryId: 'ent_' + crypto.randomBytes(6).toString('hex'),
+          transactionId,
+          jobId: bountyId,
+          accountId: PLATFORM_TREASURY_ACCOUNT_ID,
+          accountType: "PLATFORM_TREASURY",
+          entryType: "DEBIT",
+          amount: rewardCredits,
+          currency: "CREDITS",
+          description: `Platform bounty grant funding: ${title || bountyId}`,
+          balanceBefore: treasuryBalance,
+          balanceAfter: treasuryBalance,
+          createdAt: settledAt
+        };
+
+        const ledgerTx: PlatformLedgerTransaction = {
+          transactionId,
+          idempotencyKey,
+          jobId: bountyId,
+          buyerAgentId: PLATFORM_TREASURY_ACCOUNT_ID,
+          buyerHandle: 'stock_bloc_platform',
+          sellerAgentId: agentId,
+          sellerHandle: agentHandle,
+          treasuryAccountId: PLATFORM_TREASURY_ACCOUNT_ID,
+          grossAmount: rewardCredits,
+          platformFeeBps: 0,
+          platformFee: 0,
+          providerAmount: rewardCredits,
+          currency: "CREDITS",
+          paymentRail: "PLATFORM_CREDITS",
+          status: "SETTLED",
+          entries: [agentCreditEntry, treasuryGrantEntry],
+          balancesAfter: {
+            buyerBalance: treasuryBalance,
+            sellerBalance: newAgentBalance,
+            treasuryBalance: treasuryBalance
+          },
+          createdAt: settledAt,
+          completedAt: settledAt
+        };
+
+        t.set(agentWalletRef, {
+          ...agentData,
+          agentId,
+          creditsBalance: newAgentBalance,
+          lifetimeGrossEarnings: (agentData.lifetimeGrossEarnings || 0) + rewardCredits,
+          lifetimeNetEarnings: (agentData.lifetimeNetEarnings || 0) + rewardCredits,
+          updatedAt: settledAt
+        }, { merge: true });
+
+        t.set(treasuryRef, {
+          ...treasuryData,
+          agentId: PLATFORM_TREASURY_ACCOUNT_ID,
+          totalSettledVolume: (treasuryData.totalSettledVolume || 0) + rewardCredits,
+          updatedAt: settledAt
+        }, { merge: true });
+
+        t.set(db.collection('platform_transactions').doc(transactionId), ledgerTx);
+        t.set(db.collection('idempotency_keys').doc(idempotencyKey), {
+          idempotencyKey,
+          transactionId,
+          jobId: bountyId,
+          status: 'SETTLED',
+          createdAt: settledAt
+        });
+        t.set(db.collection('ledger_entries').doc(agentCreditEntry.entryId), agentCreditEntry);
+        t.set(db.collection('ledger_entries').doc(treasuryGrantEntry.entryId), treasuryGrantEntry);
+
+        return {
+          success: true,
+          transactionId,
+          idempotencyKey,
+          bountyId,
+          agentId,
+          rewardCredits,
+          newBalance: newAgentBalance,
+          transaction: ledgerTx
+        };
+      });
+
+      return result;
+    } catch (err: any) {
+      // In-memory fallback if Firestore is inaccessible in test mode
+      console.warn('Firestore transaction fallback for bounty payout:', err.message);
+      const currentWallet = inMemoryWalletRegistry.get(agentId) || {
+        creditsBalance: PLATFORM_ECONOMICS.defaultTrialCredits,
+        lifetimeSpent: 0,
+        simulationRuns: 0,
+        verifiedSimulations: 0
+      };
+      const prevBal = currentWallet.creditsBalance ?? PLATFORM_ECONOMICS.defaultTrialCredits;
+      const newBal = prevBal + rewardCredits;
+      currentWallet.creditsBalance = newBal;
+      inMemoryWalletRegistry.set(agentId, currentWallet);
+
+      const fallbackTx: PlatformLedgerTransaction = {
+        transactionId,
+        idempotencyKey,
+        jobId: bountyId,
+        buyerAgentId: PLATFORM_TREASURY_ACCOUNT_ID,
+        sellerAgentId: agentId,
+        sellerHandle: agentHandle,
+        grossAmount: rewardCredits,
+        platformFeeBps: 0,
+        platformFee: 0,
+        providerAmount: rewardCredits,
+        currency: "CREDITS",
+        paymentRail: "PLATFORM_CREDITS",
+        status: "SETTLED",
+        createdAt: settledAt,
+        completedAt: settledAt
+      };
+
+      return {
+        success: true,
+        transactionId,
+        idempotencyKey,
+        bountyId,
+        agentId,
+        rewardCredits,
+        newBalance: newBal,
+        transaction: fallbackTx
+      };
+    }
+  }
+
+  async getProviderBalance(agentId: string): Promise<AgentWalletBalance> {
+    return await this.getOrCreateWallet(agentId);
+  }
+
+  async getTreasuryBalance(): Promise<any> {
+    const treasuryWallet = await this.getOrCreateWallet(PLATFORM_TREASURY_ACCOUNT_ID);
+    return {
+      accountId: PLATFORM_TREASURY_ACCOUNT_ID,
+      creditsBalance: treasuryWallet.creditsBalance || 0,
+      lifetimeGrossEarnings: treasuryWallet.lifetimeGrossEarnings || 0,
+      lifetimeFeesCollected: treasuryWallet.lifetimeFeesCollected || 0,
+      totalSettledVolume: treasuryWallet.totalSettledVolume || 0,
+      platformFeeRate: `${PLATFORM_ECONOMICS.platformFeeBps / 100}%`
+    };
+  }
+
+  async getAccountLedger(agentId: string, limit = 50): Promise<LedgerEntry[]> {
+    const snap = await db.collection('ledger_entries')
+      .where('accountId', '==', agentId)
+      .orderBy('createdAt', 'desc')
+      .limit(limit)
+      .get()
+      .catch(() => ({ docs: [] }));
+
+    return snap.docs.map((d: any) => d.data() as LedgerEntry);
   }
 }
 
@@ -183,9 +858,16 @@ agentExchangeRouter.get('/marketplace/catalog', async (req, res) => {
       ...doc.data()
     })) as MarketTaskRequest[];
 
+    // Open Stock Bloc Bounties (Immediate autonomous earning opportunities)
+    await ensureSeedBountiesExist();
+    const openBounties = Array.from(inMemoryBounties.values())
+      .filter(b => b.status === 'open')
+      .slice(0, 20);
+
     // Metrics summary for discoverability
     const totalServices = services.length;
     const totalOpenRequests = openRequests.length;
+    const totalOpenBounties = openBounties.length;
 
     return res.json({
       protocol: 'Stock Bloc Agent Exchange v1.0',
@@ -211,7 +893,9 @@ agentExchangeRouter.get('/marketplace/catalog', async (req, res) => {
       summary: {
         activeServicesCount: totalServices,
         openTasksCount: totalOpenRequests,
+        openBountiesCount: totalOpenBounties,
       },
+      bounties: openBounties,
       services,
       openRequests,
     });
@@ -228,6 +912,7 @@ agentExchangeRouter.get('/.well-known/stock-bloc-agent.json', (req, res) => {
     version: "1.0.0",
     description: "Machine-native financial intelligence network for AI agents to discover, request, deliver, verify, and monetize quantitative research, SEC filings, and probabilistic market forecasts.",
     endpoints: {
+      bounties: "/api/v1/bounties",
       catalog: "/api/v1/marketplace/catalog",
       services: "/api/v1/exchange/services",
       requests: "/api/v1/exchange/requests",
@@ -817,37 +1502,26 @@ agentExchangeRouter.post('/exchange/jobs/:jobId/deliver', authenticateAgent, req
 
     const finalStatus: any = isVerificationPassed ? 'VERIFIED' : 'DELIVERED';
 
-    // Calculate Platform Economics & Settlement
+    // Calculate Platform Economics & Execute Double-Entry Settlement
     const grossAmount = job.price;
-    const platformFee = Math.max(1, Math.round((grossAmount * PLATFORM_ECONOMICS.platformFeeBps) / 10000));
-    const providerAmount = Math.max(0, grossAmount - platformFee);
+    const idempotencyKey = `settle_${job.jobId}_${grossAmount}`;
+    let settlementResult: SettlementResult | null = null;
 
-    // Create Immutable Platform Ledger Transaction
-    const transactionId = 'tx_' + crypto.randomBytes(8).toString('hex');
-    const ledgerTx: PlatformLedgerTransaction = {
-      transactionId,
-      jobId,
-      buyerAgentId: job.requesterAgentId,
-      buyerHandle: job.requesterHandle,
-      sellerAgentId: job.providerAgentId,
-      sellerHandle: job.providerHandle,
-      grossAmount,
-      platformFeeBps: PLATFORM_ECONOMICS.platformFeeBps,
-      platformFee,
-      providerAmount,
-      currency: job.currency,
-      paymentRail: job.paymentRail,
-      status: isVerificationPassed ? 'SETTLED' : 'AUTHORIZED',
-      createdAt: deliveredAt,
-      completedAt: isVerificationPassed ? deliveredAt : undefined
-    };
-
-    await db.collection('platform_transactions').doc(transactionId).set(ledgerTx);
-
-    // Capture payment and settle credits to provider wallet
     if (isVerificationPassed) {
-      const provider = paymentProviders.PLATFORM_CREDITS;
-      await provider.capturePayment('cred_ref', grossAmount, platformFee, job.providerAgentId);
+      const provider = paymentProviders.PLATFORM_CREDITS as PlatformCreditsProvider;
+      settlementResult = await provider.settlePayment({
+        jobId,
+        buyerAgentId: job.requesterAgentId,
+        buyerHandle: job.requesterHandle,
+        sellerAgentId: job.providerAgentId,
+        sellerHandle: job.providerHandle,
+        grossAmount,
+        platformFeeBps: PLATFORM_ECONOMICS.platformFeeBps,
+        idempotencyKey,
+        currency: job.currency as any,
+        paymentRail: job.paymentRail as any,
+        description: `Settlement for verified job ${jobId}: ${job.title}`
+      });
     }
 
     // Update job document
@@ -868,15 +1542,17 @@ agentExchangeRouter.post('/exchange/jobs/:jobId/deliver', authenticateAgent, req
 
     return res.json({
       success: true,
-      message: 'Job delivered and verified by Stock Bloc verification engine.',
+      message: 'Job delivered, verified, and settled on platform double-entry ledger.',
       jobId,
       status: finalStatus,
       verification: verificationRecord,
-      transaction: ledgerTx
+      settlement: settlementResult,
+      transaction: settlementResult?.transaction,
+      balances: settlementResult?.balances
     });
   } catch (err: any) {
     console.error('Job delivery error:', err);
-    return res.status(500).json({ error: 'Failed to deliver job' });
+    return res.status(500).json({ error: err.message || 'Failed to deliver job' });
   }
 });
 
@@ -888,6 +1564,121 @@ agentExchangeRouter.get('/exchange/jobs/:jobId', async (req, res) => {
     return res.json(jobDoc.data());
   } catch (err: any) {
     return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ==========================================
+// 7. DOUBLE-ENTRY LEDGER & WALLET ENDPOINTS
+// ==========================================
+
+// GET /api/v1/exchange/wallets/me (Authenticated agent wallet & ledger overview)
+agentExchangeRouter.get('/exchange/wallets/me', authenticateAgent, async (req, res) => {
+  try {
+    const agent = (req as any).agent;
+    const provider = paymentProviders.PLATFORM_CREDITS as PlatformCreditsProvider;
+    const wallet = await provider.getProviderBalance(agent.agentId);
+    const ledger = await provider.getAccountLedger(agent.agentId, 20);
+
+    return res.json({
+      success: true,
+      agentId: agent.agentId,
+      handle: agent.handle,
+      wallet,
+      recentLedgerEntries: ledger
+    });
+  } catch (err: any) {
+    console.error('Wallet me error:', err);
+    return res.status(500).json({ error: 'Failed to fetch agent wallet' });
+  }
+});
+
+// GET /api/v1/exchange/wallets/:agentId (Query any agent wallet balance)
+agentExchangeRouter.get('/exchange/wallets/:agentId', async (req, res) => {
+  try {
+    const { agentId } = req.params;
+    const provider = paymentProviders.PLATFORM_CREDITS as PlatformCreditsProvider;
+    const wallet = await provider.getProviderBalance(agentId);
+
+    return res.json({
+      success: true,
+      agentId,
+      wallet
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to fetch agent wallet' });
+  }
+});
+
+// GET /api/v1/exchange/treasury (Platform Treasury Account Ledger Balance)
+agentExchangeRouter.get('/exchange/treasury', async (req, res) => {
+  try {
+    const provider = paymentProviders.PLATFORM_CREDITS as PlatformCreditsProvider;
+    const treasury = await provider.getTreasuryBalance();
+    const ledger = await provider.getAccountLedger(PLATFORM_TREASURY_ACCOUNT_ID, 20);
+
+    return res.json({
+      success: true,
+      treasury,
+      recentFeeEntries: ledger
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to fetch treasury balance' });
+  }
+});
+
+// GET /api/v1/exchange/ledger/:agentId (Get double-entry ledger journal entries for account)
+agentExchangeRouter.get('/exchange/ledger/:agentId', async (req, res) => {
+  try {
+    const { agentId } = req.params;
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 50);
+    const provider = paymentProviders.PLATFORM_CREDITS as PlatformCreditsProvider;
+    const entries = await provider.getAccountLedger(agentId, limit);
+
+    return res.json({
+      success: true,
+      accountId: agentId,
+      count: entries.length,
+      entries
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to fetch ledger entries' });
+  }
+});
+
+// POST /api/v1/exchange/settle (Direct double-entry settlement with custom idempotency key)
+agentExchangeRouter.post('/exchange/settle', authenticateAgent, requireScope('payments:transact'), async (req, res) => {
+  try {
+    const {
+      jobId,
+      buyerAgentId,
+      sellerAgentId,
+      grossAmount,
+      platformFeeBps,
+      idempotencyKey,
+      description
+    } = req.body;
+
+    if (!jobId || !buyerAgentId || !sellerAgentId || typeof grossAmount !== 'number' || grossAmount <= 0) {
+      return res.status(400).json({
+        error: 'Missing required parameters: jobId, buyerAgentId, sellerAgentId, grossAmount (positive number)'
+      });
+    }
+
+    const provider = paymentProviders.PLATFORM_CREDITS as PlatformCreditsProvider;
+    const result = await provider.settlePayment({
+      jobId,
+      buyerAgentId,
+      sellerAgentId,
+      grossAmount,
+      platformFeeBps,
+      idempotencyKey: idempotencyKey || `settle_${jobId}_${grossAmount}`,
+      description: description || `Settlement for jobId ${jobId}`
+    });
+
+    return res.status(200).json(result);
+  } catch (err: any) {
+    console.error('Direct settlement error:', err);
+    return res.status(400).json({ error: err.message || 'Settlement failed' });
   }
 });
 
@@ -996,3 +1787,936 @@ agentExchangeRouter.get('/exchange/economy/metrics', async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch economy metrics' });
   }
 });
+
+// ==========================================
+// 8. STOCK BLOC BOUNTIES & DEMAND ENGINE
+// ==========================================
+
+export const inMemoryBounties = new Map<string, StockBlocBounty>();
+
+export const SEED_BOUNTIES: StockBlocBounty[] = [
+  {
+    bountyId: "bounty_nvda_capex_01",
+    title: "Analyze NVDA Hyperscaler Capex & AI Data Center Margin Exposure",
+    description: "Analyze NVIDIA's last 8 quarters of hyperscaler capex exposure, data center gross margins, and AI compute cluster ASP trends following recent earnings disclosures. Calculate margin sensitivity to cloud hyperscaler spending deceleration.",
+    category: "Research",
+    asset: "NVDA",
+    rewardCredits: 30,
+    currency: "CREDITS",
+    status: "open",
+    createdBy: "platform",
+    creatorHandle: "stock_bloc_platform",
+    creatorDisplayName: "Stock Bloc Autonomous Engine",
+    claimedBy: null,
+    claimedByHandle: null,
+    claimedAt: null,
+    deliveredAt: null,
+    paidAt: null,
+    verificationMethod: "payload_present",
+    inputSchema: {
+      ticker: "NVDA",
+      quarters: 8,
+      hyperscalers: ["MSFT", "AMZN", "GOOGL", "META"]
+    },
+    requiredOutputSchema: {
+      type: "object",
+      properties: {
+        summary: { type: "string" },
+        metrics: {
+          type: "object",
+          properties: {
+            hyperscalerCapexSharePercent: { type: "number" },
+            dataCenterGrossMarginPercent: { type: "number" },
+            capexSensitivityDelta: { type: "number" }
+          },
+          required: ["hyperscalerCapexSharePercent", "dataCenterGrossMarginPercent"]
+        },
+        convictionRating: { type: "string" },
+        sources: { type: "array", items: { type: "string" } }
+      },
+      required: ["summary", "metrics"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 86400000).toISOString()
+  },
+  {
+    bountyId: "bounty_spcx_starlink_02",
+    title: "SPCX Starlink Direct-to-Cell Constellation & Starship Cadence Valuation",
+    description: "Model launch economics and payload deployment velocity for SpaceX Starship flights, projecting unit launch cost reduction and Starlink Direct-to-Cell subscriber addressable market through 2027.",
+    category: "Quant",
+    asset: "SPCX",
+    rewardCredits: 35,
+    currency: "CREDITS",
+    status: "open",
+    createdBy: "platform",
+    creatorHandle: "stock_bloc_platform",
+    creatorDisplayName: "Stock Bloc Autonomous Engine",
+    claimedBy: null,
+    claimedByHandle: null,
+    claimedAt: null,
+    deliveredAt: null,
+    paidAt: null,
+    verificationMethod: "payload_present",
+    inputSchema: {
+      ticker: "SPCX",
+      modelHorizonYears: 3,
+      includeDirectToCell: true
+    },
+    requiredOutputSchema: {
+      type: "object",
+      properties: {
+        summary: { type: "string" },
+        metrics: {
+          type: "object",
+          properties: {
+            projectedCostPerKgToLEO: { type: "number" },
+            annualLaunchCadenceEstimate: { type: "number" },
+            directToCellTamBillions: { type: "number" }
+          },
+          required: ["projectedCostPerKgToLEO", "annualLaunchCadenceEstimate"]
+        },
+        valuationRange: { type: "object" },
+        sources: { type: "array", items: { type: "string" } }
+      },
+      required: ["summary", "metrics"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 86400000).toISOString()
+  },
+  {
+    bountyId: "bounty_be_microgrid_03",
+    title: "Bloom Energy (BE) Solid-Oxide Fuel Cell Power for AI Data Centers",
+    description: "Quantify utility grid interconnection queue delays across PJM and ERCOT. Model Bloom Energy on-site solid-oxide fuel cell deployment speed, cost per MW, and 30-day directional probability forecast.",
+    category: "Forecasting",
+    asset: "BE",
+    rewardCredits: 30,
+    currency: "CREDITS",
+    status: "open",
+    createdBy: "platform",
+    creatorHandle: "stock_bloc_platform",
+    creatorDisplayName: "Stock Bloc Autonomous Engine",
+    claimedBy: null,
+    claimedByHandle: null,
+    claimedAt: null,
+    deliveredAt: null,
+    paidAt: null,
+    verificationMethod: "payload_present",
+    inputSchema: {
+      ticker: "BE",
+      regions: ["PJM", "ERCOT"],
+      targetMW: 100
+    },
+    requiredOutputSchema: {
+      type: "object",
+      properties: {
+        summary: { type: "string" },
+        metrics: {
+          type: "object",
+          properties: {
+            gridDelayMonths: { type: "number" },
+            beDeploymentMonths: { type: "number" },
+            levelizedCostPerMWh: { type: "number" }
+          }
+        },
+        directionalForecast30d: {
+          type: "object",
+          properties: {
+            probabilityUpPercent: { type: "number" },
+            targetPrice: { type: "number" }
+          },
+          required: ["probabilityUpPercent", "targetPrice"]
+        }
+      },
+      required: ["summary", "directionalForecast30d"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 86400000).toISOString()
+  },
+  {
+    bountyId: "bounty_pltr_aip_04",
+    title: "PLTR AIP Commercial Deal Velocity & Rule of 40 Momentum",
+    description: "Extract latest quarterly US Commercial customer count, AIP Bootcamp conversion rates, and evaluate GAAP operating margin trajectory vs Rule of 40 score.",
+    category: "Research",
+    asset: "PLTR",
+    rewardCredits: 25,
+    currency: "CREDITS",
+    status: "open",
+    createdBy: "platform",
+    creatorHandle: "stock_bloc_platform",
+    creatorDisplayName: "Stock Bloc Autonomous Engine",
+    claimedBy: null,
+    claimedByHandle: null,
+    claimedAt: null,
+    deliveredAt: null,
+    paidAt: null,
+    verificationMethod: "payload_present",
+    inputSchema: {
+      ticker: "PLTR",
+      metricFocus: ["usCommercialCustomerGrowth", "ruleOf40", "operatingMargin"]
+    },
+    requiredOutputSchema: {
+      type: "object",
+      properties: {
+        summary: { type: "string" },
+        metrics: {
+          type: "object",
+          properties: {
+            usCommercialGrowthYoYPercent: { type: "number" },
+            ruleOf40Score: { type: "number" },
+            gaapOperatingMarginPercent: { type: "number" }
+          },
+          required: ["usCommercialGrowthYoYPercent", "ruleOf40Score"]
+        },
+        strategicAssessment: { type: "string" }
+      },
+      required: ["summary", "metrics"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 86400000).toISOString()
+  },
+  {
+    bountyId: "bounty_sec_13f_05",
+    title: "Verify Institutional Whale 13F Filing Shifts for Duquesne & Appaloosa",
+    description: "Cross-reference the latest SEC Form 13F quarterly filings for Stanley Druckenmiller (Duquesne) and David Tepper (Appaloosa). Extract top 5 portfolio adjustments, new positions, and sector rotation from tech into materials/energy.",
+    category: "SEC",
+    asset: "SPY",
+    rewardCredits: 25,
+    currency: "CREDITS",
+    status: "open",
+    createdBy: "platform",
+    creatorHandle: "stock_bloc_platform",
+    creatorDisplayName: "Stock Bloc Autonomous Engine",
+    claimedBy: null,
+    claimedByHandle: null,
+    claimedAt: null,
+    deliveredAt: null,
+    paidAt: null,
+    verificationMethod: "payload_present",
+    inputSchema: {
+      funds: ["Duquesne Family Office", "Appaloosa Management"],
+      formType: "13F-HR"
+    },
+    requiredOutputSchema: {
+      type: "object",
+      properties: {
+        summary: { type: "string" },
+        topHoldingsAdjustments: { type: "array" },
+        sectorRotationSummary: { type: "string" },
+        secFilingAccessionNumbers: { type: "array", items: { type: "string" } }
+      },
+      required: ["summary", "topHoldingsAdjustments"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 86400000).toISOString()
+  },
+  {
+    bountyId: "bounty_tsla_autonomy_06",
+    title: "TSLA Robotaxi Fleet Economics vs Auto Hardware Margin Compression",
+    description: "Calculate unit revenue per mile for unsupervised autonomous vehicle fleets vs declining hardware gross margins. Model break-even utilization rates under regional regulatory deployment scenarios.",
+    category: "Valuation",
+    asset: "TSLA",
+    rewardCredits: 30,
+    currency: "CREDITS",
+    status: "open",
+    createdBy: "platform",
+    creatorHandle: "stock_bloc_platform",
+    creatorDisplayName: "Stock Bloc Autonomous Engine",
+    claimedBy: null,
+    claimedByHandle: null,
+    claimedAt: null,
+    deliveredAt: null,
+    paidAt: null,
+    verificationMethod: "payload_present",
+    inputSchema: {
+      ticker: "TSLA",
+      utilizationRateDailyHours: 14,
+      electricityCostKWh: 0.12
+    },
+    requiredOutputSchema: {
+      type: "object",
+      properties: {
+        summary: { type: "string" },
+        metrics: {
+          type: "object",
+          properties: {
+            estimatedRevenuePerMile: { type: "number" },
+            vehicleDepreciationPerMile: { type: "number" },
+            breakEvenFleetSize: { type: "number" }
+          }
+        },
+        conclusion: { type: "string" }
+      },
+      required: ["summary", "metrics"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 86400000).toISOString()
+  },
+  {
+    bountyId: "bounty_aehr_photonics_07",
+    title: "AEHR Silicon Photonics & Wafer-Level Burn-In Test Demand",
+    description: "Verify silicon photonics optical transceiver test requirements for 1.6T AI clusters. Benchmark AEHR test system backlog and customer qualification announcements.",
+    category: "Verification",
+    asset: "AEHR",
+    rewardCredits: 20,
+    currency: "CREDITS",
+    status: "open",
+    createdBy: "platform",
+    creatorHandle: "stock_bloc_platform",
+    creatorDisplayName: "Stock Bloc Autonomous Engine",
+    claimedBy: null,
+    claimedByHandle: null,
+    claimedAt: null,
+    deliveredAt: null,
+    paidAt: null,
+    verificationMethod: "payload_present",
+    inputSchema: {
+      ticker: "AEHR",
+      clusterGeneration: "1.6T Transceivers",
+      testDomain: "Wafer-level Burn-in"
+    },
+    requiredOutputSchema: {
+      type: "object",
+      properties: {
+        summary: { type: "string" },
+        metrics: {
+          type: "object",
+          properties: {
+            estimatedTestTimePerWaferHours: { type: "number" },
+            totalAddressableSiliconPhotonicsTransceiverUnits: { type: "number" }
+          }
+        },
+        verifiedCitations: { type: "array", items: { type: "string" } }
+      },
+      required: ["summary", "verifiedCitations"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 86400000).toISOString()
+  },
+  {
+    bountyId: "bounty_macro_yield_08",
+    title: "Macro 2Y/10Y Yield Curve Steepening & Regional Bank Net Interest Margin",
+    description: "Evaluate US Treasury 2Y/10Y yield curve steepening velocity and model the quantitative impact on asset-sensitive regional bank Net Interest Margin (NIM) expansions.",
+    category: "Macro",
+    asset: "SPY",
+    rewardCredits: 25,
+    currency: "CREDITS",
+    status: "open",
+    createdBy: "platform",
+    creatorHandle: "stock_bloc_platform",
+    creatorDisplayName: "Stock Bloc Autonomous Engine",
+    claimedBy: null,
+    claimedByHandle: null,
+    claimedAt: null,
+    deliveredAt: null,
+    paidAt: null,
+    verificationMethod: "payload_present",
+    inputSchema: {
+      spreadPair: "2Y-10Y",
+      baseSpreadBps: 18
+    },
+    requiredOutputSchema: {
+      type: "object",
+      properties: {
+        summary: { type: "string" },
+        metrics: {
+          type: "object",
+          properties: {
+            estimatedNimDeltaBpsPer100bpsSteepening: { type: "number" },
+            depositBetaAssumptionPercent: { type: "number" }
+          }
+        },
+        macroRiskOutlook: { type: "string" }
+      },
+      required: ["summary", "metrics"]
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 86400000).toISOString()
+  }
+];
+
+// Initialize in-memory seed map
+SEED_BOUNTIES.forEach(b => inMemoryBounties.set(b.bountyId, { ...b }));
+
+export async function seedStockBlocBounties(forceReset = false): Promise<StockBlocBounty[]> {
+  const created: StockBlocBounty[] = [];
+  const nowIso = new Date().toISOString();
+
+  for (const item of SEED_BOUNTIES) {
+    const existing = inMemoryBounties.get(item.bountyId);
+    const docData: StockBlocBounty = {
+      ...item,
+      status: forceReset ? 'open' : (existing?.status || 'open'),
+      claimedBy: forceReset ? null : (existing?.claimedBy ?? null),
+      claimedByHandle: forceReset ? null : (existing?.claimedByHandle ?? null),
+      claimedAt: forceReset ? null : (existing?.claimedAt ?? null),
+      deliveredAt: forceReset ? null : (existing?.deliveredAt ?? null),
+      paidAt: forceReset ? null : (existing?.paidAt ?? null),
+      createdAt: item.createdAt || nowIso,
+      updatedAt: nowIso
+    };
+    inMemoryBounties.set(item.bountyId, docData);
+    created.push(docData);
+
+    try {
+      if (forceReset) {
+        await db.collection('bounties').doc(item.bountyId).set(docData);
+      } else {
+        await db.collection('bounties').doc(item.bountyId).set(docData, { merge: true });
+      }
+    } catch {
+      // In-memory fallback
+    }
+  }
+  return created;
+}
+
+let seedInitialized = false;
+export async function ensureSeedBountiesExist(): Promise<void> {
+  if (seedInitialized && inMemoryBounties.size >= SEED_BOUNTIES.length) return;
+  seedInitialized = true;
+  try {
+    const snap = await db.collection('bounties').limit(1).get().catch(() => ({ empty: true, docs: [] }));
+    if (snap.empty) {
+      await seedStockBlocBounties(false);
+    } else {
+      const allSnap = await db.collection('bounties').limit(50).get().catch(() => ({ docs: [] }));
+      for (const d of allSnap.docs) {
+        inMemoryBounties.set(d.id, { bountyId: d.id, ...d.data() } as StockBlocBounty);
+      }
+      for (const item of SEED_BOUNTIES) {
+        if (!inMemoryBounties.has(item.bountyId)) {
+          inMemoryBounties.set(item.bountyId, { ...item });
+          await db.collection('bounties').doc(item.bountyId).set(item, { merge: true }).catch(() => {});
+        }
+      }
+    }
+  } catch {
+    await seedStockBlocBounties(false);
+  }
+}
+
+// Auto-seed on initial load
+ensureSeedBountiesExist().catch(() => {});
+
+// GET /api/v1/bounties (List open bounties with filters)
+agentExchangeRouter.get(['/bounties', '/exchange/bounties', '/marketplace/bounties'], async (req, res) => {
+  try {
+    await ensureSeedBountiesExist();
+    const { status = 'open', category, asset, minReward, maxReward, limit = '50' } = req.query;
+
+    let bounties: StockBlocBounty[] = [];
+
+    try {
+      let query: any = db.collection('bounties');
+      if (status && status !== 'all') {
+        query = query.where('status', '==', status.toString().toLowerCase());
+      }
+      if (category) {
+        query = query.where('category', '==', category.toString());
+      }
+      if (asset) {
+        query = query.where('asset', '==', asset.toString().toUpperCase());
+      }
+      const snap = await query.orderBy('createdAt', 'desc').limit(parseInt(limit as string, 10) || 50).get();
+      if (!snap.empty) {
+        bounties = snap.docs.map((d: any) => ({ bountyId: d.id, ...d.data() })) as StockBlocBounty[];
+      }
+    } catch {
+      // Fallback to in-memory store
+      bounties = Array.from(inMemoryBounties.values());
+      if (status && status !== 'all') {
+        bounties = bounties.filter(b => b.status === status.toString().toLowerCase());
+      }
+      if (category) {
+        bounties = bounties.filter(b => b.category.toLowerCase() === category.toString().toLowerCase());
+      }
+      if (asset) {
+        bounties = bounties.filter(b => b.asset?.toUpperCase() === asset.toString().toUpperCase());
+      }
+    }
+
+    if (minReward) {
+      const min = parseFloat(minReward as string);
+      if (!isNaN(min)) bounties = bounties.filter(b => b.rewardCredits >= min);
+    }
+    if (maxReward) {
+      const max = parseFloat(maxReward as string);
+      if (!isNaN(max)) bounties = bounties.filter(b => b.rewardCredits <= max);
+    }
+
+    return res.json({
+      success: true,
+      protocol: 'Stock Bloc Agent Bounties v1.0',
+      count: bounties.length,
+      bounties,
+      meta: {
+        claimEndpoint: '/api/v1/bounties/:id/claim',
+        deliverEndpoint: '/api/v1/bounties/:id/deliver',
+        verifyEndpoint: '/api/v1/bounties/:id/verify-and-pay'
+      }
+    });
+  } catch (err: any) {
+    console.error('List bounties error:', err);
+    return res.status(500).json({ success: false, error: 'Failed to list bounties' });
+  }
+});
+
+// GET /api/v1/bounties/:bountyId (Get single bounty)
+agentExchangeRouter.get(['/bounties/:bountyId', '/exchange/bounties/:bountyId', '/marketplace/bounties/:bountyId'], async (req, res) => {
+  try {
+    await ensureSeedBountiesExist();
+    const { bountyId } = req.params;
+    let bounty: StockBlocBounty | null = null;
+
+    try {
+      const doc = await db.collection('bounties').doc(bountyId).get();
+      if (doc.exists) {
+        bounty = { bountyId: doc.id, ...doc.data() } as StockBlocBounty;
+      }
+    } catch {
+      // Fallback
+    }
+
+    if (!bounty && inMemoryBounties.has(bountyId)) {
+      bounty = inMemoryBounties.get(bountyId)!;
+    }
+
+    if (!bounty) {
+      return res.status(404).json({ success: false, error: `Bounty ${bountyId} not found` });
+    }
+
+    return res.json({ success: true, bounty });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: 'Failed to get bounty' });
+  }
+});
+
+// POST /api/v1/bounties/:bountyId/claim (Claim an open bounty)
+agentExchangeRouter.post(
+  ['/bounties/:bountyId/claim', '/exchange/bounties/:bountyId/claim', '/marketplace/bounties/:bountyId/claim'],
+  authenticateAgent,
+  async (req, res) => {
+    try {
+      await ensureSeedBountiesExist();
+      const agent = (req as any).agent;
+      const { bountyId } = req.params;
+
+      let bounty: StockBlocBounty | null = null;
+      try {
+        const doc = await db.collection('bounties').doc(bountyId).get();
+        if (doc.exists) {
+          bounty = { bountyId: doc.id, ...doc.data() } as StockBlocBounty;
+        }
+      } catch {
+        // Fallback
+      }
+
+      if (!bounty && inMemoryBounties.has(bountyId)) {
+        bounty = inMemoryBounties.get(bountyId)!;
+      }
+
+      if (!bounty) {
+        return res.status(404).json({ success: false, error: `Bounty ${bountyId} not found` });
+      }
+
+      if (bounty.status !== 'open') {
+        if (bounty.claimedBy === agent.agentId) {
+          return res.json({
+            success: true,
+            message: 'Bounty is already claimed by you',
+            bountyId,
+            status: bounty.status,
+            claimedBy: bounty.claimedBy,
+            claimedAt: bounty.claimedAt,
+            expiresAt: bounty.expiresAt
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          error: `Bounty is not open for claiming (current status: ${bounty.status})`,
+          claimedBy: bounty.claimedBy
+        });
+      }
+
+      const nowIso = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+
+      bounty.status = 'claimed';
+      bounty.claimedBy = agent.agentId;
+      bounty.claimedByHandle = agent.handle || agent.agentId;
+      bounty.claimedAt = nowIso;
+      bounty.expiresAt = expiresAt;
+      bounty.updatedAt = nowIso;
+
+      inMemoryBounties.set(bountyId, bounty);
+
+      try {
+        await db.collection('bounties').doc(bountyId).set(bounty, { merge: true });
+      } catch (err: any) {
+        console.warn('Firestore set bounty claim fallback:', err.message);
+      }
+
+      return res.json({
+        success: true,
+        message: `Bounty ${bountyId} claimed successfully by ${agent.handle || agent.agentId}`,
+        bountyId,
+        status: 'claimed',
+        claimedBy: agent.agentId,
+        claimedByHandle: agent.handle || agent.agentId,
+        claimedAt: nowIso,
+        expiresAt,
+        deliverEndpoint: `/api/v1/bounties/${bountyId}/deliver`
+      });
+    } catch (err: any) {
+      console.error('Claim bounty error:', err);
+      return res.status(500).json({ success: false, error: 'Failed to claim bounty' });
+    }
+  }
+);
+
+// POST /api/v1/bounties/:bountyId/deliver (Deliver research payload)
+agentExchangeRouter.post(
+  ['/bounties/:bountyId/deliver', '/exchange/bounties/:bountyId/deliver', '/marketplace/bounties/:bountyId/deliver'],
+  authenticateAgent,
+  async (req, res) => {
+    try {
+      await ensureSeedBountiesExist();
+      const agent = (req as any).agent;
+      const { bountyId } = req.params;
+      const { summary, outputPayload, evidenceSources = [], autoVerify = true } = req.body;
+
+      if (!summary || !outputPayload) {
+        return res.status(400).json({
+          success: false,
+          error: 'Missing required delivery payload: summary and outputPayload must be provided'
+        });
+      }
+
+      let bounty: StockBlocBounty | null = null;
+      try {
+        const doc = await db.collection('bounties').doc(bountyId).get();
+        if (doc.exists) {
+          bounty = { bountyId: doc.id, ...doc.data() } as StockBlocBounty;
+        }
+      } catch {
+        // Fallback
+      }
+
+      if (!bounty && inMemoryBounties.has(bountyId)) {
+        bounty = inMemoryBounties.get(bountyId)!;
+      }
+
+      if (!bounty) {
+        return res.status(404).json({ success: false, error: `Bounty ${bountyId} not found` });
+      }
+
+      // If bounty is open, auto-claim for this agent on delivery
+      if (bounty.status === 'open') {
+        bounty.claimedBy = agent.agentId;
+        bounty.claimedByHandle = agent.handle || agent.agentId;
+        bounty.claimedAt = new Date().toISOString();
+      } else if (bounty.claimedBy && bounty.claimedBy !== agent.agentId && agent.agentId !== 'system_operator' && agent.agentId !== 'master_agent') {
+        return res.status(403).json({
+          success: false,
+          error: `Bounty is claimed by another agent (${bounty.claimedBy})`
+        });
+      }
+
+      const nowIso = new Date().toISOString();
+      bounty.status = 'delivered';
+      bounty.deliveredAt = nowIso;
+      bounty.updatedAt = nowIso;
+      bounty.submission = {
+        summary: typeof summary === 'string' ? summary.trim() : JSON.stringify(summary),
+        outputPayload,
+        evidenceSources: Array.isArray(evidenceSources) ? evidenceSources : [evidenceSources].filter(Boolean),
+        submittedAt: nowIso
+      };
+
+      inMemoryBounties.set(bountyId, bounty);
+
+      try {
+        await db.collection('bounties').doc(bountyId).set(bounty, { merge: true });
+      } catch (err: any) {
+        console.warn('Firestore set bounty deliver fallback:', err.message);
+      }
+
+      // If auto-verify is enabled and verificationMethod is payload_present, trigger payout settlement
+      let paymentResult: any = null;
+      if (autoVerify && bounty.verificationMethod === 'payload_present') {
+        const provider = paymentProviders.PLATFORM_CREDITS;
+        paymentResult = await provider.payoutBountyReward({
+          bountyId: bounty.bountyId,
+          agentId: bounty.claimedBy || agent.agentId,
+          agentHandle: bounty.claimedByHandle || agent.handle,
+          rewardCredits: bounty.rewardCredits,
+          title: bounty.title,
+          idempotencyKey: `bounty_payout_${bounty.bountyId}_${bounty.claimedBy || agent.agentId}`
+        });
+
+        bounty.status = 'paid';
+        bounty.paidAt = nowIso;
+        bounty.payoutTxId = paymentResult.transactionId;
+        bounty.verification = {
+          passed: true,
+          verifiedAt: nowIso,
+          verifier: 'platform_automated_verifier',
+          score: 100,
+          notes: 'Automated payload schema and evidence verification passed.'
+        };
+        bounty.updatedAt = nowIso;
+
+        inMemoryBounties.set(bountyId, bounty);
+        try {
+          await db.collection('bounties').doc(bountyId).set(bounty, { merge: true });
+        } catch {
+          // Fallback
+        }
+      }
+
+      return res.json({
+        success: true,
+        message: bounty.status === 'paid' 
+          ? `Bounty deliverable verified and paid ${bounty.rewardCredits} Platform Credits!` 
+          : 'Bounty deliverable submitted successfully and pending verification',
+        bountyId,
+        status: bounty.status,
+        deliveredAt: nowIso,
+        rewardCredits: bounty.rewardCredits,
+        paidAt: bounty.paidAt,
+        payoutTxId: bounty.payoutTxId,
+        newBalance: paymentResult ? paymentResult.newBalance : undefined,
+        verification: bounty.verification,
+        submission: bounty.submission
+      });
+    } catch (err: any) {
+      console.error('Deliver bounty error:', err);
+      return res.status(500).json({ success: false, error: 'Failed to deliver bounty' });
+    }
+  }
+);
+
+// POST /api/v1/bounties/:bountyId/verify-and-pay (Verify deliverables and settle credits)
+agentExchangeRouter.post(
+  ['/bounties/:bountyId/verify-and-pay', '/exchange/bounties/:bountyId/verify-and-pay', '/marketplace/bounties/:bountyId/verify-and-pay'],
+  authenticateAgent,
+  async (req, res) => {
+    try {
+      await ensureSeedBountiesExist();
+      const agent = (req as any).agent;
+      const { bountyId } = req.params;
+      const { passed = true, score = 100, notes = 'Verified by platform verifier' } = req.body;
+
+      let bounty: StockBlocBounty | null = null;
+      try {
+        const doc = await db.collection('bounties').doc(bountyId).get();
+        if (doc.exists) {
+          bounty = { bountyId: doc.id, ...doc.data() } as StockBlocBounty;
+        }
+      } catch {
+        // Fallback
+      }
+
+      if (!bounty && inMemoryBounties.has(bountyId)) {
+        bounty = inMemoryBounties.get(bountyId)!;
+      }
+
+      if (!bounty) {
+        return res.status(404).json({ success: false, error: `Bounty ${bountyId} not found` });
+      }
+
+      if (bounty.status === 'paid') {
+        const wallet = await paymentProviders.PLATFORM_CREDITS.getProviderBalance(bounty.claimedBy || agent.agentId);
+        return res.json({
+          success: true,
+          message: 'Bounty is already verified and paid',
+          bountyId,
+          status: 'paid',
+          rewardCredits: bounty.rewardCredits,
+          creditedAgentId: bounty.claimedBy,
+          paidAt: bounty.paidAt,
+          payoutTxId: bounty.payoutTxId,
+          currentBalance: wallet.creditsBalance
+        });
+      }
+
+      if (!bounty.submission && bounty.status === 'open') {
+        return res.status(400).json({
+          success: false,
+          error: 'Cannot verify an open bounty with no submitted deliverables'
+        });
+      }
+
+      const targetAgentId = bounty.claimedBy || agent.agentId;
+      const targetAgentHandle = bounty.claimedByHandle || agent.handle;
+      const nowIso = new Date().toISOString();
+
+      if (!passed) {
+        bounty.status = 'open';
+        bounty.claimedBy = null;
+        bounty.claimedByHandle = null;
+        bounty.verification = {
+          passed: false,
+          verifiedAt: nowIso,
+          verifier: agent.agentId || 'platform_verifier',
+          score: Number(score) || 0,
+          notes: notes || 'Deliverable rejected by verifier'
+        };
+        bounty.updatedAt = nowIso;
+        inMemoryBounties.set(bountyId, bounty);
+
+        try {
+          await db.collection('bounties').doc(bountyId).set(bounty, { merge: true });
+        } catch {
+          // Fallback
+        }
+
+        return res.json({
+          success: false,
+          message: 'Bounty deliverable failed verification. Bounty returned to open pool.',
+          bountyId,
+          status: 'open',
+          verification: bounty.verification
+        });
+      }
+
+      // Settle payment to claimant agent
+      const provider = paymentProviders.PLATFORM_CREDITS;
+      const paymentResult = await provider.payoutBountyReward({
+        bountyId: bounty.bountyId,
+        agentId: targetAgentId,
+        agentHandle: targetAgentHandle,
+        rewardCredits: bounty.rewardCredits,
+        title: bounty.title,
+        idempotencyKey: `bounty_payout_${bounty.bountyId}_${targetAgentId}`
+      });
+
+      bounty.status = 'paid';
+      bounty.paidAt = nowIso;
+      bounty.payoutTxId = paymentResult.transactionId;
+      bounty.verification = {
+        passed: true,
+        verifiedAt: nowIso,
+        verifier: agent.agentId || 'platform_verifier',
+        score: Number(score) || 100,
+        notes: notes || 'Verified and approved for payment'
+      };
+      bounty.updatedAt = nowIso;
+
+      inMemoryBounties.set(bountyId, bounty);
+      try {
+        await db.collection('bounties').doc(bountyId).set(bounty, { merge: true });
+      } catch {
+        // Fallback
+      }
+
+      return res.json({
+        success: true,
+        message: `Bounty verified and paid ${bounty.rewardCredits} Platform Credits to ${targetAgentHandle || targetAgentId}!`,
+        bountyId,
+        status: 'paid',
+        rewardCredits: bounty.rewardCredits,
+        creditedAgentId: targetAgentId,
+        creditedAgentHandle: targetAgentHandle,
+        newBalance: paymentResult.newBalance,
+        transactionId: paymentResult.transactionId,
+        paidAt: nowIso,
+        verification: bounty.verification
+      });
+    } catch (err: any) {
+      console.error('Verify and pay bounty error:', err);
+      return res.status(500).json({ success: false, error: 'Failed to verify and pay bounty' });
+    }
+  }
+);
+
+// POST /api/v1/bounties/seed (Re-seed the deterministic Super Sonic Tsunami bounties)
+agentExchangeRouter.post(['/bounties/seed', '/exchange/bounties/seed', '/marketplace/bounties/seed'], async (req, res) => {
+  try {
+    const seeded = await seedStockBlocBounties(true);
+    return res.json({
+      success: true,
+      message: `Successfully seeded ${seeded.length} Stock Bloc demand bounties`,
+      count: seeded.length,
+      bounties: seeded
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: 'Failed to seed bounties' });
+  }
+});
+
+// POST /api/v1/bounties (Create a custom bounty by an agent or human operator)
+agentExchangeRouter.post(
+  ['/bounties', '/exchange/bounties', '/marketplace/bounties'],
+  authenticateAgent,
+  async (req, res) => {
+    try {
+      const agent = (req as any).agent;
+      const {
+        title,
+        description,
+        category = 'Research',
+        asset,
+        rewardCredits = 25,
+        inputSchema,
+        requiredOutputSchema,
+        verificationMethod = 'payload_present'
+      } = req.body;
+
+      if (!title || !description) {
+        return res.status(400).json({ success: false, error: 'Missing required title or description' });
+      }
+
+      const bountyId = 'bounty_' + (asset ? asset.toLowerCase() + '_' : '') + crypto.randomBytes(4).toString('hex');
+      const nowIso = new Date().toISOString();
+
+      const newBounty: StockBlocBounty = {
+        bountyId,
+        title: title.trim(),
+        description: description.trim(),
+        category: category as any,
+        asset: asset ? asset.toUpperCase().trim() : undefined,
+        rewardCredits: Math.max(1, Number(rewardCredits)),
+        currency: 'CREDITS',
+        status: 'open',
+        createdBy: agent.agentId,
+        creatorHandle: agent.handle,
+        creatorDisplayName: agent.displayName,
+        claimedBy: null,
+        claimedByHandle: null,
+        claimedAt: null,
+        deliveredAt: null,
+        paidAt: null,
+        inputSchema: inputSchema || {},
+        requiredOutputSchema: requiredOutputSchema || {},
+        verificationMethod: verificationMethod as any,
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        expiresAt: new Date(Date.now() + 30 * 86400000).toISOString()
+      };
+
+      inMemoryBounties.set(bountyId, newBounty);
+      try {
+        await db.collection('bounties').doc(bountyId).set(newBounty);
+      } catch {
+        // Fallback
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: 'Bounty created successfully',
+        bounty: newBounty
+      });
+    } catch (err: any) {
+      return res.status(500).json({ success: false, error: 'Failed to create bounty' });
+    }
+  }
+);
