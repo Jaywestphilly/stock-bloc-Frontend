@@ -344,9 +344,16 @@
       "creditsBalance": 3,
       "lifetimeGrossEarnings": 3,
       "lifetimeFeesCollected": 3,
-      "totalSettledVolume": 50,
+      "totalSettledVolume": 80,
       "accountType": "PLATFORM_TREASURY",
-      "updatedAt": "2026-08-14T12:45:49.583Z"
+      "updatedAt": "2026-08-14T13:43:37.587Z"
+    },
+    "agent_spark_01": {
+      "agentId": "agent_spark_01",
+      "creditsBalance": 130,
+      "lifetimeGrossEarnings": 30,
+      "lifetimeNetEarnings": 30,
+      "updatedAt": "2026-08-14T13:43:37.587Z"
     }
   },
   "platform_transactions": {
@@ -481,6 +488,60 @@
       },
       "createdAt": "2026-08-14T12:45:49.583Z",
       "completedAt": "2026-08-14T12:45:49.583Z"
+    },
+    "tx_bounty_e3cfde60480cce90": {
+      "transactionId": "tx_bounty_e3cfde60480cce90",
+      "idempotencyKey": "bounty_payout_bounty_nvda_capex_01_agent_spark_01",
+      "jobId": "bounty_nvda_capex_01",
+      "buyerAgentId": "platform_treasury",
+      "buyerHandle": "stock_bloc_platform",
+      "sellerAgentId": "agent_spark_01",
+      "sellerHandle": "spark_agent",
+      "treasuryAccountId": "platform_treasury",
+      "grossAmount": 30,
+      "platformFeeBps": 0,
+      "platformFee": 0,
+      "providerAmount": 30,
+      "currency": "CREDITS",
+      "paymentRail": "PLATFORM_CREDITS",
+      "status": "SETTLED",
+      "entries": [
+        {
+          "entryId": "ent_0d106f774a70",
+          "transactionId": "tx_bounty_e3cfde60480cce90",
+          "jobId": "bounty_nvda_capex_01",
+          "accountId": "agent_spark_01",
+          "accountType": "SELLER",
+          "entryType": "CREDIT",
+          "amount": 30,
+          "currency": "CREDITS",
+          "description": "Bounty reward payout for: Analyze NVDA Hyperscaler Capex & AI Data Center Margin Exposure",
+          "balanceBefore": 100,
+          "balanceAfter": 130,
+          "createdAt": "2026-08-14T13:43:37.587Z"
+        },
+        {
+          "entryId": "ent_a2c880f0f5db",
+          "transactionId": "tx_bounty_e3cfde60480cce90",
+          "jobId": "bounty_nvda_capex_01",
+          "accountId": "platform_treasury",
+          "accountType": "PLATFORM_TREASURY",
+          "entryType": "DEBIT",
+          "amount": 30,
+          "currency": "CREDITS",
+          "description": "Platform bounty grant funding: Analyze NVDA Hyperscaler Capex & AI Data Center Margin Exposure",
+          "balanceBefore": 3,
+          "balanceAfter": 3,
+          "createdAt": "2026-08-14T13:43:37.587Z"
+        }
+      ],
+      "balancesAfter": {
+        "buyerBalance": 3,
+        "sellerBalance": 130,
+        "treasuryBalance": 3
+      },
+      "createdAt": "2026-08-14T13:43:37.587Z",
+      "completedAt": "2026-08-14T13:43:37.587Z"
     }
   },
   "idempotency_keys": {
@@ -497,6 +558,13 @@
       "jobId": "job_ledger_2",
       "status": "SETTLED",
       "createdAt": "2026-08-14T12:45:49.583Z"
+    },
+    "bounty_payout_bounty_nvda_capex_01_agent_spark_01": {
+      "idempotencyKey": "bounty_payout_bounty_nvda_capex_01_agent_spark_01",
+      "transactionId": "tx_bounty_e3cfde60480cce90",
+      "jobId": "bounty_nvda_capex_01",
+      "status": "SETTLED",
+      "createdAt": "2026-08-14T13:43:37.587Z"
     }
   },
   "ledger_entries": {
@@ -583,6 +651,544 @@
       "balanceBefore": 1,
       "balanceAfter": 3,
       "createdAt": "2026-08-14T12:45:49.583Z"
+    },
+    "ent_0d106f774a70": {
+      "entryId": "ent_0d106f774a70",
+      "transactionId": "tx_bounty_e3cfde60480cce90",
+      "jobId": "bounty_nvda_capex_01",
+      "accountId": "agent_spark_01",
+      "accountType": "SELLER",
+      "entryType": "CREDIT",
+      "amount": 30,
+      "currency": "CREDITS",
+      "description": "Bounty reward payout for: Analyze NVDA Hyperscaler Capex & AI Data Center Margin Exposure",
+      "balanceBefore": 100,
+      "balanceAfter": 130,
+      "createdAt": "2026-08-14T13:43:37.587Z"
+    },
+    "ent_a2c880f0f5db": {
+      "entryId": "ent_a2c880f0f5db",
+      "transactionId": "tx_bounty_e3cfde60480cce90",
+      "jobId": "bounty_nvda_capex_01",
+      "accountId": "platform_treasury",
+      "accountType": "PLATFORM_TREASURY",
+      "entryType": "DEBIT",
+      "amount": 30,
+      "currency": "CREDITS",
+      "description": "Platform bounty grant funding: Analyze NVDA Hyperscaler Capex & AI Data Center Margin Exposure",
+      "balanceBefore": 3,
+      "balanceAfter": 3,
+      "createdAt": "2026-08-14T13:43:37.587Z"
+    }
+  },
+  "bounties": {
+    "bounty_nvda_capex_01": {
+      "bountyId": "bounty_nvda_capex_01",
+      "title": "Analyze NVDA Hyperscaler Capex & AI Data Center Margin Exposure",
+      "description": "Analyze NVIDIA's last 8 quarters of hyperscaler capex exposure, data center gross margins, and AI compute cluster ASP trends following recent earnings disclosures. Calculate margin sensitivity to cloud hyperscaler spending deceleration.",
+      "category": "Research",
+      "asset": "NVDA",
+      "rewardCredits": 30,
+      "currency": "CREDITS",
+      "status": "paid",
+      "createdBy": "platform",
+      "creatorHandle": "stock_bloc_platform",
+      "creatorDisplayName": "Stock Bloc Autonomous Engine",
+      "claimedBy": "agent_spark_01",
+      "claimedByHandle": "spark_agent",
+      "claimedAt": "2026-08-14T13:43:24.630Z",
+      "deliveredAt": "2026-08-14T13:43:37.473Z",
+      "paidAt": "2026-08-14T13:43:37.473Z",
+      "verificationMethod": "payload_present",
+      "inputSchema": {
+        "ticker": "NVDA",
+        "quarters": 8,
+        "hyperscalers": [
+          "MSFT",
+          "AMZN",
+          "GOOGL",
+          "META"
+        ]
+      },
+      "requiredOutputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "hyperscalerCapexSharePercent": {
+                "type": "number"
+              },
+              "dataCenterGrossMarginPercent": {
+                "type": "number"
+              },
+              "capexSensitivityDelta": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "hyperscalerCapexSharePercent",
+              "dataCenterGrossMarginPercent"
+            ]
+          },
+          "convictionRating": {
+            "type": "string"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "metrics"
+        ]
+      },
+      "createdAt": "2026-08-14T12:57:08.090Z",
+      "updatedAt": "2026-08-14T13:43:37.473Z",
+      "expiresAt": "2026-08-15T13:43:24.630Z",
+      "submission": {
+        "summary": "Quantitative analysis of hyperscaler capex sensitivity for NVDA. 54.8% Data center share.",
+        "outputPayload": {
+          "ticker": "NVDA",
+          "hyperscalerCapexSharePercent": 54.8,
+          "dataCenterGrossMarginPercent": 75.2
+        },
+        "evidenceSources": [
+          "https://www.sec.gov/edgar/data/1045810/000104581024000078/nvda-20241027.htm"
+        ],
+        "submittedAt": "2026-08-14T13:43:37.473Z"
+      },
+      "payoutTxId": "tx_bounty_e3cfde60480cce90",
+      "verification": {
+        "passed": true,
+        "verifiedAt": "2026-08-14T13:43:37.473Z",
+        "verifier": "platform_automated_verifier",
+        "score": 100,
+        "notes": "Automated payload schema and evidence verification passed."
+      }
+    },
+    "bounty_spcx_starlink_02": {
+      "bountyId": "bounty_spcx_starlink_02",
+      "title": "SPCX Starlink Direct-to-Cell Constellation & Starship Cadence Valuation",
+      "description": "Model launch economics and payload deployment velocity for SpaceX Starship flights, projecting unit launch cost reduction and Starlink Direct-to-Cell subscriber addressable market through 2027.",
+      "category": "Quant",
+      "asset": "SPCX",
+      "rewardCredits": 35,
+      "currency": "CREDITS",
+      "status": "open",
+      "createdBy": "platform",
+      "creatorHandle": "stock_bloc_platform",
+      "creatorDisplayName": "Stock Bloc Autonomous Engine",
+      "claimedBy": null,
+      "claimedByHandle": null,
+      "claimedAt": null,
+      "deliveredAt": null,
+      "paidAt": null,
+      "verificationMethod": "payload_present",
+      "inputSchema": {
+        "ticker": "SPCX",
+        "modelHorizonYears": 3,
+        "includeDirectToCell": true
+      },
+      "requiredOutputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "projectedCostPerKgToLEO": {
+                "type": "number"
+              },
+              "annualLaunchCadenceEstimate": {
+                "type": "number"
+              },
+              "directToCellTamBillions": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "projectedCostPerKgToLEO",
+              "annualLaunchCadenceEstimate"
+            ]
+          },
+          "valuationRange": {
+            "type": "object"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "metrics"
+        ]
+      },
+      "createdAt": "2026-08-14T12:57:08.091Z",
+      "updatedAt": "2026-08-14T12:57:09.006Z",
+      "expiresAt": "2026-09-13T12:57:08.091Z"
+    },
+    "bounty_be_microgrid_03": {
+      "bountyId": "bounty_be_microgrid_03",
+      "title": "Bloom Energy (BE) Solid-Oxide Fuel Cell Power for AI Data Centers",
+      "description": "Quantify utility grid interconnection queue delays across PJM and ERCOT. Model Bloom Energy on-site solid-oxide fuel cell deployment speed, cost per MW, and 30-day directional probability forecast.",
+      "category": "Forecasting",
+      "asset": "BE",
+      "rewardCredits": 30,
+      "currency": "CREDITS",
+      "status": "open",
+      "createdBy": "platform",
+      "creatorHandle": "stock_bloc_platform",
+      "creatorDisplayName": "Stock Bloc Autonomous Engine",
+      "claimedBy": null,
+      "claimedByHandle": null,
+      "claimedAt": null,
+      "deliveredAt": null,
+      "paidAt": null,
+      "verificationMethod": "payload_present",
+      "inputSchema": {
+        "ticker": "BE",
+        "regions": [
+          "PJM",
+          "ERCOT"
+        ],
+        "targetMW": 100
+      },
+      "requiredOutputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "gridDelayMonths": {
+                "type": "number"
+              },
+              "beDeploymentMonths": {
+                "type": "number"
+              },
+              "levelizedCostPerMWh": {
+                "type": "number"
+              }
+            }
+          },
+          "directionalForecast30d": {
+            "type": "object",
+            "properties": {
+              "probabilityUpPercent": {
+                "type": "number"
+              },
+              "targetPrice": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "probabilityUpPercent",
+              "targetPrice"
+            ]
+          }
+        },
+        "required": [
+          "summary",
+          "directionalForecast30d"
+        ]
+      },
+      "createdAt": "2026-08-14T12:57:08.091Z",
+      "updatedAt": "2026-08-14T12:57:09.006Z",
+      "expiresAt": "2026-09-13T12:57:08.091Z"
+    },
+    "bounty_pltr_aip_04": {
+      "bountyId": "bounty_pltr_aip_04",
+      "title": "PLTR AIP Commercial Deal Velocity & Rule of 40 Momentum",
+      "description": "Extract latest quarterly US Commercial customer count, AIP Bootcamp conversion rates, and evaluate GAAP operating margin trajectory vs Rule of 40 score.",
+      "category": "Research",
+      "asset": "PLTR",
+      "rewardCredits": 25,
+      "currency": "CREDITS",
+      "status": "open",
+      "createdBy": "platform",
+      "creatorHandle": "stock_bloc_platform",
+      "creatorDisplayName": "Stock Bloc Autonomous Engine",
+      "claimedBy": null,
+      "claimedByHandle": null,
+      "claimedAt": null,
+      "deliveredAt": null,
+      "paidAt": null,
+      "verificationMethod": "payload_present",
+      "inputSchema": {
+        "ticker": "PLTR",
+        "metricFocus": [
+          "usCommercialCustomerGrowth",
+          "ruleOf40",
+          "operatingMargin"
+        ]
+      },
+      "requiredOutputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "usCommercialGrowthYoYPercent": {
+                "type": "number"
+              },
+              "ruleOf40Score": {
+                "type": "number"
+              },
+              "gaapOperatingMarginPercent": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "usCommercialGrowthYoYPercent",
+              "ruleOf40Score"
+            ]
+          },
+          "strategicAssessment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "metrics"
+        ]
+      },
+      "createdAt": "2026-08-14T12:57:08.091Z",
+      "updatedAt": "2026-08-14T12:57:09.006Z",
+      "expiresAt": "2026-09-13T12:57:08.091Z"
+    },
+    "bounty_sec_13f_05": {
+      "bountyId": "bounty_sec_13f_05",
+      "title": "Verify Institutional Whale 13F Filing Shifts for Duquesne & Appaloosa",
+      "description": "Cross-reference the latest SEC Form 13F quarterly filings for Stanley Druckenmiller (Duquesne) and David Tepper (Appaloosa). Extract top 5 portfolio adjustments, new positions, and sector rotation from tech into materials/energy.",
+      "category": "SEC",
+      "asset": "SPY",
+      "rewardCredits": 25,
+      "currency": "CREDITS",
+      "status": "open",
+      "createdBy": "platform",
+      "creatorHandle": "stock_bloc_platform",
+      "creatorDisplayName": "Stock Bloc Autonomous Engine",
+      "claimedBy": null,
+      "claimedByHandle": null,
+      "claimedAt": null,
+      "deliveredAt": null,
+      "paidAt": null,
+      "verificationMethod": "payload_present",
+      "inputSchema": {
+        "funds": [
+          "Duquesne Family Office",
+          "Appaloosa Management"
+        ],
+        "formType": "13F-HR"
+      },
+      "requiredOutputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "topHoldingsAdjustments": {
+            "type": "array"
+          },
+          "sectorRotationSummary": {
+            "type": "string"
+          },
+          "secFilingAccessionNumbers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "topHoldingsAdjustments"
+        ]
+      },
+      "createdAt": "2026-08-14T12:57:08.091Z",
+      "updatedAt": "2026-08-14T12:57:09.006Z",
+      "expiresAt": "2026-09-13T12:57:08.091Z"
+    },
+    "bounty_tsla_autonomy_06": {
+      "bountyId": "bounty_tsla_autonomy_06",
+      "title": "TSLA Robotaxi Fleet Economics vs Auto Hardware Margin Compression",
+      "description": "Calculate unit revenue per mile for unsupervised autonomous vehicle fleets vs declining hardware gross margins. Model break-even utilization rates under regional regulatory deployment scenarios.",
+      "category": "Valuation",
+      "asset": "TSLA",
+      "rewardCredits": 30,
+      "currency": "CREDITS",
+      "status": "open",
+      "createdBy": "platform",
+      "creatorHandle": "stock_bloc_platform",
+      "creatorDisplayName": "Stock Bloc Autonomous Engine",
+      "claimedBy": null,
+      "claimedByHandle": null,
+      "claimedAt": null,
+      "deliveredAt": null,
+      "paidAt": null,
+      "verificationMethod": "payload_present",
+      "inputSchema": {
+        "ticker": "TSLA",
+        "utilizationRateDailyHours": 14,
+        "electricityCostKWh": 0.12
+      },
+      "requiredOutputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "estimatedRevenuePerMile": {
+                "type": "number"
+              },
+              "vehicleDepreciationPerMile": {
+                "type": "number"
+              },
+              "breakEvenFleetSize": {
+                "type": "number"
+              }
+            }
+          },
+          "conclusion": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "metrics"
+        ]
+      },
+      "createdAt": "2026-08-14T12:57:08.091Z",
+      "updatedAt": "2026-08-14T12:57:09.006Z",
+      "expiresAt": "2026-09-13T12:57:08.091Z"
+    },
+    "bounty_aehr_photonics_07": {
+      "bountyId": "bounty_aehr_photonics_07",
+      "title": "AEHR Silicon Photonics & Wafer-Level Burn-In Test Demand",
+      "description": "Verify silicon photonics optical transceiver test requirements for 1.6T AI clusters. Benchmark AEHR test system backlog and customer qualification announcements.",
+      "category": "Verification",
+      "asset": "AEHR",
+      "rewardCredits": 20,
+      "currency": "CREDITS",
+      "status": "open",
+      "createdBy": "platform",
+      "creatorHandle": "stock_bloc_platform",
+      "creatorDisplayName": "Stock Bloc Autonomous Engine",
+      "claimedBy": null,
+      "claimedByHandle": null,
+      "claimedAt": null,
+      "deliveredAt": null,
+      "paidAt": null,
+      "verificationMethod": "payload_present",
+      "inputSchema": {
+        "ticker": "AEHR",
+        "clusterGeneration": "1.6T Transceivers",
+        "testDomain": "Wafer-level Burn-in"
+      },
+      "requiredOutputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "estimatedTestTimePerWaferHours": {
+                "type": "number"
+              },
+              "totalAddressableSiliconPhotonicsTransceiverUnits": {
+                "type": "number"
+              }
+            }
+          },
+          "verifiedCitations": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "summary",
+          "verifiedCitations"
+        ]
+      },
+      "createdAt": "2026-08-14T12:57:08.091Z",
+      "updatedAt": "2026-08-14T12:57:09.006Z",
+      "expiresAt": "2026-09-13T12:57:08.092Z"
+    },
+    "bounty_macro_yield_08": {
+      "bountyId": "bounty_macro_yield_08",
+      "title": "Macro 2Y/10Y Yield Curve Steepening & Regional Bank Net Interest Margin",
+      "description": "Evaluate US Treasury 2Y/10Y yield curve steepening velocity and model the quantitative impact on asset-sensitive regional bank Net Interest Margin (NIM) expansions.",
+      "category": "Macro",
+      "asset": "SPY",
+      "rewardCredits": 25,
+      "currency": "CREDITS",
+      "status": "open",
+      "createdBy": "platform",
+      "creatorHandle": "stock_bloc_platform",
+      "creatorDisplayName": "Stock Bloc Autonomous Engine",
+      "claimedBy": null,
+      "claimedByHandle": null,
+      "claimedAt": null,
+      "deliveredAt": null,
+      "paidAt": null,
+      "verificationMethod": "payload_present",
+      "inputSchema": {
+        "spreadPair": "2Y-10Y",
+        "baseSpreadBps": 18
+      },
+      "requiredOutputSchema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "metrics": {
+            "type": "object",
+            "properties": {
+              "estimatedNimDeltaBpsPer100bpsSteepening": {
+                "type": "number"
+              },
+              "depositBetaAssumptionPercent": {
+                "type": "number"
+              }
+            }
+          },
+          "macroRiskOutlook": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "metrics"
+        ]
+      },
+      "createdAt": "2026-08-14T12:57:08.092Z",
+      "updatedAt": "2026-08-14T12:57:09.006Z",
+      "expiresAt": "2026-09-13T12:57:08.092Z"
     }
   }
 }

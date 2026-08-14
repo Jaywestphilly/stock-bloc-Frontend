@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { triggerHaptic } from "../../utils/haptics";
 import type { AgentService, MarketTaskRequest, AgentJob, ServiceCategory } from "../../types";
+import { AgentMissionControl } from "./AgentMissionControl";
 
 interface AgentExchangeProps {
   onNavigateTab?: (tab: any) => void;
@@ -35,7 +36,7 @@ interface AgentExchangeProps {
 }
 
 export const AgentExchange: React.FC<AgentExchangeProps> = ({ onNavigateTab, onOpenAuth }) => {
-  const [activeSection, setActiveSection] = useState<"discover" | "requests" | "services" | "jobs" | "economy">("discover");
+  const [activeSection, setActiveSection] = useState<"mission-control" | "discover" | "requests" | "services" | "jobs" | "economy">("mission-control");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -245,8 +246,9 @@ export const AgentExchange: React.FC<AgentExchangeProps> = ({ onNavigateTab, onO
           {/* Navigation Sub-Tabs */}
           <div className="flex items-center gap-2 mt-4 pt-3 border-t border-white/5 overflow-x-auto scrollbar-none">
             {[
+              { id: "mission-control", label: "⚡ Mission Control (Open Work)", icon: Zap },
+              { id: "requests", label: "Market Bounties", icon: Briefcase, count: requests.length },
               { id: "discover", label: "Exchange Home", icon: Sparkles },
-              { id: "requests", label: "Market Tasks / Bounties", icon: Briefcase, count: requests.length },
               { id: "services", label: "Agent Services", icon: Layers, count: services.length },
               { id: "economy", label: "Macro Health & Ledger", icon: Activity },
             ].map(tab => {
@@ -280,60 +282,65 @@ export const AgentExchange: React.FC<AgentExchangeProps> = ({ onNavigateTab, onO
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {/* Real Macro Metrics Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-4 rounded-2xl bg-neutral-900/60 border border-white/5 flex flex-col justify-between">
-            <div className="text-[11px] font-mono uppercase text-neutral-400 flex items-center justify-between">
-              Active Agents
-              <Cpu className="w-4 h-4 text-cyan-400" />
-            </div>
-            <div className="text-2xl font-black text-white mt-1">
-              {economyMetrics?.activeAgents ?? 0}
-            </div>
-            <div className="text-[10px] text-neutral-500 mt-1 font-mono">
-              Independent verified operators
-            </div>
-          </div>
+        {/* SECTION 0: MISSION CONTROL (DEFAULT AT-A-GLANCE OPEN WORK & HARDENED SETTLEMENT) */}
+        {activeSection === "mission-control" ? (
+          <AgentMissionControl onNavigateTab={onNavigateTab} onOpenAuth={onOpenAuth} />
+        ) : (
+          <>
+            {/* Real Macro Metrics Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-4 rounded-2xl bg-neutral-900/60 border border-white/5 flex flex-col justify-between">
+                <div className="text-[11px] font-mono uppercase text-neutral-400 flex items-center justify-between">
+                  Active Agents
+                  <Cpu className="w-4 h-4 text-cyan-400" />
+                </div>
+                <div className="text-2xl font-black text-white mt-1">
+                  {economyMetrics?.activeAgents ?? 0}
+                </div>
+                <div className="text-[10px] text-neutral-500 mt-1 font-mono">
+                  Independent verified operators
+                </div>
+              </div>
 
-          <div className="p-4 rounded-2xl bg-neutral-900/60 border border-white/5 flex flex-col justify-between">
-            <div className="text-[11px] font-mono uppercase text-neutral-400 flex items-center justify-between">
-              Active Services
-              <Layers className="w-4 h-4 text-blue-400" />
-            </div>
-            <div className="text-2xl font-black text-white mt-1">
-              {economyMetrics?.activeServices ?? services.length}
-            </div>
-            <div className="text-[10px] text-neutral-500 mt-1 font-mono">
-              Machine-readable APIs
-            </div>
-          </div>
+              <div className="p-4 rounded-2xl bg-neutral-900/60 border border-white/5 flex flex-col justify-between">
+                <div className="text-[11px] font-mono uppercase text-neutral-400 flex items-center justify-between">
+                  Active Services
+                  <Layers className="w-4 h-4 text-blue-400" />
+                </div>
+                <div className="text-2xl font-black text-white mt-1">
+                  {economyMetrics?.activeServices ?? services.length}
+                </div>
+                <div className="text-[10px] text-neutral-500 mt-1 font-mono">
+                  Machine-readable APIs
+                </div>
+              </div>
 
-          <div className="p-4 rounded-2xl bg-neutral-900/60 border border-white/5 flex flex-col justify-between">
-            <div className="text-[11px] font-mono uppercase text-neutral-400 flex items-center justify-between">
-              Open Market Tasks
-              <Briefcase className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div className="text-2xl font-black text-emerald-400 mt-1">
-              {economyMetrics?.openRequests ?? requests.length}
-            </div>
-            <div className="text-[10px] text-neutral-500 mt-1 font-mono">
-              Live market-triggered bounties
-            </div>
-          </div>
+              <div className="p-4 rounded-2xl bg-neutral-900/60 border border-white/5 flex flex-col justify-between">
+                <div className="text-[11px] font-mono uppercase text-neutral-400 flex items-center justify-between">
+                  Open Market Tasks
+                  <Briefcase className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="text-2xl font-black text-emerald-400 mt-1">
+                  {economyMetrics?.openRequests ?? requests.length}
+                </div>
+                <div className="text-[10px] text-neutral-500 mt-1 font-mono">
+                  Live market-triggered bounties
+                </div>
+              </div>
 
-          <div className="p-4 rounded-2xl bg-neutral-900/60 border border-white/5 flex flex-col justify-between">
-            <div className="text-[11px] font-mono uppercase text-neutral-400 flex items-center justify-between">
-              Settled Volume (Credits)
-              <DollarSign className="w-4 h-4 text-amber-400" />
+              <div className="p-4 rounded-2xl bg-neutral-900/60 border border-white/5 flex flex-col justify-between">
+                <div className="text-[11px] font-mono uppercase text-neutral-400 flex items-center justify-between">
+                  Settled Volume (Credits)
+                  <DollarSign className="w-4 h-4 text-amber-400" />
+                </div>
+                <div className="text-2xl font-black text-white mt-1 font-mono">
+                  {economyMetrics?.grossVolume ?? 0} <span className="text-xs text-amber-400 font-sans">CR</span>
+                </div>
+                <div className="text-[10px] text-neutral-500 mt-1 font-mono">
+                  5.0% Platform Fee Configured
+                </div>
+              </div>
             </div>
-            <div className="text-2xl font-black text-white mt-1 font-mono">
-              {economyMetrics?.grossVolume ?? 0} <span className="text-xs text-amber-400 font-sans">CR</span>
-            </div>
-            <div className="text-[10px] text-neutral-500 mt-1 font-mono">
-              5.0% Platform Fee Configured
-            </div>
-          </div>
-        </div>
 
         {/* SECTION 1: DISCOVER / OVERVIEW */}
         {activeSection === "discover" && (
@@ -739,6 +746,8 @@ export const AgentExchange: React.FC<AgentExchangeProps> = ({ onNavigateTab, onO
             </div>
           </div>
         )}
+        </>
+      )}
       </div>
 
       {/* MODAL: AUTONOMOUS JOB EXECUTION / TESTER */}
