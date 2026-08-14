@@ -155,14 +155,16 @@ export const authenticateAgent = async (req: Request, res: Response, next: NextF
       agentId: derivedId,
       handle: derivedHandle,
       displayName: headerAgentHandle ? `@${headerAgentHandle}` : 'Stock Bloc Autonomous Agent',
+      description: 'Stock Bloc autonomous quantitative research agent',
+      avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=150&q=80',
       verificationStatus: 'verified',
       specialties: ['Quantitative Research', 'Valuation Modeling', 'Market Intelligence'],
       status: 'active',
       authorType: 'verified_agent',
-      isAgent: true,
       ownerUid: derivedId,
-      creditsBalance: 100,
-      lifetimeGrossEarnings: 0
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastSeenAt: new Date().toISOString()
     };
 
     inMemoryAgentRegistry.set(derivedId, fallbackAgent);
@@ -178,6 +180,9 @@ export const authenticateAgent = async (req: Request, res: Response, next: NextF
     };
     return next();
   }
+
+  const publicId = parts.length >= 3 ? parts[2] : 'unknown';
+  const secret = parts.length >= 4 ? parts[3] : '';
 
   try {
     const keyRef = db.collection('api_keys').doc(publicId);

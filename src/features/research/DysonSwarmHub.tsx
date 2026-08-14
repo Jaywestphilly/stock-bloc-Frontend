@@ -47,20 +47,29 @@ import {
   Cpu,
   ArrowUpRight,
   Target,
+  Sun,
 } from "lucide-react";
 import { triggerHaptic } from "../../utils/haptics";
 import { DysonLiveData, DysonLaunch, DysonStory } from "../../types";
+import { OrbitalLaunchEconomics } from "./dyson/OrbitalLaunchEconomics";
+import { SpacePowerArbitrage } from "./dyson/SpacePowerArbitrage";
+import { LaserMeshLatencyMatrix } from "./dyson/LaserMeshLatencyMatrix";
+import { ConstellationShellTracker } from "./dyson/ConstellationShellTracker";
 
 type DysonSubTab =
+  | "space_news"
+  | "orbital_economics"
+  | "power_arbitrage"
+  | "laser_mesh_latency"
+  | "constellation_shells"
   | "starlink_hub"
   | "starship_hub"
   | "launch_cadence"
+  | "dyson_power"
   | "dyson_metaphor"
   | "spacex_history"
-  | "space_docs"
   | "planet_labs"
-  | "dyson_power"
-  | "space_news";
+  | "space_docs";
 
 interface TimeRemaining {
   days: number;
@@ -139,15 +148,19 @@ export const DysonSwarmHub: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useSubTabUrl<DysonSubTab>(
     "/research/dyson-swarm",
     [
+      "space_news",
+      "orbital_economics",
+      "power_arbitrage",
+      "laser_mesh_latency",
+      "constellation_shells",
       "starlink_hub",
       "starship_hub",
       "launch_cadence",
+      "dyson_power",
       "dyson_metaphor",
       "spacex_history",
-      "space_docs",
       "planet_labs",
-      "dyson_power",
-      "space_news"
+      "space_docs"
     ] as const,
     "space_news"
   );
@@ -324,14 +337,18 @@ export const DysonSwarmHub: React.FC = () => {
         <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
           {[
             { id: "space_news", label: "Live Space News", icon: Zap },
+            { id: "orbital_economics", label: "Starship $/kg Engine", icon: Rocket },
+            { id: "power_arbitrage", label: "SBSP vs AI Microgrids", icon: Sun },
+            { id: "laser_mesh_latency", label: "Laser Mesh Latency", icon: Radio },
+            { id: "constellation_shells", label: "Orbital Shells & Spectrum", icon: Satellite },
             { id: "starlink_hub", label: "Starlink Constellation", icon: Wifi },
             { id: "starship_hub", label: "Starship Program", icon: Rocket },
             { id: "launch_cadence", label: "Launch Windows", icon: Clock },
+            { id: "dyson_power", label: "Solar Metrology", icon: Flame },
             { id: "dyson_metaphor", label: "Dyson Swarm Metaphor", icon: Lightbulb },
             { id: "spacex_history", label: "SpaceX History Roadmap", icon: History },
+            { id: "planet_labs", label: "Planet Labs Fleet", icon: Globe },
             { id: "space_docs", label: "Video Vault", icon: Film },
-            { id: "planet_labs", label: "Planet Labs Fleet", icon: Satellite },
-            { id: "dyson_power", label: "Solar Metrology", icon: Zap },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeSubTab === tab.id;
@@ -355,6 +372,7 @@ export const DysonSwarmHub: React.FC = () => {
           })}
         </div>
 
+        {/* TAB 0A: LIVE SPACE NEWS */}
         {activeSubTab === "space_news" && (
           <div className="space-y-6 animate-fadeIn">
             <div className="flex items-center gap-3 border-b border-white/10 pb-4">
@@ -391,6 +409,26 @@ export const DysonSwarmHub: React.FC = () => {
                <div className="p-4 bg-red-900/20 text-red-400 rounded-xl">No news found or failed to load.</div>
             )}
           </div>
+        )}
+
+        {/* TAB 0B: STARSHIP $/KG DECAY ENGINE */}
+        {activeSubTab === "orbital_economics" && (
+          <OrbitalLaunchEconomics />
+        )}
+
+        {/* TAB 0C: SBSP VS AI MICROGRIDS POWER ARBITRAGE */}
+        {activeSubTab === "power_arbitrage" && (
+          <SpacePowerArbitrage />
+        )}
+
+        {/* TAB 0D: ORBITAL LASER MESH & QUANT LATENCY */}
+        {activeSubTab === "laser_mesh_latency" && (
+          <LaserMeshLatencyMatrix />
+        )}
+
+        {/* TAB 0E: CONSTELLATION ORBITAL SHELLS & SPECTRUM */}
+        {activeSubTab === "constellation_shells" && (
+          <ConstellationShellTracker />
         )}
 
         {/* TAB 1: STARLINK HUB */}

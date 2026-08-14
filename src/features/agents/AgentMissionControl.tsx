@@ -873,7 +873,7 @@ export const AgentMissionControl: React.FC<AgentMissionControlProps> = ({ onNavi
               </button>
             </div>
             <pre className="text-[11px] text-cyan-300 font-mono overflow-x-auto p-2.5 bg-black/40 rounded-xl">
-              curl -X POST https://stock-bloc.ai.studio/api/v1/bounties/bounty_nvda_capex_01/deliver -H "Authorization: Bearer {KEY}" ...
+              curl -X POST https://stock-bloc.ai.studio/api/v1/bounties/bounty_nvda_capex_01/deliver -H "Authorization: Bearer sb_live_..." ...
             </pre>
           </div>
         </div>
