@@ -35,6 +35,10 @@ import { VisualOrderDiagrams } from '../../components/VisualOrderDiagrams';
 import { VisualOptionsTree } from '../../components/VisualOptionsTree';
 import { InteractiveOptionsStrategyVisualizer } from '../../components/InteractiveOptionsStrategyVisualizer';
 import { StrategyGlossary } from '../../components/StrategyGlossary';
+import { FinancialForensicsModeler } from './FinancialForensicsModeler';
+import { OptionsGreeksSandbox } from './OptionsGreeksSandbox';
+import { HistoricalCrisisSimulator } from './HistoricalCrisisSimulator';
+import { MarketMicrostructureSimulator } from './MarketMicrostructureSimulator';
 
 interface InvestopediaTabProps {
   stocks?: StockTicker[];
@@ -191,6 +195,10 @@ export const InvestopediaTab: React.FC<InvestopediaTabProps> = ({
 }) => {
   const [activeSection, setActiveSection] = useState<
     | "indicators"
+    | "forensics"
+    | "options_greeks"
+    | "microstructure"
+    | "crisis_war_room"
     | "options_masterclass"
     | "robinhood_starter"
     | "brokerage_basics"
@@ -307,7 +315,7 @@ export const InvestopediaTab: React.FC<InvestopediaTabProps> = ({
         </div>
 
         {/* Section Navigation Tabs */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 pt-2 border-t border-white/10 font-mono text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 pt-2 border-t border-white/10 font-mono text-xs">
           <button
             onClick={() => {
               triggerHaptic("selection");
@@ -321,6 +329,66 @@ export const InvestopediaTab: React.FC<InvestopediaTabProps> = ({
           >
             <Activity className="w-4 h-4 text-cyan-400" />
             <span>Indicators</span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveSection("forensics");
+            }}
+            className={`p-3 rounded-xl border text-center font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              activeSection === "forensics"
+                ? "bg-emerald-500/20 text-emerald-300 border-emerald-400 font-black shadow-lg shadow-emerald-500/10"
+                : "bg-black/40 text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-900"
+            }`}
+          >
+            <FileText className="w-4 h-4 text-emerald-400" />
+            <span>10-K Forensics</span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveSection("options_greeks");
+            }}
+            className={`p-3 rounded-xl border text-center font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              activeSection === "options_greeks"
+                ? "bg-purple-500/20 text-purple-300 border-purple-400 font-black shadow-lg shadow-purple-500/10"
+                : "bg-black/40 text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-900"
+            }`}
+          >
+            <Layers className="w-4 h-4 text-purple-400" />
+            <span>Greeks Sandbox</span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveSection("microstructure");
+            }}
+            className={`p-3 rounded-xl border text-center font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              activeSection === "microstructure"
+                ? "bg-cyan-500/20 text-cyan-300 border-cyan-400 font-black shadow-lg shadow-cyan-500/10"
+                : "bg-black/40 text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-900"
+            }`}
+          >
+            <Compass className="w-4 h-4 text-cyan-400" />
+            <span>Order Book L2</span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveSection("crisis_war_room");
+            }}
+            className={`p-3 rounded-xl border text-center font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              activeSection === "crisis_war_room"
+                ? "bg-red-500/20 text-red-300 border-red-400 font-black shadow-lg shadow-red-500/10"
+                : "bg-black/40 text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-900"
+            }`}
+          >
+            <Shield className="w-4 h-4 text-red-400" />
+            <span>Crisis War Room</span>
           </button>
 
           <button
@@ -379,7 +447,7 @@ export const InvestopediaTab: React.FC<InvestopediaTabProps> = ({
                 : "bg-black/40 text-neutral-400 border-neutral-800 hover:text-white hover:bg-neutral-900"
             }`}
           >
-            <FileText className="w-4 h-4 text-indigo-400" />
+            <BookOpen className="w-4 h-4 text-indigo-400" />
             <span>Dictionary</span>
           </button>
 
@@ -464,6 +532,26 @@ export const InvestopediaTab: React.FC<InvestopediaTabProps> = ({
             ))}
           </div>
         </div>
+      )}
+
+      {/* SECTION: 10-K FORENSIC ACCOUNTING & CASH FLOW DECONSTRUCTOR */}
+      {activeSection === "forensics" && (
+        <FinancialForensicsModeler />
+      )}
+
+      {/* SECTION: OPTIONS GREEKS & VOLATILITY SURFACE SANDBOX */}
+      {activeSection === "options_greeks" && (
+        <OptionsGreeksSandbox />
+      )}
+
+      {/* SECTION: MARKET MICROSTRUCTURE & ORDER BOOK SIMULATOR */}
+      {activeSection === "microstructure" && (
+        <MarketMicrostructureSimulator />
+      )}
+
+      {/* SECTION: CRISIS WAR ROOM & SYSTEMIC RISK SIMULATOR */}
+      {activeSection === "crisis_war_room" && (
+        <HistoricalCrisisSimulator />
       )}
 
       {/* SECTION 2: OPTIONS MASTERCLASS & VISUAL OPTIONS TREE */}

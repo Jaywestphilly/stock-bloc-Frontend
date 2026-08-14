@@ -31,6 +31,42 @@ import {
   PolarRadiusAxis,
   Radar
 } from "recharts";
+import { DataProvenanceCard, DataProvenanceItem } from "../../../components/common/DataProvenanceBadge";
+
+const POWER_DATA_SOURCES: DataProvenanceItem[] = [
+  {
+    metricName: "Space-Based Solar Power (SBSP) Technical Feasibility",
+    source: "NASA Office of Technology, Policy, and Strategy (OTPS) SBSP Systems Study & Caltech SSPP",
+    sourceType: "Regulatory Agency",
+    asOfDate: "2025/2026 Evaluation",
+    updateFrequency: "Annual",
+    details: "Solar irradiance constant in GEO (1,361 W/m² AM0), microwave phased-array conversion efficiency, and rectenna land footprint."
+  },
+  {
+    metricName: "Levelized Cost of Energy (LCOE) Benchmarks",
+    source: "Lazard Levelized Cost of Energy Analysis (Version 17.0) & EIA Annual Energy Outlook",
+    sourceType: "Industry Benchmark",
+    asOfDate: "2025/2026",
+    updateFrequency: "Annual",
+    details: "Unsubsidized LCOE ranges ($/MWh) for Nuclear, Combined-Cycle Gas Turbines (CCGT), Utility Solar PV, and SMRs."
+  },
+  {
+    metricName: "Hyperscale AI Power Demand & PPA Pricing",
+    source: "Constellation Energy ($CEG) / Talen Energy ($TLN) FERC 10-K Data Center PPA Filings",
+    sourceType: "SEC Filing",
+    asOfDate: "Q2 2026",
+    updateFrequency: "Quarterly",
+    details: "Behind-the-meter nuclear colocated PPA pricing ($90–$115/MWh) and 24/7 carbon-free energy accounting."
+  },
+  {
+    metricName: "Grid Interconnection Queue Durations",
+    source: "Lawrence Berkeley National Laboratory (LBNL) Queued Up Report",
+    sourceType: "Regulatory Agency",
+    asOfDate: "H1 2026",
+    updateFrequency: "Annual",
+    details: "Average 4.5–7 year interconnection queue wait times across PJM, ERCOT, CAISO, and MISO ISOs."
+  }
+];
 
 interface PowerArchitecture {
   id: string;
@@ -428,6 +464,14 @@ export const SpacePowerArbitrage: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* DATA PROVENANCE & SOURCE ATTRIBUTION */}
+      <DataProvenanceCard
+        category="Energy Generation Economics & SBSP Physics"
+        lastUpdated="August 2026 (Lazard v17 / NASA OTPS / FERC Tracked)"
+        sources={POWER_DATA_SOURCES}
+        defaultExpanded={false}
+      />
     </div>
   );
 };

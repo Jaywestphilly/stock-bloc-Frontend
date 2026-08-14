@@ -33,7 +33,13 @@ import {
   FileText,
   Landmark,
   Download,
+  Server,
+  AlertTriangle,
+  Lock,
 } from "lucide-react";
+import { CreMaturityWallRefinance } from "../realestate/CreMaturityWallRefinance";
+import { DataCenterCapRateArbitrage } from "../realestate/DataCenterCapRateArbitrage";
+import { HousingAffordabilityMortgageEngine } from "../realestate/HousingAffordabilityMortgageEngine";
 
 interface RealEstateHubProps {
   reitStocks: StockTicker[];
@@ -51,8 +57,17 @@ export const RealEstateHub: React.FC<RealEstateHubProps> = ({
   );
   const [activeTab, setActiveTab] = useSubTabUrl(
     "/real-estate",
-    ["calculator", "first_home", "strategies", "reits", "live_macro"] as const,
-    "live_macro"
+    [
+      "cre_debt",
+      "datacenter_arbitrage",
+      "housing_mortgage",
+      "live_macro",
+      "calculator",
+      "first_home",
+      "strategies",
+      "reits"
+    ] as const,
+    "cre_debt"
   );
   
   const [macroData, setMacroData] = useState<any>(null);
@@ -211,6 +226,42 @@ https://stock-bloc.ai.studio/real-estate
         {/* Sub-Tabs Selector */}
         <div className="flex items-center gap-2 pt-2 overflow-x-auto no-scrollbar">
           <button
+            onClick={() => setActiveTab("cre_debt")}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
+              activeTab === "cre_debt"
+                ? "bg-red-500 text-black font-extrabold shadow-lg shadow-red-500/30"
+                : "bg-white/10 text-neutral-300 hover:bg-white/20"
+            }`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5 text-red-300" />
+            CRE Maturity Wall ($1.8T)
+          </button>
+
+          <button
+            onClick={() => setActiveTab("datacenter_arbitrage")}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
+              activeTab === "datacenter_arbitrage"
+                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
+                : "bg-white/10 text-neutral-300 hover:bg-white/20"
+            }`}
+          >
+            <Server className="w-3.5 h-3.5 text-cyan-300" />
+            AI Data Center vs Office Cap Rates
+          </button>
+
+          <button
+            onClick={() => setActiveTab("housing_mortgage")}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
+              activeTab === "housing_mortgage"
+                ? "bg-emerald-500 text-black font-extrabold shadow-lg shadow-emerald-500/30"
+                : "bg-white/10 text-neutral-300 hover:bg-white/20"
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5 text-emerald-300" />
+            Mortgage Lock-In & Homebuilder Buydowns
+          </button>
+
+          <button
             onClick={() => setActiveTab("live_macro")}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
               activeTab === "live_macro"
@@ -287,6 +338,13 @@ https://stock-bloc.ai.studio/real-estate
           </button>
         </div>
       </div>
+
+      {/* NEW QUANTITATIVE REAL ESTATE MODULES */}
+      {activeTab === "cre_debt" && <CreMaturityWallRefinance />}
+
+      {activeTab === "datacenter_arbitrage" && <DataCenterCapRateArbitrage />}
+
+      {activeTab === "housing_mortgage" && <HousingAffordabilityMortgageEngine />}
 
       {/* CALCULATOR TAB */}
       {activeTab === "calculator" && (

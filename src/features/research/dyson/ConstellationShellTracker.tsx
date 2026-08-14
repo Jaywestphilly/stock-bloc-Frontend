@@ -15,6 +15,42 @@ import {
   CheckCircle2,
   ExternalLink
 } from "lucide-react";
+import { DataProvenanceCard, DataProvenanceItem } from "../../../components/common/DataProvenanceBadge";
+
+const CONSTELLATION_DATA_SOURCES: DataProvenanceItem[] = [
+  {
+    metricName: "Active On-Orbit Satellite Counts & Two-Line Elements (TLEs)",
+    source: "US Space Force 18th Space Defense Squadron (Space-Track.org / CelesTrak)",
+    sourceType: "Regulatory Agency",
+    asOfDate: "August 2026 (Daily Ephemeris)",
+    updateFrequency: "Daily",
+    details: "Automated two-line element orbital tracking, active vs. decaying satellites, and mean motion vectors."
+  },
+  {
+    metricName: "FCC Gen-1 & Gen-2 Constellation Licensing & Shell Grants",
+    source: "Federal Communications Commission (FCC) Part 25 Satellite Space Station Licenses (Call Sign: SAT-MOD-20200417)",
+    sourceType: "Regulatory Agency",
+    asOfDate: "July 2026",
+    updateFrequency: "Monthly",
+    details: "Approved orbital shells (525 km, 530 km, 535 km, 345 km), inclination angles, and Ku/Ka/V/E-band frequency allocations."
+  },
+  {
+    metricName: "Direct-to-Cell Cellular Spectrum Authorizations",
+    source: "FCC Special Temporary Authority (STA) & T-Mobile US 1900 MHz PCS G-Block Filings",
+    sourceType: "Regulatory Agency",
+    asOfDate: "2026 Commercial Rollout",
+    updateFrequency: "Quarterly",
+    details: "Direct-to-cellular LTE eNodeB payload performance and carrier partnership agreements (T-Mobile, KDDI, Optus, Rogers)."
+  },
+  {
+    metricName: "Aviation & Maritime Commercial Enterprise ARPU",
+    source: "SpaceX Starlink Enterprise Commercial Rate Cards & Public Airline Carrier Contracts",
+    sourceType: "Industry Benchmark",
+    asOfDate: "Q2 2026",
+    updateFrequency: "Monthly",
+    details: "Wholesale terminal licensing, high-gain electronically steered array (ESA) antenna pricing, and committed CIR bandwidth."
+  }
+];
 
 interface OrbitalShellDetail {
   id: string;
@@ -273,6 +309,14 @@ export const ConstellationShellTracker: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* DATA PROVENANCE & SOURCE ATTRIBUTION */}
+      <DataProvenanceCard
+        category="LEO Telemetry & Spacecraft Communications"
+        lastUpdated="August 2026 (Space-Track & FCC Part 25 Daily)"
+        sources={CONSTELLATION_DATA_SOURCES}
+        defaultExpanded={false}
+      />
     </div>
   );
 };

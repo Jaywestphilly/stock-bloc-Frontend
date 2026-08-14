@@ -34,13 +34,24 @@ import {
   HeartHandshake,
   FileCheck,
   Download,
+  ShieldAlert,
 } from "lucide-react";
+import { CmbsPrivateCreditRadar } from "../credit/CmbsPrivateCreditRadar";
 
 export const CreditBuildingHub: React.FC = () => {
   const [activeTab, setActiveTab] = useSubTabUrl(
     "/credit",
-    ["simulator", "factors", "bureaus", "student_loans", "cards", "repair", "live_macro"] as const,
-    "live_macro"
+    [
+      "cmbs_private_credit",
+      "live_macro",
+      "simulator",
+      "factors",
+      "bureaus",
+      "student_loans",
+      "cards",
+      "repair"
+    ] as const,
+    "cmbs_private_credit"
   );
   
   const [macroData, setMacroData] = useState<any>(null);
@@ -293,6 +304,18 @@ https://stock-bloc.ai.studio/credit-hub
         {/* Sub-Tabs Selector */}
         <div className="flex items-center gap-2 pt-2 overflow-x-auto no-scrollbar">
           <button
+            onClick={() => setActiveTab("cmbs_private_credit")}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
+              activeTab === "cmbs_private_credit"
+                ? "bg-purple-500 text-black font-extrabold shadow-lg shadow-purple-500/30"
+                : "bg-white/10 text-neutral-300 hover:bg-white/20"
+            }`}
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-purple-300" />
+            CMBS Delinquency & Private Credit (10.5%)
+          </button>
+
+          <button
             onClick={() => setActiveTab("live_macro")}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
               activeTab === "live_macro"
@@ -376,6 +399,9 @@ https://stock-bloc.ai.studio/credit-hub
           </button>
         </div>
       </div>
+
+      {/* CMBS DELINQUENCY & PRIVATE CREDIT TAB */}
+      {activeTab === "cmbs_private_credit" && <CmbsPrivateCreditRadar />}
 
       {/* BUREAU DIRECT LINKS & ANNUAL REPORT TAB */}
       {activeTab === "bureaus" && (
