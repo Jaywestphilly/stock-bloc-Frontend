@@ -30,17 +30,25 @@ import {
   Cpu,
   LayoutGrid,
   List,
+  Compass,
+  Users,
+  Landmark,
 } from "lucide-react";
 import { HEDGE_FUND_PROFILES, FILINGS_13F_DATA } from "../../data/hedge_funds";
 import { triggerHaptic } from "../../utils/haptics";
 import { LiveSecIntelSection } from "../../components/LiveSecIntelSection";
+import { MacroEconomicsBriefing } from "./MacroEconomicsBriefing";
+import { WhaleConsensusMatrix } from "./WhaleConsensusMatrix";
 
 export type ReportCategory =
   | "ALL"
+  | "MACRO_BRIEFING"
+  | "WHALE_CONSENSUS"
   | "13F_HEAVYWEIGHTS"
   | "SUPERSONIC_TSUNAMI"
   | "SPACEX_ORBITAL"
-  | "SEC_EXTERNAL_LINKS" | "LIVE_SEC_INTEL";
+  | "SEC_EXTERNAL_LINKS"
+  | "LIVE_SEC_INTEL";
 
 export interface MasterReportItem {
   id: string;
@@ -606,6 +614,8 @@ export const ReportRepository: React.FC = () => {
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
             {[
               { id: "ALL", label: "ALL DOSSIERS", icon: Globe },
+              { id: "MACRO_BRIEFING", label: "MACRO REGIME BRIEF", icon: Landmark },
+              { id: "WHALE_CONSENSUS", label: "WHALE CONSENSUS & DRIFT", icon: Users },
               { id: "SUPERSONIC_TSUNAMI", label: "SUPERSONIC TSUNAMI", icon: Flame },
               { id: "SPACEX_ORBITAL", label: "SPACEX ORBITAL", icon: Rocket },
               { id: "13F_HEAVYWEIGHTS", label: "13F HEDGE FUNDS", icon: Briefcase },
@@ -678,6 +688,10 @@ export const ReportRepository: React.FC = () => {
       {/* Live SEC Intel Section */}
       {selectedCategory === "LIVE_SEC_INTEL" ? (
         <LiveSecIntelSection />
+      ) : selectedCategory === "MACRO_BRIEFING" ? (
+        <MacroEconomicsBriefing />
+      ) : selectedCategory === "WHALE_CONSENSUS" ? (
+        <WhaleConsensusMatrix />
       ) : selectedCategory === "SEC_EXTERNAL_LINKS" ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {EXTERNAL_RESOURCES.map((resource) => {

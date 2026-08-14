@@ -23,10 +23,14 @@ import { HedgeFund13F } from "./HedgeFund13F";
 import { Intel13FDashboard } from "./Intel13FDashboard";
 import { InvestopediaTab } from "../education/InvestopediaTab";
 import { ReportRepository } from "./ReportRepository";
+import { MacroEconomicsBriefing } from "./MacroEconomicsBriefing";
+import { WhaleConsensusMatrix } from "./WhaleConsensusMatrix";
 import { StockTicker } from "../../types";
 
 export type IntelligenceSubTab =
   | "report_repository"
+  | "macro_briefing"
+  | "whale_consensus"
   | "intel_13f_dashboard"
   | "investopedia"
   | "hedge_funds"
@@ -89,6 +93,20 @@ export const MarketIntelligenceHub: React.FC<MarketIntelligenceHubProps> = ({
       icon: FolderDown,
       badge: "PDF & Dossiers",
       color: "from-cyan-500/20 to-blue-500/20 text-cyan-300 border-cyan-500/30",
+    },
+    {
+      id: "macro_briefing",
+      label: "Macro Economics Briefing",
+      icon: Landmark,
+      badge: "Net Fed Reserves",
+      color: "from-emerald-500/20 to-teal-500/20 text-emerald-300 border-emerald-500/30",
+    },
+    {
+      id: "whale_consensus",
+      label: "Whale Consensus Matrix",
+      icon: Sparkles,
+      badge: "45D Drift",
+      color: "from-purple-500/20 to-indigo-500/20 text-purple-300 border-purple-500/30",
     },
     {
       id: "intel_13f_dashboard",
@@ -229,6 +247,8 @@ export const MarketIntelligenceHub: React.FC<MarketIntelligenceHubProps> = ({
           transition={{ duration: 0.15 }}
         >
           {activeSubTab === "report_repository" && <ReportRepository />}
+          {activeSubTab === "macro_briefing" && <MacroEconomicsBriefing />}
+          {activeSubTab === "whale_consensus" && <WhaleConsensusMatrix />}
           {activeSubTab === "intel_13f_dashboard" && <Intel13FDashboard />}
           {activeSubTab === "investopedia" && (
             <InvestopediaTab stocks={stocks} initialTicker={activeTicker} />

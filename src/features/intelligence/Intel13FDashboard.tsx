@@ -33,9 +33,14 @@ import {
   Activity,
   Award,
   Filter,
+  Users,
+  Globe,
+  Landmark,
 } from "lucide-react";
 import { triggerHaptic } from "../../utils/haptics";
 import { LiveSecIntelSection } from "../../components/LiveSecIntelSection";
+import { WhaleConsensusMatrix } from "./WhaleConsensusMatrix";
+import { MacroEconomicsBriefing } from "./MacroEconomicsBriefing";
 
 export interface Holding13F {
   symbol: string;
@@ -92,6 +97,7 @@ import { formatUtcTimestamp, isDataStale } from "../../utils/timeUtils";
 
 export const Intel13FDashboard: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
+  const [activeViewMode, setActiveViewMode] = useState<"FUNDS" | "WHALE_CONSENSUS" | "MACRO_BRIEF">("FUNDS");
   const [funds, setFunds] = useState<Fund13FItem[]>([]);
   const [consensus, setConsensus] = useState<ConsensusHolding[]>([]);
   const [macroSummary, setMacroSummary] = useState<string>("");
@@ -358,39 +364,97 @@ export const Intel13FDashboard: React.FC = () => {
           </div>
         )}
 
-        {/* Fund Selector Navigation Pills */}
-        <div className="pt-3 border-t border-cyan-500/20 flex items-center gap-2 overflow-x-auto no-scrollbar">
-          {funds.map((f) => {
-            const isActive = selectedFundId === f.id;
-            return (
-              <button
-                key={f.id}
-                onClick={() => {
-                  triggerHaptic("selection");
-                  setSelectedFundId(f.id);
-                }}
-                className={`px-3.5 py-2 alien-block-cut-sm text-xs font-black flex items-center gap-2 shrink-0 transition-all cursor-pointer border uppercase ${
-                  isActive
-                    ? "bg-cyan-400 text-black border-cyan-300 shadow-md shadow-cyan-400/20 scale-[1.02]"
-                    : "bg-black/60 text-cyan-400 border-cyan-500/30 hover:border-cyan-400 hover:text-white"
-                }`}
-              >
-                <Building2 className="w-3.5 h-3.5" />
-                <span>{f.fundName}</span>
-                <span
-                  className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
-                    isActive ? "bg-black/20 text-black" : "bg-cyan-950 text-cyan-300 border border-cyan-500/30"
+        {/* Dashboard Sub-View Switcher */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-3 border-t border-cyan-500/20 font-mono text-xs">
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveViewMode("FUNDS");
+            }}
+            className={`p-2.5 alien-block-cut-sm text-center font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border uppercase ${
+              activeViewMode === "FUNDS"
+                ? "bg-cyan-400 text-black border-cyan-300 font-black shadow-lg shadow-cyan-400/20"
+                : "bg-black/60 text-cyan-400 border-cyan-500/30 hover:border-cyan-400 hover:text-white"
+            }`}
+          >
+            <Briefcase className="w-3.5 h-3.5" />
+            <span>Fund 13F Dossiers</span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveViewMode("WHALE_CONSENSUS");
+            }}
+            className={`p-2.5 alien-block-cut-sm text-center font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border uppercase ${
+              activeViewMode === "WHALE_CONSENSUS"
+                ? "bg-purple-400 text-black border-purple-300 font-black shadow-lg shadow-purple-400/20"
+                : "bg-black/60 text-purple-300 border-purple-500/30 hover:border-purple-400 hover:text-white"
+            }`}
+          >
+            <Users className="w-3.5 h-3.5 text-purple-400" />
+            <span>Whale Overlap & 45D Drift</span>
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveViewMode("MACRO_BRIEF");
+            }}
+            className={`p-2.5 alien-block-cut-sm text-center font-bold flex items-center justify-center gap-2 transition-all cursor-pointer border uppercase ${
+              activeViewMode === "MACRO_BRIEF"
+                ? "bg-emerald-400 text-black border-emerald-300 font-black shadow-lg shadow-emerald-400/20"
+                : "bg-black/60 text-emerald-300 border-emerald-500/30 hover:border-emerald-400 hover:text-white"
+            }`}
+          >
+            <Landmark className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Macro Liquidity Radar</span>
+          </button>
+        </div>
+
+        {/* Fund Selector Navigation Pills - Only Shown in FUNDS mode */}
+        {activeViewMode === "FUNDS" && (
+          <div className="pt-3 border-t border-cyan-500/20 flex items-center gap-2 overflow-x-auto no-scrollbar">
+            {funds.map((f) => {
+              const isActive = selectedFundId === f.id;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => {
+                    triggerHaptic("selection");
+                    setSelectedFundId(f.id);
+                  }}
+                  className={`px-3.5 py-2 alien-block-cut-sm text-xs font-black flex items-center gap-2 shrink-0 transition-all cursor-pointer border uppercase ${
+                    isActive
+                      ? "bg-cyan-400 text-black border-cyan-300 shadow-md shadow-cyan-400/20 scale-[1.02]"
+                      : "bg-black/60 text-cyan-400 border-cyan-500/30 hover:border-cyan-400 hover:text-white"
                   }`}
                 >
-                  {f.aum}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  <Building2 className="w-3.5 h-3.5" />
+                  <span>{f.fundName}</span>
+                  <span
+                    className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
+                      isActive ? "bg-black/20 text-black" : "bg-cyan-950 text-cyan-300 border border-cyan-500/30"
+                    }`}
+                  >
+                    {f.aum}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {selectedFund && (
+      {activeViewMode === "WHALE_CONSENSUS" && (
+        <WhaleConsensusMatrix />
+      )}
+
+      {activeViewMode === "MACRO_BRIEF" && (
+        <MacroEconomicsBriefing />
+      )}
+
+      {activeViewMode === "FUNDS" && selectedFund && (
         <div className="space-y-6">
           {/* Fund Profile & Mandate Card */}
           <div className="p-5 alien-block-cut bg-black/60 border border-cyan-500/30 grid grid-cols-1 md:grid-cols-3 gap-4">
