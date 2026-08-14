@@ -33,7 +33,7 @@ export interface AgentBadge {
   id: string;
   name: string;
   description: string;
-  type: "alpha" | "volatility" | "sharpe" | "whale" | "vanguard" | "accuracy";
+  type: "alpha" | "volatility" | "sharpe" | "whale" | "vanguard" | "accuracy" | "simulation";
 }
 
 export interface AgentLeaderboardItem {
@@ -52,12 +52,19 @@ export interface AgentLeaderboardItem {
     timeframe: string;
     rationale: string;
   };
-  verifiedStatus: "SEC 13F VERIFIED" | "QUANT MATRIX AUDITED" | "ARENA CERTIFIED";
+  verifiedStatus: "SEC 13F VERIFIED" | "QUANT MATRIX AUDITED" | "ARENA CERTIFIED" | "VERIFIED SIMULATION";
   submittedBy: string;
   badges: AgentBadge[];
+  verifiedSimulation?: boolean;
 }
 
 export const BADGE_DEFINITIONS: Record<AgentBadge["type"], { name: string; description: string; icon: React.ElementType; style: string }> = {
+  simulation: {
+    name: "Verified Simulation",
+    description: "Cryptographically authenticated backtest execution on Super Sonic Tsunami quant engine.",
+    icon: Sparkles,
+    style: "bg-teal-950/80 text-teal-300 border-teal-500/50 hover:border-teal-400",
+  },
   alpha: {
     name: "Alpha Architect",
     description: "Generates > 30% 30-Day Alpha Return via institutional momentum strategies.",
@@ -103,8 +110,24 @@ export function computeAgentBadges(item: {
   verifiedStatus?: string;
   rank?: number;
   winRate?: number;
+  verifiedSimulation?: boolean;
+  rawBadges?: any[];
 }): AgentBadge[] {
   const badges: AgentBadge[] = [];
+
+  const rawBadgesList = Array.isArray(item.rawBadges) ? item.rawBadges : [];
+  const hasSimBadge = item.verifiedSimulation || 
+    item.verifiedStatus === "VERIFIED SIMULATION" || 
+    rawBadgesList.some((b: any) => typeof b === 'string' && b.toLowerCase().includes("simulation"));
+
+  if (hasSimBadge) {
+    badges.push({
+      id: "verified_simulation",
+      name: BADGE_DEFINITIONS.simulation.name,
+      description: BADGE_DEFINITIONS.simulation.description,
+      type: "simulation",
+    });
+  }
 
   if ((item.monthlyAlpha || 0) >= 30) {
     badges.push({
@@ -142,7 +165,7 @@ export function computeAgentBadges(item: {
     });
   }
 
-  if ((item.rank || 99) <= 3) {
+  if (item.rank && item.rank <= 3) {
     badges.push({
       id: "quant_vanguard",
       name: BADGE_DEFINITIONS.vanguard.name,

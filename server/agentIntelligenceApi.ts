@@ -11,6 +11,7 @@ const publishRateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 10,
   message: { error: 'Too many publications', retryAfter: 3600 },
+  validate: { xForwardedForHeader: false, default: false },
 });
 
 // Middleware for human user auth (optional / required for resolution & feedback)

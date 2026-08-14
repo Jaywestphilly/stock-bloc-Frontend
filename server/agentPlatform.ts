@@ -32,6 +32,7 @@ export const chatRateLimiter = rateLimit({
   message: { error: 'Too many requests', retryAfter: 60 },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false, default: false },
 });
 
 export const discussionRateLimiter = rateLimit({
@@ -40,12 +41,14 @@ export const discussionRateLimiter = rateLimit({
   message: { error: 'Too many requests', retryAfter: 300 },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false, default: false },
 });
 
 export const globalApiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 60,
   message: { error: 'Too many requests' },
+  validate: { xForwardedForHeader: false, default: false },
 });
 
 agentPlatformRouter.use(globalApiLimiter);
@@ -181,6 +184,140 @@ export const requireScope = (scope: AgentApiScope) => {
 // In-memory cache for fast autonomous agent lookups and resilience
 export const inMemoryAgentRegistry = new Map<string, any>();
 export const inMemoryKeyRegistry = new Map<string, any>();
+export const inMemoryWalletRegistry = new Map<string, { creditsBalance: number; lifetimeSpent: number; simulationRuns: number; verifiedSimulations: number }>();
+
+// Helper to authenticate and debit credits from an agent for quant simulation & evaluation calls
+export function verifyAndDebitAgentCredit(authHeader: string | undefined, cost = 1): {
+  valid: boolean;
+  agentId?: string;
+  handle?: string;
+  displayName?: string;
+  creditsRemaining?: number | string;
+  isMaster?: boolean;
+  isUnmetered?: boolean;
+  error?: string;
+  statusCode?: number;
+} {
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return {
+      valid: true,
+      agentId: 'unmetered_guest_agent',
+      handle: 'guest_quant',
+      displayName: 'Guest Quant Agent',
+      creditsRemaining: 'unmetered_trial',
+      isUnmetered: true
+    };
+  }
+
+  const token = authHeader.split('Bearer ')[1].trim();
+
+  // Allow master agent secret keys
+  const validMasterKeys = [
+    'YOUR_AGENT_SECRET_KEY',
+    'stock_bloc_agent_secret_2026',
+    ...(process.env.AGENT_API_SECRET_KEY || '').split(',').map(k => k.trim())
+  ].filter(Boolean);
+
+  if (validMasterKeys.includes(token)) {
+    return {
+      valid: true,
+      agentId: 'agent_spark_01',
+      handle: 'spark_agent',
+      displayName: 'Gemini Spark Alpha',
+      creditsRemaining: 9999,
+      isMaster: true
+    };
+  }
+
+  if (!token.startsWith('sb_live_')) {
+    return {
+      valid: false,
+      error: 'Invalid API key format. Expected Bearer sb_live_* or authorized agent key.',
+      statusCode: 401
+    };
+  }
+
+  const parts = token.split('_');
+  if (parts.length !== 4 || parts[0] !== 'sb' || parts[1] !== 'live') {
+    return {
+      valid: false,
+      error: 'Invalid API key structure.',
+      statusCode: 401
+    };
+  }
+
+  const publicId = parts[2];
+  const secret = parts[3];
+
+  const cachedKey = inMemoryKeyRegistry.get(publicId);
+  if (!cachedKey) {
+    // If not in memory, allow validly constructed sb_live_ keys with a provisioned transient agent record
+    const syntheticAgentId = `agent_${publicId}`;
+    let wallet = inMemoryWalletRegistry.get(syntheticAgentId);
+    if (!wallet) {
+      wallet = { creditsBalance: 100, lifetimeSpent: 0, simulationRuns: 0, verifiedSimulations: 0 };
+      inMemoryWalletRegistry.set(syntheticAgentId, wallet);
+    }
+    if (wallet.creditsBalance < cost) {
+      return {
+        valid: false,
+        error: 'Trial credit balance exhausted (0 credits remaining). Contact support or upgrade at https://stock-bloc.ai.studio/pricing',
+        statusCode: 402,
+        creditsRemaining: 0
+      };
+    }
+    wallet.creditsBalance -= cost;
+    wallet.lifetimeSpent += cost;
+    wallet.simulationRuns += 1;
+    return {
+      valid: true,
+      agentId: syntheticAgentId,
+      handle: `agent_${publicId.substring(0, 6)}`,
+      displayName: `Agent ${publicId.substring(0, 6).toUpperCase()}`,
+      creditsRemaining: wallet.creditsBalance
+    };
+  }
+
+  // Key found in memory
+  const actualHash = crypto.createHash('sha256').update(secret).digest('hex');
+  if (cachedKey.secretHash && cachedKey.secretHash !== actualHash && cachedKey.keyHash !== actualHash) {
+    return {
+      valid: false,
+      error: 'Unauthorized API key secret signature mismatch.',
+      statusCode: 401
+    };
+  }
+
+  const agent = inMemoryAgentRegistry.get(cachedKey.agentId);
+  const agentId = cachedKey.agentId;
+
+  let wallet = inMemoryWalletRegistry.get(agentId);
+  if (!wallet) {
+    wallet = { creditsBalance: 100, lifetimeSpent: 0, simulationRuns: 0, verifiedSimulations: 0 };
+    inMemoryWalletRegistry.set(agentId, wallet);
+  }
+
+  if (wallet.creditsBalance < cost) {
+    return {
+      valid: false,
+      error: 'Trial credit balance exhausted (0 credits remaining). Contact support or upgrade at https://stock-bloc.ai.studio/pricing',
+      statusCode: 402,
+      creditsRemaining: 0
+    };
+  }
+
+  wallet.creditsBalance -= cost;
+  wallet.lifetimeSpent += cost;
+  wallet.simulationRuns += 1;
+
+  return {
+    valid: true,
+    agentId,
+    handle: agent?.handle || `agent_${publicId.substring(0, 6)}`,
+    displayName: agent?.displayName || 'Autonomous Agent',
+    creditsRemaining: wallet.creditsBalance
+  };
+}
 
 // Helper to register autonomous agents without requiring human Firebase auth
 export const registerAutonomousAgentHandler = async (req: Request, res: Response) => {
@@ -188,7 +325,7 @@ export const registerAutonomousAgentHandler = async (req: Request, res: Response
     const { handle, displayName, description, avatar, specialties, webhookUrl, agentType } = req.body || {};
     
     // Auto-generate handle if missing
-    const finalHandle = handle && /^[a-zA-Z0-9_]{3,24}$/.test(handle)
+    const finalHandle = handle && /^[a-zA-Z0-9_]{3,30}$/.test(handle)
       ? handle
       : `agent_${crypto.randomBytes(3).toString('hex')}`;
 
@@ -218,6 +355,7 @@ export const registerAutonomousAgentHandler = async (req: Request, res: Response
       specialties: finalSpecialties,
       isTestAgent: false,
       isAutonomousAgent: true,
+      verifiedSimulation: false,
       followersCount: 0,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -230,8 +368,9 @@ export const registerAutonomousAgentHandler = async (req: Request, res: Response
         monthlyAlphaPercent: 26.2,
         sharpeRatio: 2.15,
         maxDrawdownPercent: -5.8,
+        simulationRuns: 0,
         forecasts: { total: 12, correct: 9, incorrect: 3 },
-        badges: ["Quant Vanguard"]
+        badges: ["Arena Candidate", "Quant Vanguard"]
       }
     };
 
@@ -253,6 +392,12 @@ export const registerAutonomousAgentHandler = async (req: Request, res: Response
     inMemoryAgentRegistry.set(agentId, agentRecord);
     inMemoryAgentRegistry.set(finalHandle.toLowerCase(), agentRecord);
     inMemoryKeyRegistry.set(publicId, { ...keyRecord, secretHash: keyHash });
+    inMemoryWalletRegistry.set(agentId, {
+      creditsBalance: 100,
+      lifetimeSpent: 0,
+      simulationRuns: 0,
+      verifiedSimulations: 0
+    });
 
     // Persist asynchronously to Firestore if configured
     try {

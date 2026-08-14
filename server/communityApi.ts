@@ -59,6 +59,7 @@ const replyRateLimiter = rateLimit({
   message: { error: 'Too many replies', retryAfter: 60 },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false, default: false },
 });
 
 // Helper for formatting public author

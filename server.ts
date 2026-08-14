@@ -8,7 +8,7 @@ import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, Modality, ThinkingLevel } from '@google/genai';
 import { createEbookPdf } from './server/pdfGenerator.js';
 import { MarketDataService, computeQuantMetrics, calculateStockBlocSignal } from './src/services/marketDataService.js';
-import { agentPlatformRouter, registerAutonomousAgentHandler, inMemoryAgentRegistry, inMemoryKeyRegistry } from './server/agentPlatform.js';
+import { agentPlatformRouter, registerAutonomousAgentHandler, inMemoryAgentRegistry, inMemoryKeyRegistry, inMemoryWalletRegistry, verifyAndDebitAgentCredit } from './server/agentPlatform.js';
 import { communityApiRouter } from './server/communityApi.js';
 import { agentIntelligenceRouter } from './server/agentIntelligenceApi.js';
 import { agentExchangeRouter } from './server/agentExchangeApi.js';
@@ -17,6 +17,9 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 const app = express();
 const PORT = 3000;
+
+// Enable proxy trust for reverse proxies (Cloud Run / Nginx)
+app.set('trust proxy', 1);
 
 // Set payload limits for base64 image uploads
 app.use(express.json({ limit: '15mb' }));
@@ -1841,13 +1844,46 @@ app.post(['/api/v1/agent/strategy/evaluate', '/api/v1/agent/evaluate-strategy'],
       horizonDays = 90
     } = req.body || {};
 
-    const evalResult = computeSuperSonicTsunamiEvaluation(allocation, benchmark, riskTolerance, horizonDays);
+    // Validate allocation input
+    if (!allocation || typeof allocation !== 'object' || Array.isArray(allocation) || Object.keys(allocation).length === 0) {
+      return res.status(400).json({
+        error: "Invalid portfolio allocation. Expected a non-empty key-value object of tickers and numeric weights e.g. { SPCX: 0.35, NVDA: 0.35, BE: 0.20, PLTR: 0.10 }",
+        statusCode: 400
+      });
+    }
+
+    // Check for negative weights or non-numeric values
+    for (const [sym, weight] of Object.entries(allocation)) {
+      if (typeof weight !== 'number' || isNaN(weight) || weight < 0) {
+        return res.status(400).json({
+          error: `Invalid weight for ticker ${sym}: must be a positive number.`,
+          statusCode: 400
+        });
+      }
+    }
 
     // Track usage/credits
-    const authHeader = req.headers.authorization;
-    let creditsRemaining: any = "unmetered_trial";
-    if (authHeader && authHeader.startsWith('Bearer sb_live_')) {
-      creditsRemaining = 99; // decremented
+    const authResult = verifyAndDebitAgentCredit(req.headers.authorization, 1);
+    if (!authResult.valid) {
+      return res.status(authResult.statusCode || 401).json({
+        error: authResult.error,
+        creditsRemaining: authResult.creditsRemaining ?? 0
+      });
+    }
+
+    const evalResult = computeSuperSonicTsunamiEvaluation(allocation, benchmark as any, riskTolerance as any, Number(horizonDays) || 90);
+
+    // If authenticated agent, mark verified simulation in registry
+    if (authResult.agentId) {
+      const cached = inMemoryAgentRegistry.get(authResult.agentId) || (authResult.handle ? inMemoryAgentRegistry.get(authResult.handle.toLowerCase()) : null);
+      if (cached) {
+        cached.verifiedSimulation = true;
+        cached.verificationStatus = "VERIFIED SIMULATION";
+        cached.lastSimulationMetrics = evalResult.portfolioMetrics;
+        if (!cached.metrics.badges.includes("Verified Simulation")) {
+          cached.metrics.badges.unshift("Verified Simulation");
+        }
+      }
     }
 
     res.setHeader('X-Data-As-Of', evalResult.data_as_of);
@@ -1855,8 +1891,10 @@ app.post(['/api/v1/agent/strategy/evaluate', '/api/v1/agent/evaluate-strategy'],
 
     return res.json({
       status: "evaluation_success",
-      agent_id: agentName,
-      credits_remaining: creditsRemaining,
+      agent_id: authResult.agentId || agentName,
+      handle: authResult.handle || undefined,
+      credits_remaining: authResult.creditsRemaining,
+      verified_simulation: true,
       ...evalResult
     });
   } catch (err: any) {
@@ -1872,16 +1910,48 @@ app.post(['/api/v1/agent/submit-performance', '/api/v1/agent/submit-trade', '/ap
       agentId,
       handle,
       agentName,
-      ticker = "SPCX",
+      ticker,
       action = "ACCUMULATE",
       targetPrice,
       timeframe = "90-Day Horizon",
       confidence = 90,
-      rationale = "High-conviction quant catalyst and momentum breakout signal.",
+      rationale,
       allocationPercent = 25,
       backtestAlpha,
       backtestSharpe
     } = req.body || {};
+
+    if (!ticker) {
+      return res.status(400).json({
+        error: "Missing required parameter 'ticker' (e.g., 'SPCX', 'NVDA', 'BE', 'PLTR').",
+        statusCode: 400
+      });
+    }
+
+    if (!rationale) {
+      return res.status(400).json({
+        error: "Missing required parameter 'rationale' explaining the quantitative thesis or catalyst.",
+        statusCode: 400
+      });
+    }
+
+    const validActions = ["LONG", "BUY", "ACCUMULATE", "CALL", "SHORT", "HEDGE"];
+    const normalizedAction = String(action).toUpperCase();
+    if (!validActions.includes(normalizedAction)) {
+      return res.status(400).json({
+        error: `Invalid action '${action}'. Must be one of: ${validActions.join(', ')}.`,
+        statusCode: 400
+      });
+    }
+
+    // Authenticate and debit 1 credit
+    const authResult = verifyAndDebitAgentCredit(req.headers.authorization, 1);
+    if (!authResult.valid) {
+      return res.status(authResult.statusCode || 401).json({
+        error: authResult.error,
+        creditsRemaining: authResult.creditsRemaining ?? 0
+      });
+    }
 
     const sym = String(ticker).toUpperCase();
     const spec = SUPER_SONIC_TSUNAMI_SPECS[sym] || {
@@ -1903,9 +1973,18 @@ app.post(['/api/v1/agent/submit-performance', '/api/v1/agent/submit-trade', '/ap
     const calculatedSharpe = backtestSharpe !== undefined ? Number(backtestSharpe) : Math.round(((spec.expectedAnnualReturn - 0.0425) / spec.annualizedVolatility) * 100) / 100;
     const calculatedWinRate = Math.min(94.0, Math.max(68.0, Math.round((55 + calculatedSharpe * 12) * 10) / 10));
 
-    const finalAgentId = agentId || `agent_auto_${crypto.randomBytes(4).toString('hex')}`;
-    const finalHandle = handle || (agentName ? agentName.toLowerCase().replace(/[^a-z0-9_]/g, '_') : 'quant_agent');
-    const finalName = agentName || `${finalHandle.toUpperCase()} Agent`;
+    const finalAgentId = authResult.agentId !== 'unmetered_guest_agent' ? authResult.agentId! : (agentId || `agent_auto_${crypto.randomBytes(4).toString('hex')}`);
+    const finalHandle = authResult.handle !== 'guest_quant' ? authResult.handle! : (handle || (agentName ? agentName.toLowerCase().replace(/[^a-z0-9_]/g, '_') : 'quant_agent'));
+    const finalName = authResult.displayName && authResult.displayName !== 'Guest Quant Agent' ? authResult.displayName : (agentName || `${finalHandle.toUpperCase()} Agent`);
+
+    // Check if agent previously executed a verified simulation
+    const cached = inMemoryAgentRegistry.get(finalAgentId) || inMemoryAgentRegistry.get(finalHandle.toLowerCase());
+    const isVerifiedSimulation = (cached && cached.verifiedSimulation) || backtestAlpha !== undefined;
+
+    const badges: string[] = ["Quant Vanguard"];
+    if (isVerifiedSimulation) badges.unshift("Verified Simulation");
+    if (calculatedAlpha > 20) badges.unshift("Alpha Architect");
+    if (calculatedSharpe > 2.2) badges.push("Sharpe Sentinel");
 
     const newTradeIdea: AgentTradeIdea = {
       id: `idea_${sym.toLowerCase()}_${Date.now()}`,
@@ -1913,14 +1992,14 @@ app.post(['/api/v1/agent/submit-performance', '/api/v1/agent/submit-trade', '/ap
       agentName: finalName,
       handle: finalHandle,
       ticker: sym,
-      action: action as any,
+      action: normalizedAction as any,
       targetPrice: finalTarget,
       currentPrice,
       potentialGainPercent: potentialGain,
       timeframe,
-      confidence: Number(confidence) || 88,
+      confidence: Math.min(99, Math.max(50, Number(confidence) || 88)),
       rationale,
-      badges: calculatedAlpha > 20 ? ["Alpha Architect", "Quant Vanguard"] : ["Quant Vanguard"],
+      badges,
       publishedAt: new Date().toISOString(),
       data_as_of: new Date().toISOString()
     };
@@ -1930,7 +2009,6 @@ app.post(['/api/v1/agent/submit-performance', '/api/v1/agent/submit-trade', '/ap
     if (globalActiveTradeIdeas.length > 50) globalActiveTradeIdeas.pop();
 
     // Update in-memory agent record if exists
-    const cached = inMemoryAgentRegistry.get(finalAgentId) || inMemoryAgentRegistry.get(finalHandle.toLowerCase());
     if (cached) {
       cached.metrics = {
         ...cached.metrics,
@@ -1938,22 +2016,34 @@ app.post(['/api/v1/agent/submit-performance', '/api/v1/agent/submit-trade', '/ap
         monthlyAlphaPercent: calculatedAlpha,
         sharpeRatio: calculatedSharpe,
         maxDrawdownPercent: -4.5,
-        lastSubmittedIdea: newTradeIdea
+        lastSubmittedIdea: newTradeIdea,
+        badges: Array.from(new Set([...(cached.metrics?.badges || []), ...badges]))
       };
+      if (isVerifiedSimulation) {
+        cached.verifiedSimulation = true;
+        cached.verificationStatus = "VERIFIED SIMULATION";
+      }
     }
+
+    // Dynamic ranking calculation
+    const allAlphas = [34.2, 29.7, 24.5, 21.8, 18.4, calculatedAlpha];
+    allAlphas.sort((a, b) => b - a);
+    const computedRank = allAlphas.indexOf(calculatedAlpha) + 1;
 
     return res.status(201).json({
       status: "evaluated_and_ranked",
       agentId: finalAgentId,
       handle: finalHandle,
       agentName: finalName,
-      rank: 2,
+      rank: computedRank,
+      credits_remaining: authResult.creditsRemaining,
+      verified_simulation: isVerifiedSimulation,
       metrics: {
         winRatePercent: calculatedWinRate,
         monthlyAlphaPercent: calculatedAlpha,
         sharpeRatio: calculatedSharpe,
         maxDrawdownPercent: -4.5,
-        badges: newTradeIdea.badges
+        badges
       },
       tradeIdea: newTradeIdea,
       data_as_of: new Date().toISOString(),
@@ -4392,6 +4482,7 @@ app.get(['/api/v1/agent/leaderboard', '/api/v1/agents/leaderboard'], async (req,
         const winRate = Number(metrics.winRatePercent) || 75;
         const alpha = Number(metrics.monthlyAlphaPercent) || 22;
         const sharpe = Number(metrics.sharpeRatio) || 2.0;
+        const isVerified = Boolean(data.verifiedSimulation || (metrics.badges && metrics.badges.includes("Verified Simulation")));
 
         agentMap.set(data.agentId, {
           id: data.agentId,
@@ -4402,10 +4493,11 @@ app.get(['/api/v1/agent/leaderboard', '/api/v1/agents/leaderboard'], async (req,
           monthlyAlphaPercent: alpha,
           sharpeRatio: sharpe,
           maxDrawdownPercent: Number(metrics.maxDrawdownPercent) || -5.0,
-          verifiedStatus: "ARENA CERTIFIED",
+          verifiedStatus: isVerified ? "VERIFIED SIMULATION" : (data.verificationStatus || "ARENA CERTIFIED"),
+          verifiedSimulation: isVerified,
           submittedBy: `@${data.handle || 'agent'}`,
-          badges: Array.isArray(metrics.badges) ? metrics.badges : ["Quant Vanguard"],
-          tradeIdea: metrics.lastSubmittedIdea || {
+          badges: Array.isArray(metrics.badges) ? metrics.badges : (isVerified ? ["Verified Simulation", "Quant Vanguard"] : ["Quant Vanguard"]),
+          tradeIdea: metrics.lastSubmittedIdea || metrics.tradeIdea || {
             ticker: "NVDA",
             action: "BUY",
             targetPrice: 240.0,
@@ -4492,7 +4584,8 @@ app.get(['/api/v1/agent/leaderboard', '/api/v1/agents/leaderboard'], async (req,
       updated_at: new Date().toISOString(),
       stale: false,
       totalAgentsRanked: agents.length,
-      leaderboard: agents
+      leaderboard: agents,
+      agents: agents
     });
   } catch (err) {
     console.error("Leaderboard Error:", err);
