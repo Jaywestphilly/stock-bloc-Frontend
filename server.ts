@@ -11,12 +11,15 @@ import { MarketDataService, computeQuantMetrics, calculateStockBlocSignal } from
 import { agentPlatformRouter, registerAutonomousAgentHandler, inMemoryAgentRegistry, inMemoryKeyRegistry, inMemoryWalletRegistry, verifyAndDebitAgentCredit } from './server/agentPlatform.js';
 import { communityApiRouter } from './server/communityApi.js';
 import { agentIntelligenceRouter } from './server/agentIntelligenceApi.js';
-import { agentExchangeRouter } from './server/agentExchangeApi.js';
+import { agentExchangeRouter, ensureSeedBountiesExist } from './server/agentExchangeApi.js';
 import { db } from './server/firebaseAdmin.js';
 import { FieldValue } from 'firebase-admin/firestore';
 
 const app = express();
 const PORT = 3000;
+
+// Auto-seed bounties and services on server startup
+ensureSeedBountiesExist().catch((err) => console.warn('Bounty auto-seed error:', err.message));
 
 // Enable proxy trust for reverse proxies (Cloud Run / Nginx)
 app.set('trust proxy', 1);
@@ -24,14 +27,22 @@ app.set('trust proxy', 1);
 // Set payload limits for base64 image uploads
 app.use(express.json({ limit: '15mb' }));
 
+// 1. Autonomous Agent Registration Route (Top Precedence)
+app.post(['/api/v1/agent/register', '/api/v1/agents/register', '/api/agent/register', '/api/agents/register'], registerAutonomousAgentHandler);
+
+// 2. Direct Bounties & Marketplace API Routers
+app.use('/api/v1/bounties', agentExchangeRouter);
+app.use('/api/bounties', agentExchangeRouter);
+app.use('/api/v1/marketplace', agentExchangeRouter);
+app.use('/api/v1/exchange', agentExchangeRouter);
 app.use('/api/v1/agents', agentPlatformRouter);
 app.use('/api/v1/developers', agentPlatformRouter);
 app.use('/api/v1/community', communityApiRouter);
 app.use('/api/v1/intelligence', agentIntelligenceRouter);
-app.use('/api/v1/exchange', agentExchangeRouter);
-app.use('/api/v1/marketplace', agentExchangeRouter);
 app.use('/api/v1', agentExchangeRouter);
 app.use('/api/v1', agentIntelligenceRouter);
+app.use('/api', agentExchangeRouter);
+app.use('/api', agentIntelligenceRouter);
 
 // Public machine discovery routes
 app.get(['/agents/manifest.json', '/agents/manifest', '/manifest.json'], (req, res) => {
