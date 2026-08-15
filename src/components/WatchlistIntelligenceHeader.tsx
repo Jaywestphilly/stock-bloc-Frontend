@@ -12,10 +12,13 @@ import {
   Zap,
   TrendingUp,
   BarChart3,
-  DollarSign
+  DollarSign,
+  CandlestickChart,
+  LineChart
 } from "lucide-react";
 import { getMarketOpenStatus, getStockDataFreshness } from "../utils/signalCalculator";
 import { triggerHaptic } from "../utils/haptics";
+import { useMarketStore } from "../stores/marketStore";
 
 interface WatchlistIntelligenceHeaderProps {
   searchQuery?: string;
@@ -46,6 +49,7 @@ export const WatchlistIntelligenceHeader: React.FC<WatchlistIntelligenceHeaderPr
 }) => {
   const marketOpen = getMarketOpenStatus();
   const freshness = getStockDataFreshness(marketDataUpdatedAt);
+  const { watchlistChartStyle, setWatchlistChartStyle } = useMarketStore();
 
   return (
     <div className="w-full space-y-3 px-4 py-2 font-martian">
@@ -66,18 +70,56 @@ export const WatchlistIntelligenceHeader: React.FC<WatchlistIntelligenceHeaderPr
             </span>
           </div>
 
-          {/* Manual Refresh Button */}
-          <button
-            onClick={() => {
-              triggerHaptic("refresh");
-              onRefresh();
-            }}
-            disabled={isSyncing}
-            className="px-3.5 py-1.5 alien-block-cut-sm bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-alien-hud text-xs flex items-center gap-2 active:scale-95 transition-all shadow-md shadow-cyan-500/20 cursor-pointer disabled:opacity-50 glow-cyan"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 text-white ${isSyncing ? "animate-spin" : ""}`} />
-            <span>{isSyncing ? "Syncing Market Feed..." : "Sync Live Prices"}</span>
-          </button>
+          {/* Right Action Controls: Chart Style & Manual Refresh */}
+          <div className="flex items-center gap-2">
+            {/* Chart Style Mode Toggle (Line default vs Candlesticks) */}
+            <div className="flex items-center p-0.5 bg-black/70 border border-cyan-500/40 alien-block-cut-sm">
+              <button
+                onClick={() => {
+                  triggerHaptic("selection");
+                  setWatchlistChartStyle("line");
+                }}
+                className={`px-2.5 py-1 text-[10px] font-alien-hud uppercase flex items-center gap-1.5 transition-all cursor-pointer ${
+                  watchlistChartStyle === "line"
+                    ? "bg-cyan-400 text-black font-black glow-cyan"
+                    : "text-neutral-400 hover:text-cyan-200"
+                }`}
+                title="Smooth Line Price Trend (Default)"
+              >
+                <LineChart className="w-3 h-3" />
+                <span>Line</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  triggerHaptic("selection");
+                  setWatchlistChartStyle("candlestick");
+                }}
+                className={`px-2.5 py-1 text-[10px] font-alien-hud uppercase flex items-center gap-1.5 transition-all cursor-pointer ${
+                  watchlistChartStyle === "candlestick"
+                    ? "bg-cyan-400 text-black font-black glow-cyan"
+                    : "text-neutral-400 hover:text-cyan-200"
+                }`}
+                title="Heikin-Ashi (平均足) Japanese Candlestick Bars"
+              >
+                <CandlestickChart className="w-3 h-3" />
+                <span>Candles</span>
+              </button>
+            </div>
+
+            {/* Manual Refresh Button */}
+            <button
+              onClick={() => {
+                triggerHaptic("refresh");
+                onRefresh();
+              }}
+              disabled={isSyncing}
+              className="px-3.5 py-1.5 alien-block-cut-sm bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-alien-hud text-xs flex items-center gap-2 active:scale-95 transition-all shadow-md shadow-cyan-500/20 cursor-pointer disabled:opacity-50 glow-cyan"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-white ${isSyncing ? "animate-spin" : ""}`} />
+              <span>{isSyncing ? "Syncing..." : "Sync Live"}</span>
+            </button>
+          </div>
         </div>
 
         {/* Metadata Row: Source & Timestamp */}

@@ -107,6 +107,107 @@ const CustomCandleTooltip = ({
   return null;
 };
 
+// Generate Heikin-Ashi (平均足) Japanese Candlestick data points for smooth, clean, uniform trend visualization
+const generateHeikinAshiCandlesticks = (
+  stock: StockTicker,
+  targetBars: number = 14
+) => {
+  const points = stock.history?.["1D"] || [];
+  const rawBars: { open: number; close: number; high: number; low: number; time: string }[] = [];
+
+  if (!points || points.length === 0) {
+    const spark =
+      stock.sparkline && stock.sparkline.length > 0
+        ? stock.sparkline
+        : [stock.price * 0.98, stock.price * 1.02];
+    const step = Math.max(1, Math.floor(spark.length / targetBars));
+    for (let i = 0; i < spark.length; i += step) {
+      const p = spark[i];
+      const prev = i > 0 ? spark[i - step] || p * 0.995 : p * 0.995;
+      const open = prev;
+      const close = p;
+      const spread = Math.max(0.04, open * 0.003);
+      rawBars.push({
+        open,
+        close,
+        high: Math.max(open, close) + spread,
+        low: Math.min(open, close) - spread,
+        time: `T${i + 1}`,
+      });
+      if (rawBars.length >= targetBars) break;
+    }
+  } else {
+    const chunkSize = Math.max(1, Math.floor(points.length / targetBars));
+    for (let i = 0; i < points.length; i += chunkSize) {
+      const chunk = points.slice(i, i + chunkSize);
+      if (chunk.length === 0) continue;
+      const open = chunk[0].price;
+      const close = chunk[chunk.length - 1].price;
+      const prices = chunk.map((p) => p.price);
+      const maxP = Math.max(...prices);
+      const minP = Math.min(...prices);
+      const spread = Math.max(0.05, open * 0.002);
+      rawBars.push({
+        open,
+        close,
+        high: Math.max(maxP, open, close) + spread,
+        low: Math.min(minP, open, close) - spread,
+        time: chunk[chunk.length - 1].time || `T-${i + 1}`,
+      });
+      if (rawBars.length >= targetBars) break;
+    }
+  }
+
+  // Convert Standard OHLC into Heikin-Ashi formulas:
+  // HA-Close = (Open + High + Low + Close) / 4
+  // HA-Open = (Prev HA-Open + Prev HA-Close) / 2
+  const haCandles: {
+    open: number;
+    close: number;
+    high: number;
+    low: number;
+    isUp: boolean;
+    time: string;
+  }[] = [];
+
+  let prevHaOpen = rawBars.length > 0 ? (rawBars[0].open + rawBars[0].close) / 2 : 100;
+  let prevHaClose = rawBars.length > 0 ? (rawBars[0].open + rawBars[0].high + rawBars[0].low + rawBars[0].close) / 4 : 100;
+
+  for (let i = 0; i < rawBars.length; i++) {
+    const raw = rawBars[i];
+    const haClose = (raw.open + raw.high + raw.low + raw.close) / 4;
+    const haOpen = i === 0 ? (raw.open + raw.close) / 2 : (prevHaOpen + prevHaClose) / 2;
+    const isUp = haClose >= haOpen;
+
+    // Authentic Japanese Heikin-Ashi wick logic:
+    // Pure uptrend has flat base (no lower shadow), pure downtrend has flat top (no upper shadow)
+    let haHigh = Math.max(raw.high, haOpen, haClose);
+    let haLow = Math.min(raw.low, haOpen, haClose);
+
+    if (isUp) {
+      // In a strong uptrend, Heikin-Ashi candle has no lower shadow (flat bottom at haOpen)
+      haLow = haOpen;
+    } else {
+      // In a strong downtrend, Heikin-Ashi candle has no upper shadow (flat top at haOpen)
+      haHigh = haOpen;
+    }
+
+    haCandles.push({
+      open: haOpen,
+      close: haClose,
+      high: haHigh,
+      low: haLow,
+      isUp,
+      time: raw.time,
+    });
+
+    prevHaOpen = haOpen;
+    prevHaClose = haClose;
+  }
+
+  return haCandles;
+};
+
 // Generate OHLC Candlestick data points for inline chart
 const generateCandlestickData = (
   stock: StockTicker,
@@ -288,7 +389,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
   onRemove,
   isSyncing,
 }) => {
-  const { marketDataUpdatedAt, marketDataIsStale } = useMarketStore();
+  const { marketDataUpdatedAt, marketDataIsStale, watchlistChartStyle } = useMarketStore();
   const [dragOffset, setDragOffset] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
   const [priceFlashState, setPriceFlashState] = useState<"up" | "down" | null>(
@@ -437,7 +538,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     }
   }, [stock.price, stock.changePercent, isHighVolatility]);
 
-  // Lightweight SVG Price Line Chart for 24-hour price trend
+  // SVG Mini Candlestick or Line Chart for 24-hour price trend
   const renderSparkline = () => {
     // Prefer 24h intraday history ('1D'), or fallback to stock.sparkline
     const dayHistoryPrices = stock.history?.["1D"]?.map((p) => p.price);
@@ -450,30 +551,124 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
 
     if (!rawData || rawData.length < 2) return null;
 
-    const width = 95;
-    const height = 32;
-    const padY = 4;
+    const chartWidth = 100;
+    const chartHeight = 32;
+    const padY = 3.0;
     const padX = 4;
 
     const trendIsPositive = stock.changePercent >= 0;
     const minVal = Math.min(...rawData);
     const maxVal = Math.max(...rawData);
     const range = maxVal - minVal || 1;
+    const lineColor = trendIsPositive ? "#00ff88" : "#ff3b3b";
 
+    // HEIKIN-ASHI JAPANESE CANDLESTICK MODE (Selectable Option)
+    if (watchlistChartStyle === "candlestick") {
+      const candles = generateHeikinAshiCandlesticks(stock, 14);
+      const minCandle = Math.min(...candles.map((c) => c.low));
+      const maxCandle = Math.max(...candles.map((c) => c.high));
+      const candleRange = maxCandle - minCandle || 1;
+      const candlePadY = 2.5;
+      const slotWidth = (chartWidth - 2 * padX) / Math.max(1, candles.length);
+      const barWidth = 4.2;
+
+      return (
+        <div
+          className="relative w-[100px] h-[32px] flex items-center justify-center overflow-visible shrink-0 group/sparkline cursor-pointer"
+          onClick={(e) => {
+            e.stopPropagation();
+            triggerHaptic("selection");
+            onSelect(stock);
+          }}
+          title={`24H Heikin-Ashi (平均足) Candlesticks • ${candles.length} Bars (H: $${maxCandle.toFixed(2)} L: $${minCandle.toFixed(2)}) • Tap to view chart`}
+        >
+          {/* Dotted 24h Price Baseline */}
+          <div className="absolute w-full border-t border-dashed border-cyan-900/40 top-1/2 pointer-events-none z-0" />
+
+          <svg
+            viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+            className="w-full h-full overflow-visible z-10"
+          >
+            <defs>
+              <linearGradient id={`ha-up-${stock.symbol}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#00e676" stopOpacity="1" />
+                <stop offset="100%" stopColor="#00b862" stopOpacity="0.9" />
+              </linearGradient>
+              <linearGradient id={`ha-dn-${stock.symbol}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#ff4d4d" stopOpacity="1" />
+                <stop offset="100%" stopColor="#d32f2f" stopOpacity="0.9" />
+              </linearGradient>
+            </defs>
+
+            {candles.map((c, idx) => {
+              const xCenter = padX + idx * slotWidth + slotWidth / 2;
+              const yHigh =
+                chartHeight - candlePadY - ((c.high - minCandle) / candleRange) * (chartHeight - 2 * candlePadY);
+              const yLow =
+                chartHeight - candlePadY - ((c.low - minCandle) / candleRange) * (chartHeight - 2 * candlePadY);
+              const yOpen =
+                chartHeight - candlePadY - ((c.open - minCandle) / candleRange) * (chartHeight - 2 * candlePadY);
+              const yClose =
+                chartHeight - candlePadY - ((c.close - minCandle) / candleRange) * (chartHeight - 2 * candlePadY);
+
+              const bodyTop = Math.min(yOpen, yClose);
+              const bodyHeight = Math.max(2.2, Math.abs(yClose - yOpen));
+              const candleFill = c.isUp ? `url(#ha-up-${stock.symbol})` : `url(#ha-dn-${stock.symbol})`;
+              const wickColor = c.isUp ? "#00e676" : "#ff4d4d";
+
+              return (
+                <g key={`ha-${idx}`} className="transition-opacity hover:opacity-100 opacity-95">
+                  {/* High/Low Japanese Candlestick Center Wick */}
+                  <line
+                    x1={xCenter}
+                    y1={yHigh}
+                    x2={xCenter}
+                    y2={yLow}
+                    stroke={wickColor}
+                    strokeWidth="1.0"
+                    strokeLinecap="round"
+                    strokeOpacity="0.85"
+                  />
+                  {/* Crisp Uniform Candlestick Body */}
+                  <rect
+                    x={xCenter - barWidth / 2}
+                    y={bodyTop}
+                    width={barWidth}
+                    height={bodyHeight}
+                    fill={candleFill}
+                    stroke={wickColor}
+                    strokeWidth="0.4"
+                    strokeOpacity="0.9"
+                    rx="0.5"
+                  />
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      );
+    }
+
+    // LINE MODE (Default: Clean, Crisp, High-Contrast Glow Chart)
     const linePoints = rawData.map((val, idx) => {
       const x =
-        padX + (idx / Math.max(1, rawData.length - 1)) * (width - 2 * padX);
+        padX + (idx / Math.max(1, rawData.length - 1)) * (chartWidth - 2 * padX);
       const y =
-        height - padY - ((val - minVal) / range) * (height - 2 * padY);
+        chartHeight - padY - ((val - minVal) / range) * (chartHeight - 2 * padY);
       return `${x.toFixed(1)},${y.toFixed(1)}`;
     });
     const lineD = `M ${linePoints.join(" L ")}`;
-    const areaD = `${lineD} L ${width - padX} ${height - padY} L ${padX} ${height - padY} Z`;
-    const lineColor = trendIsPositive ? "#00C805" : "#FF5000";
+    const areaD = `${lineD} L ${chartWidth - padX} ${chartHeight - padY} L ${padX} ${chartHeight - padY} Z`;
+    const lastX = padX + (chartWidth - 2 * padX);
+    const lastY =
+      chartHeight -
+      padY -
+      ((rawData[rawData.length - 1] - minVal) / range) *
+        (chartHeight - 2 * padY);
 
     return (
       <div
-        className="relative w-[95px] h-[32px] flex items-center justify-center overflow-visible shrink-0 group/sparkline cursor-pointer"
+        className="relative w-[100px] h-[32px] flex items-center justify-center overflow-visible shrink-0 group/sparkline cursor-pointer"
         onClick={(e) => {
           e.stopPropagation();
           triggerHaptic("selection");
@@ -482,10 +677,10 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
         title="24H Price Trend • Tap to open full chart"
       >
         {/* Dotted 24h Price Baseline */}
-        <div className="absolute w-full border-t border-dashed border-cyan-900/60 top-1/2 pointer-events-none z-0" />
+        <div className="absolute w-full border-t border-dashed border-cyan-900/50 top-1/2 pointer-events-none z-0" />
 
         <svg
-          viewBox={`0 0 ${width} ${height}`}
+          viewBox={`0 0 ${chartWidth} ${chartHeight}`}
           className="w-full h-full overflow-visible z-10"
         >
           <defs>
@@ -496,29 +691,39 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
               x2="0"
               y2="1"
             >
-              <stop offset="0%" stopColor={lineColor} stopOpacity="0.35" />
+              <stop offset="0%" stopColor={lineColor} stopOpacity="0.38" />
               <stop offset="100%" stopColor={lineColor} stopOpacity="0.0" />
             </linearGradient>
+            <filter id={`glow-${stock.symbol}`} x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="0" stdDeviation="1.5" floodColor={lineColor} floodOpacity="0.6" />
+            </filter>
           </defs>
           <path d={areaD} fill={`url(#sparkGrad-${stock.symbol})`} />
           <path
             d={lineD}
             fill="none"
             stroke={lineColor}
-            strokeWidth="2"
+            strokeWidth="2.0"
             strokeLinecap="round"
             strokeLinejoin="round"
+            filter={`url(#glow-${stock.symbol})`}
           />
+          {/* Live Price End-Point Marker */}
           <circle
-            cx={padX + (width - 2 * padX)}
-            cy={
-              height -
-              padY -
-              ((rawData[rawData.length - 1] - minVal) / range) *
-                (height - 2 * padY)
-            }
+            cx={lastX}
+            cy={lastY}
             r="2.5"
             fill={lineColor}
+            className="animate-pulse"
+          />
+          <circle
+            cx={lastX}
+            cy={lastY}
+            r="4.5"
+            fill="none"
+            stroke={lineColor}
+            strokeWidth="0.8"
+            strokeOpacity="0.5"
           />
         </svg>
       </div>

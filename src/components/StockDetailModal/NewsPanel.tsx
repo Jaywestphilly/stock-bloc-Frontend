@@ -138,35 +138,37 @@ export const NewsPanel = (props: StockDetailSubProps) => {
   return (
     <>
 {/* LATEST MARKET HEADLINES & NEWS WIRE */}
-              <div className="p-5 rounded-2xl bg-neutral-900/90 border border-cyan-500/30 space-y-4 shadow-xl">
-                <div className="flex items-center justify-between border-b border-cyan-500/20 pb-3">
-                  <div className="flex items-center gap-2.5">
-                    <div className="p-2 rounded-xl bg-cyan-500/20 border border-cyan-500/30 text-cyan-300">
-                      <Newspaper className="w-5 h-5 text-cyan-400" />
+              <div className="p-5 alien-block-cut bg-gradient-to-b from-[#031326] to-[#010912] border border-cyan-500/40 space-y-4 shadow-2xl shadow-cyan-950/40">
+                <div className="flex flex-wrap items-center justify-between border-b border-cyan-500/30 pb-3 gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 alien-block-cut-sm bg-cyan-500/20 border border-cyan-400/50 text-cyan-300 shadow-md">
+                      <Newspaper className="w-5 h-5 text-cyan-400 animate-pulse" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
-                        <span>{stock.symbol} Intelligence Wire</span>
-                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold uppercase">
-                          Live Feed
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-black font-alien-hud uppercase tracking-wider text-white">
+                          {stock.symbol} Live News Wire & Intelligence
+                        </h4>
+                        <span className="text-[10px] font-martian px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/40 font-bold uppercase">
+                          Priority Wire
                         </span>
-                      </h4>
-                      <p className="text-[11px] text-neutral-400 font-sans">
-                        Real-time news wire, press releases & market sentiment for {stock.name}
+                      </div>
+                      <p className="text-xs text-neutral-400 font-sans mt-0.5">
+                        Breaking financial reporting, company releases & institutional market sentiment
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] font-mono text-cyan-400/80 font-bold uppercase block">
-                      {tickerHeadlines.length} News Alerts
+                    <span className="text-xs font-mono text-cyan-400 font-bold uppercase block px-2.5 py-1 bg-black/60 border border-cyan-500/30 alien-block-cut-sm">
+                      {tickerHeadlines.length} Verified Stories
                     </span>
                   </div>
                 </div>
 
-                <div className="space-y-2.5">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {tickerHeadlines.length === 0 ? (
-                    <div className="p-4 rounded-xl bg-neutral-950 border border-white/5 text-center text-xs text-neutral-400">
-                      No recent news alerts reported for {stock.symbol}.
+                    <div className="col-span-full p-6 alien-block-cut-sm bg-black/50 border border-white/5 text-center text-xs text-neutral-400">
+                      No active news alerts reported for {stock.symbol}.
                     </div>
                   ) : (
                     tickerHeadlines.map((hl) => (
@@ -175,35 +177,37 @@ export const NewsPanel = (props: StockDetailSubProps) => {
                         href={hl.url || "#"}
                         target={hl.url ? "_blank" : "_self"}
                         rel="noopener noreferrer"
-                        className="p-3.5 rounded-xl bg-neutral-950 hover:bg-neutral-900 border border-white/10 hover:border-cyan-500/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 group cursor-pointer block"
+                        className="p-3.5 alien-block-cut-sm bg-[#040e1a]/90 hover:bg-[#071a30] border border-cyan-900/60 hover:border-cyan-400/60 transition-all flex flex-col justify-between gap-3 group cursor-pointer"
                       >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className={`text-[9px] font-mono font-black uppercase px-2 py-0.5 rounded ${
-                                hl.sentiment === "Bullish"
-                                  ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                                  : hl.sentiment === "Bearish"
-                                  ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
-                                  : "bg-neutral-800 text-neutral-300 border border-neutral-700"
-                              }`}
-                            >
-                              {hl.sentiment}
-                            </span>
-                            <span className="text-[10px] font-mono text-neutral-400 font-bold">
-                              {hl.source}
-                            </span>
-                            <span className="text-[10px] text-neutral-500">
-                              • {hl.timeAgo}
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-[9px] font-martian font-black uppercase px-2 py-0.5 rounded ${
+                                  hl.sentiment === "Bullish"
+                                    ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40"
+                                    : hl.sentiment === "Bearish"
+                                    ? "bg-rose-500/20 text-rose-400 border border-rose-500/40"
+                                    : "bg-neutral-800 text-neutral-300 border border-neutral-700"
+                                }`}
+                              >
+                                {hl.sentiment}
+                              </span>
+                              <span className="text-[10px] font-martian text-cyan-400/90 font-bold">
+                                {hl.source}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-neutral-400 font-sans">
+                              {hl.timeAgo}
                             </span>
                           </div>
-                          <h5 className="text-xs font-bold text-neutral-200 group-hover:text-cyan-300 transition-colors leading-snug">
+                          <h5 className="text-xs font-bold text-neutral-100 group-hover:text-cyan-300 transition-colors leading-snug">
                             {hl.title}
                           </h5>
                         </div>
-                        <div className="flex items-center text-xs font-mono text-cyan-400 group-hover:translate-x-1 transition-transform self-end sm:self-center shrink-0">
-                          <span>Read Article</span>
-                          <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                        <div className="flex items-center justify-end text-[11px] font-alien-hud uppercase text-cyan-400 group-hover:translate-x-0.5 transition-transform pt-1 border-t border-cyan-950/60">
+                          <span>Read Full Story</span>
+                          <ExternalLink className="w-3 h-3 ml-1" />
                         </div>
                       </a>
                     ))

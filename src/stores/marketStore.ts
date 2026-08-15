@@ -24,6 +24,8 @@ interface MarketState {
   setMarketDataSource: (src: string) => void;
   selectedStock: StockTicker | null;
   setSelectedStock: (stock: StockTicker | null) => void;
+  watchlistChartStyle: "candlestick" | "line";
+  setWatchlistChartStyle: (style: "candlestick" | "line") => void;
 }
 
 export const useMarketStore = create<MarketState>((set) => ({
@@ -47,4 +49,11 @@ export const useMarketStore = create<MarketState>((set) => ({
   setMarketDataSource: (marketDataSource) => set({ marketDataSource }),
   selectedStock: null,
   setSelectedStock: (selectedStock) => set({ selectedStock }),
+  watchlistChartStyle: (typeof window !== "undefined" && (localStorage.getItem("stockbloc_watchlist_chart_style") as "candlestick" | "line")) || "line",
+  setWatchlistChartStyle: (watchlistChartStyle) => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("stockbloc_watchlist_chart_style", watchlistChartStyle);
+    }
+    set({ watchlistChartStyle });
+  },
 }));

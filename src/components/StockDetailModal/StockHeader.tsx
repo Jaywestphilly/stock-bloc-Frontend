@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import { triggerHaptic } from "../../utils/haptics";
 import { getInstitutionalDataForStock } from "../../utils/institutionalHelper";
+import { runFullTradeScreener } from "../../utils/tradeScreenerEngine";
 
 const PIE_COLORS = [
   "#10b981",
@@ -140,6 +141,10 @@ export const StockHeader = (props: StockDetailSubProps) => {
   const { starredTickers, toggleStarredTicker } = useUserStore();
   const isStarred = stock ? starredTickers.includes(stock.symbol) : false;
 
+  const tradeScreener = useMemo(() => {
+    return stock ? runFullTradeScreener(stock) : null;
+  }, [stock]);
+
   if (!stock) return null;
 
   return (
@@ -187,49 +192,63 @@ export const StockHeader = (props: StockDetailSubProps) => {
 
       {/* Price & Change Header */}
       <div className="flex items-baseline justify-between px-6 pt-2">
-                <div>
-                  <div className="text-4xl font-black tracking-tight font-mono text-white">
-                    $
-                    {hoveredPoint.price.toLocaleString(undefined, {
-                      minimumFractionDigits: 2,
-                    })}
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span
-                      className={`flex items-center font-bold text-sm ${isPositive ? "text-[#00ff88]" : "text-[#ff3b3b]"}`}
-                    >
-                      {isPositive ? (
-                        <TrendingUp className="w-4 h-4 mr-1" />
-                      ) : (
-                        <TrendingDown className="w-4 h-4 mr-1" />
-                      )}
-                      {isPositive ? "+" : ""}
-                      {stock.change.toFixed(2)} (
-                      {stock.changePercent.toFixed(2)}%)
-                    </span>
-                    <span className="text-xs text-neutral-500 font-medium">
-                      Today
-                    </span>
-                    {hoverIndex !== null && (
-                      <span className="text-xs text-cyan-400 font-mono bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
-                        {hoveredPoint.time}
-                      </span>
-                    )}
-                  </div>
-                </div>
+        <div>
+          <div className="text-4xl font-black tracking-tight font-mono text-white">
+            $
+            {hoveredPoint.price.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+            })}
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <span
+              className={`flex items-center font-bold text-sm ${isPositive ? "text-[#00ff88]" : "text-[#ff3b3b]"}`}
+            >
+              {isPositive ? (
+                <TrendingUp className="w-4 h-4 mr-1" />
+              ) : (
+                <TrendingDown className="w-4 h-4 mr-1" />
+              )}
+              {isPositive ? "+" : ""}
+              {stock.change.toFixed(2)} (
+              {stock.changePercent.toFixed(2)}%)
+            </span>
+            <span className="text-xs text-neutral-500 font-medium">
+              Today
+            </span>
+            {hoverIndex !== null && (
+              <span className="text-xs text-cyan-400 font-mono bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
+                {hoveredPoint.time}
+              </span>
+            )}
+          </div>
+        </div>
 
-                {/* Tags */}
-                <div className="flex flex-wrap gap-1.5 justify-end max-w-[200px]">
-                  {stock.tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-neutral-300"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>
+        {/* Tags & Screener Quick Badges */}
+        <div className="flex flex-col items-end gap-1.5 max-w-[280px]">
+          {tradeScreener && (
+            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+              <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-martian font-bold rounded flex items-center gap-1 shadow-sm">
+                <Zap className="w-3 h-3 text-amber-400" />
+                DAY: {tradeScreener.dayTrade.bias} ({tradeScreener.dayTrade.conviction}%)
+              </span>
+              <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-martian font-bold rounded flex items-center gap-1 shadow-sm">
+                <TrendingUp className="w-3 h-3 text-cyan-400" />
+                SWING: 1:{tradeScreener.swingTrade.rewardToRiskRatio} R/R
+              </span>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-1.5 justify-end">
+            {stock.tags.map((tag, idx) => (
+              <span
+                key={idx}
+                className="text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-neutral-300"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
 
               
     </>

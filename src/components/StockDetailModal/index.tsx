@@ -67,6 +67,7 @@ import { FinancialMetrics } from "./FinancialMetrics";
 import { NewsPanel } from "./NewsPanel";
 import { InstitutionalData } from "./InstitutionalData";
 import { OptionsPanel } from "./OptionsPanel";
+import { TradeScreenerPanel } from "./TradeScreenerPanel";
 
 
 const PIE_COLORS = [
@@ -1887,6 +1888,7 @@ export const StockDetailModal: React.FC<StockDetailModalProps> = ({
             <StockHeader {...propsToPass} />
             <div className="p-6 space-y-6 overflow-y-auto">
                 <NewsPanel {...propsToPass} />
+                <TradeScreenerPanel stock={stock} />
                 <div className="flex flex-col lg:flex-row gap-6">
                   <div className="flex-1 space-y-6">
                     <TradeSimulator {...propsToPass} />
