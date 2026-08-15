@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Briefcase,
   Scale,
@@ -24,11 +24,229 @@ import {
   Check,
   Zap,
   AlertCircle,
+  Search,
+  Download,
+  Flame,
+  ArrowRight,
+  BarChart3,
+  Clock,
+  ChevronRight,
+  Filter,
 } from "lucide-react";
+import { triggerHaptic } from "../../utils/haptics";
+import { trackEvent } from "../../utils/analytics";
+
+interface GrantItem {
+  id: string;
+  title: string;
+  provider: string;
+  amount: string;
+  category: "federal" | "corporate" | "women_minority" | "tech_innovation";
+  deadline: string;
+  description: string;
+  eligibility: string;
+  url: string;
+}
+
+const VERIFIED_GRANTS: GrantItem[] = [
+  {
+    id: "sbir-sttr",
+    title: "SBIR / STTR Federal R&D Innovation Grants",
+    provider: "U.S. Small Business Administration (SBA)",
+    amount: "$50,000 to $1,800,000",
+    category: "federal",
+    deadline: "Rolling / Quarterly Cycles",
+    description:
+      "Non-dilutive federal funding for small businesses engaged in technological research and development with commercial potential across 11 federal agencies.",
+    eligibility: "For-profit U.S. small businesses under 500 employees with majority American ownership.",
+    url: "https://www.sbir.gov/funding",
+  },
+  {
+    id: "amber-grant",
+    title: "The Amber Grant for Women Entrepreneurs",
+    provider: "WomensNet",
+    amount: "$10,000 Monthly + $25,000 Annual Bonus",
+    category: "women_minority",
+    deadline: "End of Every Month",
+    description:
+      "One of the longest-running private grant programs for female founders. Winners of monthly $10k grants are automatically eligible for year-end $25k prizes.",
+    eligibility: "Women entrepreneurs (18+) operating or starting a business in the U.S. or Canada.",
+    url: "https://ambergrantsforwomen.com/",
+  },
+  {
+    id: "fedex-grant",
+    title: "FedEx Small Business Grant Contest",
+    provider: "FedEx Corporation",
+    amount: "$30,000 + $1,000 FedEx Office Credits",
+    category: "corporate",
+    deadline: "Annual Spring Application Window",
+    description:
+      "Over $300,000 in total cash prizes awarded annually to innovative small businesses with compelling mission stories and scalable logistics needs.",
+    eligibility: "U.S. based for-profit businesses in good standing with active shipping needs for 6+ months.",
+    url: "https://www.fedex.com/en-us/small-business/grants.html",
+  },
+  {
+    id: "fast-break-grant",
+    title: "Fast Break for Small Business",
+    provider: "LegalZoom, NBA & WNBA",
+    amount: "$10,000 Cash + $500 LegalZoom Services",
+    category: "women_minority",
+    deadline: "Biannual Cohorts",
+    description:
+      "A $6 million initiative designed to support historically underserved and minority small business owners with startup capital and legal services.",
+    eligibility: "Small businesses in operation for at least 3 months with annual revenue under $1,000,000.",
+    url: "https://www.legalzoom.com/fastbreakforsmallbusiness",
+  },
+  {
+    id: "comcast-rise",
+    title: "Comcast RISE Investment Fund & Tech Package",
+    provider: "Comcast / NBCUniversal",
+    amount: "$5,000 Grant + Technology / Media Makeover",
+    category: "corporate",
+    deadline: "Annual Regional Cycles",
+    description:
+      "Grants, marketing campaigns, state-of-the-art tech makeovers, and commercial advertising production for brick-and-mortar small businesses.",
+    eligibility: "Independent businesses in designated metropolitan coverage zones open 3+ years with 1-100 employees.",
+    url: "https://www.comcastrise.com/",
+  },
+  {
+    id: "nase-growth-grant",
+    title: "NASE Small Business Growth Grants",
+    provider: "National Association for the Self-Employed",
+    amount: "$4,000 Direct Grant",
+    category: "federal",
+    deadline: "Quarterly Review (March, June, Sept, Dec)",
+    description:
+      "Targeted micro-grants to finance specific marketing initiatives, new equipment, website development, or employee training for self-employed professionals.",
+    eligibility: "Active NASE members with an identifiable business expansion requirement and plan.",
+    url: "https://www.nase.org/become-a-member/grants-and-scholarships",
+  },
+];
+
+interface CreditStep {
+  id: string;
+  tier: "Tier 0: Foundation" | "Tier 1: Net-30 Vendors" | "Tier 2: Retail & Fleet" | "Tier 3: Cash Lines & SBA";
+  title: string;
+  requirement: string;
+  bureauReported: string;
+  actionUrl: string;
+  actionLabel: string;
+}
+
+const CREDIT_STEPS: CreditStep[] = [
+  {
+    id: "step_entity",
+    tier: "Tier 0: Foundation",
+    title: "1. Form LLC or C-Corp with Secretary of State",
+    requirement: "Register your legal business entity and appoint a registered agent.",
+    bureauReported: "State Records",
+    actionUrl: "https://corp.delaware.gov/",
+    actionLabel: "Delaware Division of Corporations",
+  },
+  {
+    id: "step_ein",
+    tier: "Tier 0: Foundation",
+    title: "2. Obtain Free Official IRS EIN",
+    requirement: "Never pay $200+ on scam sites. Get your CP 575 EIN confirmation PDF instantly.",
+    bureauReported: "IRS Federal",
+    actionUrl: "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
+    actionLabel: "IRS.gov Free EIN Portal",
+  },
+  {
+    id: "step_duns",
+    tier: "Tier 0: Foundation",
+    title: "3. Register for Free D&B D-U-N-S Number",
+    requirement: "Establishes your Dun & Bradstreet corporate credit profile for Paydex score tracking.",
+    bureauReported: "Dun & Bradstreet",
+    actionUrl: "https://www.dnb.com/duns-number/get-a-duns-number.html",
+    actionLabel: "DnB.com Free Registration",
+  },
+  {
+    id: "step_bank",
+    tier: "Tier 0: Foundation",
+    title: "4. Open Dedicated Commercial Bank Account",
+    requirement: "Deposit starting capital and avoid commingling personal and company funds.",
+    bureauReported: "ChexSystems / Banking",
+    actionUrl: "https://relayfi.com/",
+    actionLabel: "Relay / Mercury Business Banking",
+  },
+  {
+    id: "step_uline",
+    tier: "Tier 1: Net-30 Vendors",
+    title: "5. Uline Shipping Supplies (Net-30)",
+    requirement: "Purchase $50+ in shipping/packaging boxes. Pay invoice in 10-15 days for an 80+ Paydex score.",
+    bureauReported: "Dun & Bradstreet / Experian",
+    actionUrl: "https://www.uline.com/",
+    actionLabel: "Uline Net-30 Portal",
+  },
+  {
+    id: "step_grainger",
+    tier: "Tier 1: Net-30 Vendors",
+    title: "6. Grainger Industrial Supplies (Net-30)",
+    requirement: "Open account, place initial order for facility/maintenance gear, select Invoice Me / Net 30.",
+    bureauReported: "D&B / Experian Business",
+    actionUrl: "https://www.grainger.com/",
+    actionLabel: "Grainger Corporate Account",
+  },
+  {
+    id: "step_quill",
+    tier: "Tier 1: Net-30 Vendors",
+    title: "7. Quill Office Supplies (Net-30)",
+    requirement: "Order $100+ in office or cleaning supplies to activate monthly reporting trade line.",
+    bureauReported: "Dun & Bradstreet",
+    actionUrl: "https://www.quill.com/",
+    actionLabel: "Quill Net-30 Account",
+  },
+  {
+    id: "step_nav",
+    tier: "Tier 1: Net-30 Vendors",
+    title: "8. Nav Business Credit Builder Tradeline",
+    requirement: "Reports monthly subscription as an active tradeline to D&B, Experian Commercial & Equifax.",
+    bureauReported: "D&B, Experian & Equifax",
+    actionUrl: "https://www.nav.com/",
+    actionLabel: "Nav Business Platform",
+  },
+  {
+    id: "step_homedepot",
+    tier: "Tier 2: Retail & Fleet",
+    title: "9. The Home Depot Commercial Revolving Card",
+    requirement: "Unlocked after 3-5 reported Net-30 trade lines with 80+ Paydex score. No personal guarantee for established entities.",
+    bureauReported: "Experian Commercial / D&B",
+    actionUrl: "https://www.homedepot.com/c/Credit_Center",
+    actionLabel: "Home Depot Commercial",
+  },
+  {
+    id: "step_wex",
+    tier: "Tier 2: Retail & Fleet",
+    title: "10. WEX Fleet / Shell Commercial Fuel Card",
+    requirement: "Nationwide fuel and vehicle maintenance credit line with automatic mileage and expense tracking.",
+    bureauReported: "Experian / D&B",
+    actionUrl: "https://www.wexinc.com/solutions/fleet-cards/",
+    actionLabel: "WEX Fleet Card Portal",
+  },
+  {
+    id: "step_chase",
+    tier: "Tier 3: Cash Lines & SBA",
+    title: "11. Chase Ink Business Unlimited / Cash",
+    requirement: "0% APR for 12 months + $750 bonus. Provides immediate working capital without personal credit reporting.",
+    bureauReported: "Experian Commercial",
+    actionUrl: "https://creditcards.chase.com/business-credit-cards",
+    actionLabel: "Chase Ink Business",
+  },
+  {
+    id: "step_sba7a",
+    tier: "Tier 3: Cash Lines & SBA",
+    title: "12. SBA 7(a) Working Capital Line of Credit (Up to $5M)",
+    requirement: "Government-backed long-term financing (10-25 years) with prime-based interest rates for scaling.",
+    bureauReported: "SBSS / Equifax Commercial",
+    actionUrl: "https://www.sba.gov/funding-programs/loans/7a",
+    actionLabel: "SBA 7(a) Official Guide",
+  },
+];
 
 export const SmallBusinessHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
-    "formation" | "business_credit" | "startup_roadmap" | "valuation_calc"
+    "formation" | "business_credit" | "grants_directory" | "startup_roadmap" | "valuation_calc"
   >("formation");
 
   useEffect(() => {
@@ -38,26 +256,90 @@ export const SmallBusinessHub: React.FC = () => {
   }, [activeTab]);
 
   const [copiedEinSteps, setCopiedEinSteps] = useState(false);
+  const [copiedBlueprint, setCopiedBlueprint] = useState(false);
+
+  // Completed credit steps tracking (Local state with persistence)
+  const [completedSteps, setCompletedSteps] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem("sb_credit_tier_progress");
+      return saved ? JSON.parse(saved) : ["step_entity", "step_ein"];
+    } catch {
+      return ["step_entity", "step_ein"];
+    }
+  });
+
+  const toggleStep = (stepId: string) => {
+    triggerHaptic("selection");
+    setCompletedSteps((prev) => {
+      const next = prev.includes(stepId)
+        ? prev.filter((id) => id !== stepId)
+        : [...prev, stepId];
+      try {
+        localStorage.setItem("sb_credit_tier_progress", JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  const creditProgressPercent = Math.round(
+    (completedSteps.length / CREDIT_STEPS.length) * 100
+  );
+
+  // Grants Directory Filter & Search
+  const [grantSearch, setGrantSearch] = useState("");
+  const [grantCategory, setGrantCategory] = useState<"all" | GrantItem["category"]>("all");
+
+  const filteredGrants = useMemo(() => {
+    return VERIFIED_GRANTS.filter((g) => {
+      const matchesCat = grantCategory === "all" || g.category === grantCategory;
+      const matchesSearch =
+        g.title.toLowerCase().includes(grantSearch.toLowerCase()) ||
+        g.provider.toLowerCase().includes(grantSearch.toLowerCase()) ||
+        g.description.toLowerCase().includes(grantSearch.toLowerCase());
+      return matchesCat && matchesSearch;
+    });
+  }, [grantSearch, grantCategory]);
+
+  // Business Valuation & Multiple Estimator States
+  const [annualRevenue, setAnnualRevenue] = useState<number>(750000);
+  const [netMarginPercent, setNetMarginPercent] = useState<number>(22);
+  const [industryMultiple, setIndustryMultiple] = useState<number>(4.5);
+  const [industryName, setIndustryName] = useState<string>("SaaS & Software");
+
+  // Cash Runway & Burn Rate Engine States
+  const [cashBalance, setCashBalance] = useState<number>(180000);
+  const [monthlyRevenue, setMonthlyRevenue] = useState<number>(45000);
+  const [monthlyPayroll, setMonthlyPayroll] = useState<number>(32000);
+  const [monthlyOpex, setMonthlyOpex] = useState<number>(18000);
+
+  // Calculations for Valuation & Runway
+  const annualProfitSDE = (annualRevenue * netMarginPercent) / 100;
+  const estimatedEnterpriseValue = annualProfitSDE * industryMultiple;
+  const estimatedLowVal = estimatedEnterpriseValue * 0.8;
+  const estimatedHighVal = estimatedEnterpriseValue * 1.25;
+
+  const totalMonthlyBurn = monthlyPayroll + monthlyOpex;
+  const netMonthlyBurn = totalMonthlyBurn - monthlyRevenue;
+  const runwayMonths =
+    netMonthlyBurn <= 0
+      ? 999
+      : Math.max(0, Math.round((cashBalance / netMonthlyBurn) * 10) / 10);
+  const targetRaiseFor24Months = Math.max(0, netMonthlyBurn * 24 - cashBalance);
 
   // Cap Table / SAFE Dilution Estimator States
-  const [preMoneyValuation, setPreMoneyValuation] = useState<number>(5000000); // $5M
-  const [safeInvestmentAmount, setSafeInvestmentAmount] =
-    useState<number>(1000000); // $1M
-  const [optionPoolPercent, setOptionPoolPercent] = useState<number>(10); // 10%
-  const [initialFounderShares, setInitialFounderShares] =
-    useState<number>(10000000); // 10M shares
+  const [preMoneyValuation, setPreMoneyValuation] = useState<number>(5000000);
+  const [safeInvestmentAmount, setSafeInvestmentAmount] = useState<number>(1000000);
+  const [optionPoolPercent, setOptionPoolPercent] = useState<number>(10);
+  const [initialFounderShares, setInitialFounderShares] = useState<number>(10000000);
 
-  // Calculations
   const postMoneyValuation = preMoneyValuation + safeInvestmentAmount;
-  const safeInvestorOwnership =
-    (safeInvestmentAmount / postMoneyValuation) * 100;
+  const safeInvestorOwnership = (safeInvestmentAmount / postMoneyValuation) * 100;
   const founderPostOwnership = 100 - safeInvestorOwnership - optionPoolPercent;
   const pricePerShare = preMoneyValuation / initialFounderShares;
-  const founderEquityValue = (postMoneyValuation * founderPostOwnership) / 100;
 
   const handleCopyEinSteps = () => {
     const guideText = `FREE IRS EIN APPLICATION STEPS:
-1. Visit official irs.gov/ein (Mon-Fri 7am 10pm ET). Never pay 3rd parties $100-$300!
+1. Visit official irs.gov/ein (Mon-Fri 7am-10pm ET). Never pay 3rd parties $100-$300!
 2. Select your structure (LLC, Corporation, Sole Proprietorship).
 3. Input Responsible Party details (SSN or ITIN).
 4. Provide Business Name, Physical Address, and Start Date.
@@ -67,34 +349,64 @@ export const SmallBusinessHub: React.FC = () => {
     setTimeout(() => setCopiedEinSteps(false), 2500);
   };
 
+  const handleCopyBlueprint = () => {
+    const blueprintText = `STOCK BLOC - 1-PAGE SMALL BUSINESS & CREDIT BLUEPRINT
+=====================================================
+VALUATION & FINANCIAL RUNWAY:
+• Annual Revenue: $${annualRevenue.toLocaleString()} (${netMarginPercent}% Net Margin)
+• Estimated Enterprise Valuation: $${Math.round(estimatedEnterpriseValue).toLocaleString()} (${industryName} @ ${industryMultiple}x SDE)
+• Current Cash Balance: $${cashBalance.toLocaleString()}
+• Net Monthly Burn: $${netMonthlyBurn > 0 ? `$${netMonthlyBurn.toLocaleString()}/mo` : "CASH-FLOW POSITIVE"}
+• Estimated Runway: ${runwayMonths >= 999 ? "Profitable (Infinite Runway)" : `${runwayMonths} Months`}
+
+BUSINESS CREDIT ROADMAP (Paydex 80+ Target):
+[Tier 0] LLC/C-Corp Formation -> IRS CP575 EIN -> D-U-N-S (D&B) -> Commercial Checking
+[Tier 1] Starter Net-30s: Uline ($50+), Grainger, Quill ($100+), Nav Business Builder
+[Tier 2] Retail & Fleet: Home Depot Commercial, Lowe's Pro, WEX Fuel Fleet
+[Tier 3] Cash Lines: Chase Ink 0% APR, Brex/Ramp Corporate, SBA 7(a) Working Capital Line
+
+Verified at Stock Bloc Accelerator (stockbloc.app)`;
+    navigator.clipboard.writeText(blueprintText);
+    setCopiedBlueprint(true);
+    setTimeout(() => setCopiedBlueprint(false), 2500);
+  };
+
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-6 p-4 text-white font-sans">
+    <div className="w-full max-w-5xl mx-auto space-y-6 p-2 sm:p-4 text-white font-mono select-none">
       {/* HEADER BANNER */}
-      <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-950 via-neutral-900 to-cyan-950 border border-cyan-500/40 shadow-2xl relative overflow-hidden">
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-indigo-950 via-neutral-900 to-cyan-950 border border-cyan-500/40 shadow-2xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="flex items-center justify-between mb-3">
+        
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
           <span className="text-[10px] font-black uppercase tracking-widest text-cyan-300 bg-cyan-500/15 px-3 py-1 rounded-full border border-cyan-500/30 flex items-center gap-1.5">
             <Rocket className="w-3.5 h-3.5 text-cyan-300 animate-pulse" />
-            Startup & Enterprise Command Center
+            Small Business Accelerator Hub
           </span>
-          <span className="text-xs font-mono font-bold text-cyan-400">
-            Incorporation to IPO Matrix
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyBlueprint}
+              className="px-3 py-1 rounded-xl bg-cyan-400/20 hover:bg-cyan-400/30 border border-cyan-400/40 text-cyan-200 text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+            >
+              {copiedBlueprint ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-cyan-400" />}
+              <span>{copiedBlueprint ? "Blueprint Copied!" : "Export 1-Page Blueprint"}</span>
+            </button>
+          </div>
         </div>
 
         <h2 className="text-2xl sm:text-3xl font-black uppercase tracking-wider text-white flex items-center gap-2 animate-periodic-text-glitch">
-          Small Business & Startup Accelerator
+          Small Business & Startup Command
         </h2>
-        <p className="text-xs font-tech text-neutral-300 uppercase tracking-wide leading-relaxed max-w-2xl mt-1">
-          Complete legal formation guides, official free IRS EIN portal, FinCEN
-          BOI compliance, business credit building (DUNS & Net-30s), SBA loans,
-          and the 4-stage startup roadmap from Seed SAFE to M&A / Nasdaq IPO.
+        <p className="text-xs text-neutral-300 uppercase tracking-wide leading-relaxed max-w-3xl mt-1">
+          Complete legal formation guides, official free IRS EIN portal, Tier 1–3 business credit roadmaps, verified grants directory, cash runway engine, and startup cap table estimators.
         </p>
 
         {/* Sub-Tabs Selector */}
-        <div className="flex items-center gap-2 pt-4 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-2 pt-5 overflow-x-auto no-scrollbar">
           <button
-            onClick={() => setActiveTab("formation")}
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveTab("formation");
+            }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
               activeTab === "formation"
                 ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
@@ -106,7 +418,10 @@ export const SmallBusinessHub: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab("business_credit")}
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveTab("business_credit");
+            }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
               activeTab === "business_credit"
                 ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
@@ -114,23 +429,29 @@ export const SmallBusinessHub: React.FC = () => {
             }`}
           >
             <CreditCard className="w-3.5 h-3.5 text-indigo-300" />
-            Business Credit & Loans
+            Tier 1-3 Credit Navigator ({completedSteps.length}/{CREDIT_STEPS.length})
           </button>
 
           <button
-            onClick={() => setActiveTab("startup_roadmap")}
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveTab("grants_directory");
+            }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "startup_roadmap"
+              activeTab === "grants_directory"
                 ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
                 : "bg-white/10 text-neutral-300 hover:bg-white/20"
             }`}
           >
-            <Rocket className="w-3.5 h-3.5 text-emerald-300" />
-            Startup to M&A / IPO
+            <Award className="w-3.5 h-3.5 text-emerald-300" />
+            Grants & Funding Directory
           </button>
 
           <button
-            onClick={() => setActiveTab("valuation_calc")}
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveTab("valuation_calc");
+            }}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
               activeTab === "valuation_calc"
                 ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
@@ -138,7 +459,22 @@ export const SmallBusinessHub: React.FC = () => {
             }`}
           >
             <Calculator className="w-3.5 h-3.5 text-amber-300" />
-            Cap Table & SAFE Calc
+            Valuation, Burn & Runway
+          </button>
+
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setActiveTab("startup_roadmap");
+            }}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
+              activeTab === "startup_roadmap"
+                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
+                : "bg-white/10 text-neutral-300 hover:bg-white/20"
+            }`}
+          >
+            <Rocket className="w-3.5 h-3.5 text-pink-300" />
+            Startup to IPO Roadmap
           </button>
         </div>
       </div>
@@ -161,16 +497,13 @@ export const SmallBusinessHub: React.FC = () => {
               Do NOT Pay $100 to $300 to Third-Party Filing Sites for an EIN!
             </h3>
             <p className="text-xs text-neutral-300 leading-relaxed">
-              The U.S. Internal Revenue Service (IRS) provides Employer
-              Identification Numbers (EINs){" "}
-              <strong className="text-amber-300">100% FREE</strong> online with
-              instant download of your official CP 575 confirmation document.
+              The U.S. Internal Revenue Service (IRS) provides Employer Identification Numbers (EINs) <strong className="text-amber-300">100% FREE</strong> online with instant download of your official CP 575 confirmation document.
             </p>
 
             <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-amber-500/20">
               <button
                 onClick={handleCopyEinSteps}
-                className="px-3.5 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold text-xs flex items-center gap-1.5 border border-white/10"
+                className="px-3.5 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-bold text-xs flex items-center gap-1.5 border border-white/10 cursor-pointer"
               >
                 {copiedEinSteps ? (
                   <Check className="w-3.5 h-3.5 text-emerald-400" />
@@ -178,9 +511,7 @@ export const SmallBusinessHub: React.FC = () => {
                   <Copy className="w-3.5 h-3.5 text-amber-400" />
                 )}
                 <span>
-                  {copiedEinSteps
-                    ? "EIN Guide Copied!"
-                    : "Copy EIN Step Checklist"}
+                  {copiedEinSteps ? "EIN Guide Copied!" : "Copy EIN Step Checklist"}
                 </span>
               </button>
 
@@ -196,7 +527,7 @@ export const SmallBusinessHub: React.FC = () => {
             </div>
           </div>
 
-          {/* Entity Choice Matrix: LLC vs C-Corp vs S-Corp */}
+          {/* Entity Choice Matrix */}
           <div className="space-y-4">
             <h3 className="text-base font-extrabold text-white flex items-center gap-2">
               <Scale className="w-5 h-5 text-cyan-400" />
@@ -204,35 +535,22 @@ export const SmallBusinessHub: React.FC = () => {
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* LLC */}
               <div className="p-5 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-3 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono font-bold uppercase text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
-                      Best for Small Business & Real Estate
+                      Best for Small Biz & Real Estate
                     </span>
                     <Building2 className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div>
-                    <h4 className="text-base font-black text-white animate-periodic-text-glitch">
+                    <h4 className="text-base font-black text-white">
                       Limited Liability Company (LLC)
                     </h4>
                     <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
-                      Flexible asset protection with pass-through taxation.
-                      Avoids double taxation, requires minimal annual corporate
-                      formalities, and allows single or multi-member ownership.
+                      Flexible asset protection with pass-through taxation. Avoids double taxation and requires minimal annual corporate formalities.
                     </p>
                   </div>
-                  <ul className="text-[11px] text-neutral-400 space-y-1 pt-1 border-t border-white/10">
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>Pass-through tax on personal 1040</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                      <span>Operating Agreement defines split</span>
-                    </li>
-                  </ul>
                 </div>
                 <div className="pt-2 border-t border-white/10">
                   <a
@@ -247,79 +565,52 @@ export const SmallBusinessHub: React.FC = () => {
                 </div>
               </div>
 
-              {/* Delaware C-Corp */}
               <div className="p-5 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-3 flex flex-col justify-between">
                 <div className="space-y-3">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono font-bold uppercase text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded border border-cyan-500/30">
-                      Required for VC Funding & IPO
+                      Venture Capital & Tech Startups
                     </span>
-                    <Rocket className="w-5 h-5 text-cyan-400" />
+                    <Briefcase className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
-                    <h4 className="text-base font-black text-white animate-periodic-text-glitch">
+                    <h4 className="text-base font-black text-white">
                       Delaware C-Corporation
                     </h4>
                     <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
-                      Standard structure for tech startups seeking Venture
-                      Capital, Y Combinator, stock options (ESOP), SAFEs, and
-                      future Nasdaq/NYSE IPO listings.
+                      Gold standard for tech startups raising outside VC funding. Issues stock classes and qualifies for Section 1202 QSBS tax exclusion.
                     </p>
                   </div>
-                  <ul className="text-[11px] text-neutral-400 space-y-1 pt-1 border-t border-white/10">
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <span>Allows stock classes & SAFE notes</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-                      <span>QSBS 100% Tax-Free capital gains</span>
-                    </li>
-                  </ul>
                 </div>
-                <div className="pt-2 border-t border-white/10 flex items-center gap-3">
+                <div className="pt-2 border-t border-white/10">
                   <a
                     href="https://corp.delaware.gov/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 cursor-pointer"
                   >
-                    <span>Delaware Corp Portal</span>
+                    <span>Delaware Division of Corporations</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </a>
                 </div>
               </div>
 
-              {/* S-Corp Election */}
               <div className="p-5 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-3 flex flex-col justify-between">
                 <div className="space-y-3">
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-center justify-between">
                     <span className="text-[10px] font-mono font-bold uppercase text-purple-300 bg-purple-500/20 px-2 py-0.5 rounded border border-purple-500/30">
-                      Self-Employment Tax Savings
+                      Tax Savings on $60k+ Profits
                     </span>
                     <Landmark className="w-5 h-5 text-purple-400" />
                   </div>
                   <div>
-                    <h4 className="text-base font-black text-white animate-periodic-text-glitch">
+                    <h4 className="text-base font-black text-white">
                       S-Corporation Election (Form 2553)
                     </h4>
                     <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
-                      Tax status election for LLCs or C-Corps making $60k+ net
-                      profit. Allows owners to pay themselves a reasonable W-2
-                      salary and take remaining profits as dividends (saving
-                      15.3% SE tax).
+                      Tax status election for LLCs making $60k+ net profit. Pay a reasonable W-2 salary and take remaining profits as dividends (saving 15.3% SE tax).
                     </p>
                   </div>
-                  <ul className="text-[11px] text-neutral-400 space-y-1 pt-1 border-t border-white/10">
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                      <span>Saves 15.3% FICA on dividends</span>
-                    </li>
-                    <li className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                      <span>Requires payroll setup (Gusto/ADP)</span>
-                    </li>
-                  </ul>
                 </div>
                 <div className="pt-2 border-t border-white/10">
                   <a
@@ -328,7 +619,7 @@ export const SmallBusinessHub: React.FC = () => {
                     rel="noopener noreferrer"
                     className="text-xs text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 cursor-pointer"
                   >
-                    <span>IRS Form 2553 S-Corp Instructions</span>
+                    <span>IRS Form 2553 Instructions</span>
                     <ArrowUpRight className="w-3.5 h-3.5" />
                   </a>
                 </div>
@@ -336,7 +627,7 @@ export const SmallBusinessHub: React.FC = () => {
             </div>
           </div>
 
-          {/* Mandatory Mandatory FinCEN BOI Reporting Card */}
+          {/* Mandatory FinCEN BOI Card */}
           <div className="p-5 rounded-2xl bg-gradient-to-br from-indigo-950/80 via-neutral-900 to-slate-900 border border-indigo-500/30 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -349,11 +640,7 @@ export const SmallBusinessHub: React.FC = () => {
             </div>
 
             <p className="text-xs text-neutral-300 leading-relaxed">
-              Under federal law, nearly all LLCs, Corporations, and foreign
-              entities formed in the U.S. must submit a free Beneficial
-              Ownership Information (BOI) report identifying 25%+ owners or
-              direct control individuals to the Financial Crimes Enforcement
-              Network (FinCEN).
+              Under federal law, nearly all LLCs, Corporations, and foreign entities formed in the U.S. must submit a free Beneficial Ownership Information (BOI) report identifying 25%+ owners to the Financial Crimes Enforcement Network (FinCEN).
             </p>
 
             <div className="pt-2 flex items-center justify-between">
@@ -371,878 +658,503 @@ export const SmallBusinessHub: React.FC = () => {
               </a>
             </div>
           </div>
-
-          {/* Legal Checklist: From Name Search to Bank Account */}
-          <div className="p-5 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-4">
-            <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-              Step by Step Business Legal Formation Checklist
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-              <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2 flex flex-col justify-between">
-                <div>
-                  <strong className="text-cyan-300 font-bold block">
-                    1. Business Name & Trademark Search
-                  </strong>
-                  <span className="text-neutral-400">
-                    Verify Secretary of State name availability and search USPTO
-                    trademark database.
-                  </span>
-                </div>
-                <a
-                  href="https://www.uspto.gov/trademarks/search"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 w-fit"
-                >
-                  <span>USPTO Trademark Search Portal</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2 flex flex-col justify-between">
-                <div>
-                  <strong className="text-cyan-300 font-bold block">
-                    2. Registered Agent & State Articles
-                  </strong>
-                  <span className="text-neutral-400">
-                    Appoint a registered agent and file Certificate of
-                    Incorporation or Articles of Organization.
-                  </span>
-                </div>
-                <a
-                  href="https://corp.delaware.gov/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 w-fit"
-                >
-                  <span>Delaware Secretary of State</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2 flex flex-col justify-between">
-                <div>
-                  <strong className="text-cyan-300 font-bold block">
-                    3. Obtain Free IRS EIN Number
-                  </strong>
-                  <span className="text-neutral-400">
-                    Get your official tax ID instantly from irs.gov for bank
-                    account setup.
-                  </span>
-                </div>
-                <a
-                  href="https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 w-fit"
-                >
-                  <span>IRS Free EIN Application</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2 flex flex-col justify-between">
-                <div>
-                  <strong className="text-cyan-300 font-bold block">
-                    4. Operating Agreement / Corporate Bylaws
-                  </strong>
-                  <span className="text-neutral-400">
-                    Draft internal rules governing equity splits, voting rights,
-                    and partner buyout clauses.
-                  </span>
-                </div>
-                <a
-                  href="https://www.sba.gov/business-guide/launch-your-business/choose-business-structure"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 w-fit"
-                >
-                  <span>SBA Governance Guide</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2 flex flex-col justify-between">
-                <div>
-                  <strong className="text-cyan-300 font-bold block">
-                    5. Dedicated Business Bank Account
-                  </strong>
-                  <span className="text-neutral-400">
-                    Open a business checking account to preserve corporate veil
-                    liability protection.
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <a
-                    href="https://mercury.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded hover:bg-cyan-500/30 font-bold flex items-center gap-1"
-                  >
-                    <span>Mercury Banking</span>
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                  <a
-                    href="https://www.chase.com/business"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded hover:bg-blue-500/30 font-bold flex items-center gap-1"
-                  >
-                    <span>Chase Business</span>
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                  <a
-                    href="https://relayfi.com/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded hover:bg-emerald-500/30 font-bold flex items-center gap-1"
-                  >
-                    <span>Relay Bank</span>
-                    <ExternalLink className="w-2.5 h-2.5" />
-                  </a>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-2 flex flex-col justify-between">
-                <div>
-                  <strong className="text-cyan-300 font-bold block">
-                    6. Local Licenses & Seller's Permits
-                  </strong>
-                  <span className="text-neutral-400">
-                    Apply for municipal business licenses, state sales tax
-                    permits, and local registrations.
-                  </span>
-                </div>
-                <a
-                  href="https://www.sba.gov/business-guide/launch-your-business/apply-licenses-permits"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 w-fit"
-                >
-                  <span>SBA License & Permit Directory</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* TAB 2: BUSINESS CREDIT & LOANS */}
+      {/* TAB 2: TIER 1-3 CREDIT NAVIGATOR */}
       {activeTab === "business_credit" && (
         <div className="space-y-6">
-          {/* DUNS & Net-30 Starter Guide */}
-          <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-950 via-neutral-900 to-cyan-950 border border-cyan-500/40 shadow-xl space-y-4">
+          {/* Interactive Progress Bar */}
+          <div className="p-6 rounded-3xl bg-neutral-900/90 border border-cyan-500/40 space-y-3 shadow-xl">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-300 bg-cyan-500/20 px-3 py-1 rounded-full border border-cyan-500/30">
-                Dun & Bradstreet DUNS Number
-              </span>
-              <span className="text-xs font-mono font-bold text-cyan-400">
-                Paydex Score 80+
-              </span>
-            </div>
-
-            <div>
-              <h3 className="text-xl font-extrabold text-white">
-                Building Corporate Credit Without Personal Guarantee
-              </h3>
-              <p className="text-xs text-neutral-300 leading-relaxed mt-1">
-                Separate personal and business finances by establishing a
-                corporate Dun & Bradstreet D-U-N-S number, reporting Net-30
-                vendor accounts, and building an 80+ Paydex score on Experian
-                Business and Equifax Commercial.
-              </p>
-            </div>
-
-            <div className="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-cyan-500/20">
-              <a
-                href="https://www.dnb.com/duns-number/get-a-duns-number.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-4 py-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 text-black font-black text-xs flex items-center gap-1.5 shadow-lg shadow-cyan-400/20 cursor-pointer"
-              >
-                <span>Get Free D-U-N-S Number at DnB.com</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
-
-              <div className="flex items-center gap-2">
-                <a
-                  href="https://www.experian.com/small-business/business-credit-reports"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-neutral-200 text-xs font-bold flex items-center gap-1"
-                >
-                  <span>Experian Business</span>
-                  <ExternalLink className="w-3 h-3 text-cyan-300" />
-                </a>
-                <a
-                  href="https://www.equifax.com/business/commercial-credit-risk/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-neutral-200 text-xs font-bold flex items-center gap-1"
-                >
-                  <span>Equifax Commercial</span>
-                  <ExternalLink className="w-3 h-3 text-indigo-300" />
-                </a>
+              <div className="space-y-0.5">
+                <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-cyan-400" />
+                  Corporate Credit Readiness Score: {creditProgressPercent}%
+                </span>
+                <h3 className="text-lg font-black text-white">
+                  Step-by-Step Business Credit Tier Roadmap
+                </h3>
               </div>
+              <span className="text-xs font-mono text-neutral-400">
+                {completedSteps.length} of {CREDIT_STEPS.length} Completed
+              </span>
             </div>
+
+            {/* Visual Progress Track */}
+            <div className="w-full h-3 bg-neutral-950 rounded-full overflow-hidden border border-cyan-500/30 p-0.5">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-500 via-indigo-400 to-emerald-400 rounded-full transition-all duration-500"
+                style={{ width: `${creditProgressPercent}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-neutral-400 leading-relaxed">
+              Check off completed steps below to track your progress toward an 80+ Paydex score and unsecured corporate credit lines without personal guarantees.
+            </p>
           </div>
 
-          {/* Starter Net-30 Vendor Accounts */}
-          <div className="space-y-4">
-            <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-indigo-400" />
-              Top Net-30 Vendor Accounts to Build Business Credit Fast
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              <div className="p-4 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-3 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <strong className="text-white font-black text-sm">
-                      Uline
-                    </strong>
-                    <span className="text-[10px] text-cyan-300 font-mono">
-                      Reports D&B
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-neutral-400">
-                    Shipping supplies and packaging. Buy $50+ on credit, pay
-                    invoice within 30 days to build positive payment reporting.
-                  </p>
-                </div>
-                <a
-                  href="https://www.uline.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-cyan-400 hover:text-cyan-300 font-bold flex items-center gap-1 cursor-pointer pt-2 border-t border-white/10"
+          {/* Interactive Tier Step Cards */}
+          <div className="space-y-3">
+            {CREDIT_STEPS.map((step) => {
+              const isChecked = completedSteps.includes(step.id);
+              return (
+                <div
+                  key={step.id}
+                  onClick={() => toggleStep(step.id)}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
+                    isChecked
+                      ? "bg-emerald-950/20 border-emerald-500/40 shadow-md shadow-emerald-950/30"
+                      : "bg-neutral-900/80 border-white/10 hover:border-cyan-500/30"
+                  }`}
                 >
-                  <span>Apply at Uline.com</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-3 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <strong className="text-white font-black text-sm">
-                      Quill
-                    </strong>
-                    <span className="text-[10px] text-indigo-300 font-mono">
-                      Reports D&B
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-neutral-400">
-                    Office supplies, paper, cleaning products. Requires initial
-                    $100 order to open Net-30 credit line.
-                  </p>
-                </div>
-                <a
-                  href="https://www.quill.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1 cursor-pointer pt-2 border-t border-white/10"
-                >
-                  <span>Apply at Quill.com</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-3 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <strong className="text-white font-black text-sm">
-                      Grainger
-                    </strong>
-                    <span className="text-[10px] text-emerald-300 font-mono">
-                      Reports D&B/Exp
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-neutral-400">
-                    Industrial equipment and maintenance supplies. Reports trade
-                    lines to Dun & Bradstreet and Experian Commercial.
-                  </p>
-                </div>
-                <a
-                  href="https://www.grainger.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 cursor-pointer pt-2 border-t border-white/10"
-                >
-                  <span>Apply at Grainger.com</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-3 flex flex-col justify-between">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <strong className="text-white font-black text-sm">
-                      Nav Business
-                    </strong>
-                    <span className="text-[10px] text-amber-300 font-mono">
-                      Credit Monitor
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-neutral-400">
-                    Monitors D&B, Experian, and Equifax business credit scores
-                    while reporting monthly subscription as a trade line.
-                  </p>
-                </div>
-                <a
-                  href="https://www.nav.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-amber-400 hover:text-amber-300 font-bold flex items-center gap-1 cursor-pointer pt-2 border-t border-white/10"
-                >
-                  <span>Nav Credit Platform</span>
-                  <ArrowUpRight className="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-          </div>
-
-          {/* Top Business Credit Cards & SBA Loans */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Business Credit Cards */}
-            <div className="p-5 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-base font-black text-white flex items-center gap-2 animate-periodic-text-glitch">
-                  <CreditCard className="w-5 h-5 text-indigo-400" />
-                  Top Business Cards (0% APR & Capital)
-                </h4>
-              </div>
-
-              <div className="space-y-2 text-xs">
-                <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <strong className="text-cyan-300 block font-bold">
-                      Chase Ink Business Cash / Unlimited
-                    </strong>
-                    <a
-                      href="https://creditcards.chase.com/business-credit-cards"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] text-cyan-300 hover:underline flex items-center gap-0.5"
+                  <div className="flex items-start gap-3">
+                    <button
+                      type="button"
+                      className={`w-5 h-5 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 transition-all ${
+                        isChecked
+                          ? "bg-emerald-400 border-emerald-400 text-black font-bold"
+                          : "border-neutral-600 bg-neutral-950"
+                      }`}
                     >
-                      <span>Apply</span>
-                      <ArrowUpRight className="w-2.5 h-2.5" />
-                    </a>
-                  </div>
-                  <span className="text-neutral-300">
-                    0% intro APR for 12 months + $750 bonus cash back. Doesn't
-                    report to personal credit bureau if kept in good standing.
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <strong className="text-indigo-300 block font-bold">
-                      Brex / Ramp Corporate Cards
-                    </strong>
-                    <div className="flex gap-2">
-                      <a
-                        href="https://www.brex.com/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-indigo-300 hover:underline flex items-center gap-0.5"
-                      >
-                        <span>Brex</span>
-                        <ArrowUpRight className="w-2.5 h-2.5" />
-                      </a>
-                      <a
-                        href="https://ramp.com/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-indigo-300 hover:underline flex items-center gap-0.5"
-                      >
-                        <span>Ramp</span>
-                        <ArrowUpRight className="w-2.5 h-2.5" />
-                      </a>
+                      {isChecked && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                    </button>
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-white/10 text-neutral-300">
+                          {step.tier}
+                        </span>
+                        <h4
+                          className={`text-sm font-bold ${
+                            isChecked ? "text-emerald-200 line-through opacity-85" : "text-white"
+                          }`}
+                        >
+                          {step.title}
+                        </h4>
+                      </div>
+                      <p className="text-xs text-neutral-300 leading-relaxed">
+                        {step.requirement}
+                      </p>
+                      <span className="text-[10px] font-mono text-cyan-400/80 block">
+                        Reports to: {step.bureauReported}
+                      </span>
                     </div>
                   </div>
-                  <span className="text-neutral-300">
-                    Zero personal guarantee cards for venture-backed startups
-                    based on bank account balances ($50k+). Automatic expense
-                    management.
-                  </span>
-                </div>
 
-                <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <strong className="text-emerald-300 block font-bold">
-                      Amex Business Gold / Platinum
-                    </strong>
+                  <div className="shrink-0 pt-2 sm:pt-0 self-end sm:self-center">
                     <a
-                      href="https://www.americanexpress.com/us/credit-cards/business/"
+                      href={step.actionUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[10px] text-emerald-300 hover:underline flex items-center gap-0.5"
+                      onClick={(e) => e.stopPropagation()}
+                      className="px-3 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 text-xs font-bold flex items-center gap-1 active:scale-95 transition-all"
                     >
-                      <span>Amex Business</span>
-                      <ArrowUpRight className="w-2.5 h-2.5" />
+                      <span>{step.actionLabel}</span>
+                      <ExternalLink className="w-3 h-3 text-cyan-400" />
                     </a>
                   </div>
-                  <span className="text-neutral-300">
-                    High purchasing capacity charge cards for scaling operations
-                    with flexible payment terms and rewards.
-                  </span>
                 </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: VERIFIED GRANTS DIRECTORY */}
+      {activeTab === "grants_directory" && (
+        <div className="space-y-6">
+          {/* Search & Category Filter Bar */}
+          <div className="p-5 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 text-cyan-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search grants by keyword..."
+                  value={grantSearch}
+                  onChange={(e) => setGrantSearch(e.target.value)}
+                  className="w-full bg-black/60 border border-white/15 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-400 font-mono"
+                />
+              </div>
+
+              <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto no-scrollbar">
+                {[
+                  { id: "all", label: "All Grants" },
+                  { id: "federal", label: "Federal / SBA" },
+                  { id: "corporate", label: "Corporate" },
+                  { id: "women_minority", label: "Women & Minority" },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      triggerHaptic("selection");
+                      setGrantCategory(tab.id as any);
+                    }}
+                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold shrink-0 transition-all cursor-pointer ${
+                      grantCategory === tab.id
+                        ? "bg-emerald-400 text-black font-extrabold"
+                        : "bg-white/5 text-neutral-400 hover:bg-white/10"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Grants Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {filteredGrants.map((grant) => (
+              <div
+                key={grant.id}
+                className="p-5 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-3 flex flex-col justify-between hover:border-emerald-500/40 transition-all shadow-lg"
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono font-bold uppercase text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded border border-emerald-500/30">
+                      {grant.amount}
+                    </span>
+                    <span className="text-[10px] text-neutral-400 font-mono">
+                      {grant.deadline}
+                    </span>
+                  </div>
+
+                  <h4 className="text-base font-black text-white">
+                    {grant.title}
+                  </h4>
+                  <p className="text-xs text-cyan-300 font-medium">
+                    Provider: {grant.provider}
+                  </p>
+                  <p className="text-xs text-neutral-300 leading-relaxed">
+                    {grant.description}
+                  </p>
+
+                  <div className="pt-2 text-[11px] text-neutral-400 border-t border-white/10 space-y-1">
+                    <span className="text-neutral-300 font-bold block">Eligibility:</span>
+                    <p>{grant.eligibility}</p>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+                  <span className="text-[10px] text-neutral-500 uppercase font-mono">
+                    100% Non-Dilutive Grant
+                  </span>
+                  <a
+                    href={grant.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3.5 py-1.5 rounded-xl bg-emerald-400 hover:bg-emerald-300 text-black font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-400/20 active:scale-95 transition-all"
+                  >
+                    <span>Apply on Portal</span>
+                    <ExternalLink className="w-3 h-3 text-black" />
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: VALUATION, CASH RUNWAY & CAP TABLE */}
+      {activeTab === "valuation_calc" && (
+        <div className="space-y-6">
+          {/* SECTION A: BUSINESS VALUATION BY INDUSTRY MULTIPLE */}
+          <div className="p-6 rounded-3xl bg-neutral-900/90 border border-cyan-500/40 space-y-5 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-300 bg-cyan-500/20 px-2.5 py-1 rounded border border-cyan-500/30">
+                  Valuation Engine
+                </span>
+                <h3 className="text-lg font-black text-white">
+                  Small Business Valuation by Industry Multiple
+                </h3>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] text-neutral-400 block font-mono">Estimated Valuation</span>
+                <span className="text-xl sm:text-2xl font-black text-cyan-300 font-mono">
+                  ${Math.round(estimatedEnterpriseValue).toLocaleString()}
+                </span>
               </div>
             </div>
 
-            {/* SBA Loans & Line of Credit */}
-            <div className="p-5 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="text-base font-black text-white flex items-center gap-2 animate-periodic-text-glitch">
-                  <Landmark className="w-5 h-5 text-emerald-400" />
-                  SBA Government Guaranteed Loans
-                </h4>
+            {/* Controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
+              <div className="space-y-1.5 p-3 rounded-xl bg-black/50 border border-white/10">
+                <label className="text-neutral-400 block">Annual Gross Revenue</label>
+                <input
+                  type="number"
+                  value={annualRevenue}
+                  onChange={(e) => setAnnualRevenue(Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-neutral-900 border border-cyan-500/40 rounded-lg px-3 py-1.5 text-cyan-200 font-black focus:outline-none"
+                />
               </div>
 
-              <div className="space-y-2 text-xs">
-                <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <strong className="text-emerald-300 block font-bold">
-                      SBA 7(a) Loan Program (Up to $5M)
-                    </strong>
-                    <a
-                      href="https://www.sba.gov/funding-programs/loans/7a"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] text-emerald-300 hover:underline flex items-center gap-0.5"
-                    >
-                      <span>Details</span>
-                      <ArrowUpRight className="w-2.5 h-2.5" />
-                    </a>
-                  </div>
-                  <span className="text-neutral-300">
-                    Primary SBA loan for working capital, equipment, debt
-                    refinancing, and business acquisition. Terms up to 10-25
-                    years.
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <strong className="text-amber-300 block font-bold">
-                      SBA 504 Loan (Commercial Real Estate)
-                    </strong>
-                    <a
-                      href="https://www.sba.gov/funding-programs/loans/504"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] text-amber-300 hover:underline flex items-center gap-0.5"
-                    >
-                      <span>Details</span>
-                      <ArrowUpRight className="w-2.5 h-2.5" />
-                    </a>
-                  </div>
-                  <span className="text-neutral-300">
-                    Long term, fixed-rate financing for purchasing
-                    owner-occupied commercial real estate or major heavy
-                    equipment.
-                  </span>
-                </div>
-
-                <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                  <div className="flex justify-between items-center">
-                    <strong className="text-cyan-300 block font-bold">
-                      SBA Microloans (Up to $50,000)
-                    </strong>
-                    <a
-                      href="https://www.sba.gov/funding-programs/loans/microloans"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-[10px] text-cyan-300 hover:underline flex items-center gap-0.5"
-                    >
-                      <span>Details</span>
-                      <ArrowUpRight className="w-2.5 h-2.5" />
-                    </a>
-                  </div>
-                  <span className="text-neutral-300">
-                    Targeted loans for early-stage startups and small businesses
-                    needing working capital, inventory, or supplies.
-                  </span>
-                </div>
+              <div className="space-y-1.5 p-3 rounded-xl bg-black/50 border border-white/10">
+                <label className="text-neutral-400 block">Net Profit / SDE Margin ({netMarginPercent}%)</label>
+                <input
+                  type="range"
+                  min={5}
+                  max={60}
+                  step={1}
+                  value={netMarginPercent}
+                  onChange={(e) => setNetMarginPercent(Number(e.target.value))}
+                  className="w-full accent-cyan-400 cursor-pointer"
+                />
+                <span className="text-[10px] text-neutral-400">
+                  Annual SDE Profit: ${Math.round(annualProfitSDE).toLocaleString()}
+                </span>
               </div>
 
-              <div className="pt-2 border-t border-white/10">
-                <a
-                  href="https://www.sba.gov/funding-programs/loans"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-xs flex items-center gap-1.5 border border-emerald-500/30 w-fit"
+              <div className="space-y-1.5 p-3 rounded-xl bg-black/50 border border-white/10">
+                <label className="text-neutral-400 block">Industry Sector Multiple</label>
+                <select
+                  value={`${industryMultiple}-${industryName}`}
+                  onChange={(e) => {
+                    const [mult, name] = e.target.value.split("-");
+                    setIndustryMultiple(parseFloat(mult));
+                    setIndustryName(name);
+                  }}
+                  className="w-full bg-neutral-900 border border-cyan-500/40 rounded-lg px-2.5 py-1.5 text-cyan-200 font-bold focus:outline-none text-xs"
                 >
-                  <span>SBA Official Loan Finder Portal</span>
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                </a>
+                  <option value="6.5-SaaS & AI Software">SaaS & AI Software (6.5x SDE)</option>
+                  <option value="4.5-E-commerce & Brand">E-commerce & Brand (4.5x SDE)</option>
+                  <option value="3.5-Professional Services">Professional Services (3.5x SDE)</option>
+                  <option value="4.0-Healthcare & Med">Healthcare & Med (4.0x SDE)</option>
+                  <option value="3.0-Retail & Restaurant">Retail & Restaurant (3.0x SDE)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Valuation Range Box */}
+            <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+              <div>
+                <span className="text-neutral-400 block text-[11px]">Conservative Multiple Range:</span>
+                <span className="text-emerald-300 font-black text-sm">
+                  ${Math.round(estimatedLowVal).toLocaleString()} — ${Math.round(estimatedHighVal).toLocaleString()}
+                </span>
+              </div>
+              <div className="text-right">
+                <span className="text-neutral-400 block text-[11px]">Annual Cash Flow (SDE):</span>
+                <span className="text-cyan-300 font-bold">
+                  ${Math.round(annualProfitSDE).toLocaleString()}/yr
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION B: CASH RUNWAY & MONTHLY BURN RATE ENGINE */}
+          <div className="p-6 rounded-3xl bg-neutral-900/90 border border-emerald-500/40 space-y-5 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/20 px-2.5 py-1 rounded border border-emerald-500/30">
+                  Burn & Runway Engine
+                </span>
+                <h3 className="text-lg font-black text-white">
+                  Cash Runway & Monthly Net Burn Simulator
+                </h3>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] text-neutral-400 block font-mono">Est. Runway Remaining</span>
+                <span
+                  className={`text-xl sm:text-2xl font-black font-mono ${
+                    runwayMonths >= 18
+                      ? "text-emerald-300"
+                      : runwayMonths >= 6
+                      ? "text-amber-300"
+                      : "text-rose-400 animate-pulse"
+                  }`}
+                >
+                  {runwayMonths >= 999 ? "Cashflow Positive" : `${runwayMonths} Months`}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs font-mono">
+              <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-1">
+                <label className="text-neutral-400 block">Bank Cash Balance</label>
+                <input
+                  type="number"
+                  value={cashBalance}
+                  onChange={(e) => setCashBalance(Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-neutral-900 border border-emerald-500/40 rounded-lg px-2.5 py-1 text-emerald-300 font-bold"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-1">
+                <label className="text-neutral-400 block">Monthly Revenue</label>
+                <input
+                  type="number"
+                  value={monthlyRevenue}
+                  onChange={(e) => setMonthlyRevenue(Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-neutral-900 border border-emerald-500/40 rounded-lg px-2.5 py-1 text-cyan-300 font-bold"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-1">
+                <label className="text-neutral-400 block">Monthly Payroll</label>
+                <input
+                  type="number"
+                  value={monthlyPayroll}
+                  onChange={(e) => setMonthlyPayroll(Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-neutral-900 border border-rose-500/40 rounded-lg px-2.5 py-1 text-rose-300 font-bold"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-black/50 border border-white/10 space-y-1">
+                <label className="text-neutral-400 block">Monthly OpEx / Cloud</label>
+                <input
+                  type="number"
+                  value={monthlyOpex}
+                  onChange={(e) => setMonthlyOpex(Math.max(0, Number(e.target.value)))}
+                  className="w-full bg-neutral-900 border border-rose-500/40 rounded-lg px-2.5 py-1 text-rose-300 font-bold"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-neutral-950 border border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center text-xs font-mono">
+              <div className="p-2 rounded-xl bg-white/5 space-y-0.5">
+                <span className="text-[10px] text-neutral-400 block">Total Monthly Expenses</span>
+                <span className="text-rose-400 font-black text-sm">${totalMonthlyBurn.toLocaleString()}/mo</span>
+              </div>
+              <div className="p-2 rounded-xl bg-white/5 space-y-0.5">
+                <span className="text-[10px] text-neutral-400 block">Net Monthly Burn</span>
+                <span className={`font-black text-sm ${netMonthlyBurn > 0 ? "text-amber-300" : "text-emerald-400"}`}>
+                  {netMonthlyBurn > 0 ? `-$${netMonthlyBurn.toLocaleString()}/mo` : `+$${Math.abs(netMonthlyBurn).toLocaleString()}/mo`}
+                </span>
+              </div>
+              <div className="p-2 rounded-xl bg-white/5 space-y-0.5">
+                <span className="text-[10px] text-neutral-400 block">Recommended 24M Raise Target</span>
+                <span className="text-cyan-300 font-black text-sm">
+                  {targetRaiseFor24Months > 0 ? `$${targetRaiseFor24Months.toLocaleString()}` : "$0 (Self-Sustaining)"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* SECTION C: STARTUP CAP TABLE & SAFE ESTIMATOR */}
+          <div className="p-6 rounded-3xl bg-neutral-900/90 border border-amber-500/40 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300 bg-amber-500/20 px-2.5 py-1 rounded border border-amber-500/30">
+                  Cap Table Model
+                </span>
+                <h3 className="text-lg font-black text-white">
+                  Startup Cap Table & SAFE Dilution Estimator
+                </h3>
+              </div>
+              <a
+                href="https://www.ycombinator.com/documents"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-mono font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-lg border border-amber-500/30 flex items-center gap-1"
+              >
+                <span>YC SAFE Template</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+              <div className="space-y-2 p-3.5 rounded-2xl bg-black/40 border border-white/10">
+                <div className="flex justify-between">
+                  <span className="text-neutral-400 font-medium">Pre-Money Valuation:</span>
+                  <span className="font-mono font-black text-cyan-300">${preMoneyValuation.toLocaleString()}</span>
+                </div>
+                <input
+                  type="range"
+                  min={1000000}
+                  max={30000000}
+                  step={500000}
+                  value={preMoneyValuation}
+                  onChange={(e) => setPreMoneyValuation(Number(e.target.value))}
+                  className="w-full accent-cyan-400 cursor-pointer"
+                />
+              </div>
+
+              <div className="space-y-2 p-3.5 rounded-2xl bg-black/40 border border-white/10">
+                <div className="flex justify-between">
+                  <span className="text-neutral-400 font-medium">SAFE Investment Amount:</span>
+                  <span className="font-mono font-black text-emerald-300">${safeInvestmentAmount.toLocaleString()}</span>
+                </div>
+                <input
+                  type="range"
+                  min={100000}
+                  max={5000000}
+                  step={100000}
+                  value={safeInvestmentAmount}
+                  onChange={(e) => setSafeInvestmentAmount(Number(e.target.value))}
+                  className="w-full accent-emerald-400 cursor-pointer"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center font-mono">
+              <div className="p-3 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 space-y-0.5">
+                <span className="text-[9px] text-cyan-300 uppercase font-bold block">Post-Money Val</span>
+                <span className="text-base font-black text-cyan-300">${postMoneyValuation.toLocaleString()}</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 space-y-0.5">
+                <span className="text-[9px] text-emerald-300 uppercase font-bold block">Investor Equity</span>
+                <span className="text-base font-black text-emerald-300">{safeInvestorOwnership.toFixed(1)}%</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 space-y-0.5">
+                <span className="text-[9px] text-indigo-300 uppercase font-bold block">Founder Equity</span>
+                <span className="text-base font-black text-indigo-300">{founderPostOwnership.toFixed(1)}%</span>
+              </div>
+              <div className="p-3 rounded-2xl bg-amber-950/40 border border-amber-500/30 space-y-0.5">
+                <span className="text-[9px] text-amber-300 uppercase font-bold block">Implied PPS</span>
+                <span className="text-base font-black text-amber-300">${pricePerShare.toFixed(3)}/sh</span>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAB 3: STARTUP TO M&A / IPO ROADMAP */}
+      {/* TAB 5: STARTUP TO M&A / IPO ROADMAP */}
       {activeTab === "startup_roadmap" && (
         <div className="space-y-6">
           <div className="p-5 rounded-2xl bg-neutral-900/90 border border-white/15 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-extrabold text-white flex items-center gap-2">
                 <Rocket className="w-5 h-5 text-cyan-400" />
-                The 4-Stage Startup Lifecycle: From Idea to Nasdaq IPO / M&A
-                Exit
+                The 4-Stage Startup Lifecycle: From Idea to Nasdaq IPO / M&A Exit
               </h3>
               <span className="text-xs font-mono text-cyan-300 bg-cyan-500/20 px-2.5 py-1 rounded border border-cyan-500/30">
                 Venture Playbook
               </span>
             </div>
 
-            {/* STAGE 1 */}
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-black text-cyan-300 bg-cyan-500/20 px-2 py-0.5 rounded">
-                  STAGE 1: FORMATION & IP PROTECTION
-                </span>
-                <span className="text-xs text-neutral-400 font-mono">
-                  Bootstrapped / Friends & Family
-                </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                <span className="text-xs font-bold text-cyan-400 uppercase font-mono">Stage 1: Pre-Seed / Seed</span>
+                <h4 className="text-sm font-bold text-white">Entity, MVP & YC SAFE Rounds</h4>
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  Incorporate Delaware C-Corp, issue 10M founder common shares, build minimal viable product, and raise $500k-$2M on Post-Money SAFEs.
+                </p>
               </div>
-              <h4 className="text-sm font-bold text-white">
-                Delaware C-Corp, Founder Vesting & IP Assignment
-              </h4>
-              <p className="text-xs text-neutral-300 leading-relaxed">
-                Incorporate as a Delaware C-Corp, execute 4-year founder vesting
-                agreements with a 1-year cliff, assign all intellectual property
-                (IP) to the company via CIIA agreements, file 83(b) tax
-                elections within 30 days of stock issuance, and set up a
-                standard 10% employee stock option pool (ESOP).
-              </p>
-              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/10">
-                <a
-                  href="https://nvca.org/model-legal-documents/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold text-[11px] flex items-center gap-1 border border-cyan-500/30"
-                >
-                  <span>NVCA Model Legal Forms</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-                <a
-                  href="https://www.irs.gov/forms-pubs/about-form-83b"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-bold text-[11px] flex items-center gap-1 border border-purple-500/30"
-                >
-                  <span>IRS Section 83(b) Election</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+
+              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                <span className="text-xs font-bold text-emerald-400 uppercase font-mono">Stage 2: Series A & Scaling</span>
+                <h4 className="text-sm font-bold text-white">Product-Market Fit & Priced Preferred Round</h4>
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  Establish $1M+ ARR, convert SAFEs into Preferred Series A Stock, install professional board of directors, and expand sales/engineering.
+                </p>
               </div>
-            </div>
 
-            {/* STAGE 2 */}
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-black text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded">
-                  STAGE 2: PRE-SEED / SEED & SAFEs
-                </span>
-                <span className="text-xs text-neutral-400 font-mono">
-                  $500k to $3M Raised
-                </span>
+              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                <span className="text-xs font-bold text-indigo-400 uppercase font-mono">Stage 3: Growth & Series B/C</span>
+                <h4 className="text-sm font-bold text-white">Market Dominance & International Expansion</h4>
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  Scale to $10M-$50M ARR, raise growth capital from crossover hedge funds and sovereign wealth, optimize EBITDA margins and unit economics.
+                </p>
               </div>
-              <h4 className="text-sm font-bold text-white">
-                YC Post-Money SAFE Notes & Accelerator Programs
-              </h4>
-              <p className="text-xs text-neutral-300 leading-relaxed">
-                Raise initial seed capital using Y Combinator Post-Money SAFE
-                (Simple Agreement for Future Equity) instruments. Avoid price
-                negotiation early on by setting valuation caps (e.g. $5M to $12M
-                cap). Build Minimum Viable Product (MVP), achieve product-market
-                fit (PMF), and apply to top tier accelerators (YC, Techstars,
-                AngelPad).
-              </p>
-              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/10">
-                <a
-                  href="https://www.ycombinator.com/documents"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-[11px] flex items-center gap-1 border border-amber-500/30"
-                >
-                  <span>Y Combinator Official SAFE Documents</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-                <a
-                  href="https://www.ycombinator.com/apply"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-[11px] flex items-center gap-1 border border-emerald-500/30"
-                >
-                  <span>Apply to YC</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-                <a
-                  href="https://www.techstars.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-bold text-[11px] flex items-center gap-1 border border-indigo-500/30"
-                >
-                  <span>Techstars Accelerators</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
+
+              <div className="p-4 rounded-xl bg-black/40 border border-white/10 space-y-2">
+                <span className="text-xs font-bold text-amber-400 uppercase font-mono">Stage 4: Liquidity Exit</span>
+                <h4 className="text-sm font-bold text-white">Strategic M&A Acquisition or Nasdaq / NYSE S-1 IPO</h4>
+                <p className="text-xs text-neutral-300 leading-relaxed">
+                  File SEC Form S-1 with investment banks (Goldman Sachs, Morgan Stanley) or negotiate cash/stock acquisition with Fortune 500 tech acquirers.
+                </p>
               </div>
-            </div>
-
-            {/* STAGE 3 */}
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-black text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded">
-                  STAGE 3: SERIES A, B, C SCALING
-                </span>
-                <span className="text-xs text-neutral-400 font-mono">
-                  $10M to $100M+ Growth VCs
-                </span>
-              </div>
-              <h4 className="text-sm font-bold text-white">
-                Priced Equity Rounds, Lead Term Sheets & Board Seats
-              </h4>
-              <p className="text-xs text-neutral-300 leading-relaxed">
-                Transition from SAFEs to priced equity Series A rounds led by
-                institutional VC firms (Sequoia, Andreessen Horowitz,
-                Benchmark). Issue Preferred Stock, establish formal Board of
-                Directors governance, maintain Cap Table management platforms
-                (Carta, Pulley), and scale ARR (Annual Recurring Revenue)
-                exponentially.
-              </p>
-              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/10">
-                <a
-                  href="https://carta.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 font-bold text-[11px] flex items-center gap-1 border border-indigo-500/30"
-                >
-                  <span>Carta Equity Management</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-                <a
-                  href="https://pulley.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold text-[11px] flex items-center gap-1 border border-cyan-500/30"
-                >
-                  <span>Pulley Cap Table</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-
-            {/* STAGE 4 */}
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-black text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded">
-                  STAGE 4: EXIT STRATEGY (M&A OR IPO)
-                </span>
-                <span className="text-xs text-neutral-400 font-mono">
-                  Liquidity Event
-                </span>
-              </div>
-              <h4 className="text-sm font-bold text-white">
-                M&A Strategic Acquisition or Nasdaq/NYSE S-1 Public Listing
-              </h4>
-              <p className="text-xs text-neutral-300 leading-relaxed">
-                Execute a strategic liquidity exit. Option A: M&A buyout by a
-                tech titan or Private Equity firm at 10x-30x ARR multiples.
-                Option B: File Form S-1 registration statement with the SEC,
-                retain investment bankers (Goldman Sachs, Morgan Stanley),
-                conduct investor roadshows, and list on Nasdaq / NYSE.
-              </p>
-              <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-white/10">
-                <a
-                  href="https://www.sec.gov/edgar/searchedgar/companysearch"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold text-[11px] flex items-center gap-1 border border-cyan-500/30"
-                >
-                  <span>SEC EDGAR S-1 Filings Portal</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-                <a
-                  href="https://www.nasdaq.com/solutions/nasdaq-listing-center"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-[11px] flex items-center gap-1 border border-amber-500/30"
-                >
-                  <span>Nasdaq Listing Center</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-                <a
-                  href="https://www.nyse.com/listings"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 font-bold text-[11px] flex items-center gap-1 border border-emerald-500/30"
-                >
-                  <span>NYSE Listings Guide</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB 4: CAP TABLE & SAFE DILUTION CALCULATOR */}
-      {activeTab === "valuation_calc" && (
-        <div className="p-6 rounded-3xl bg-neutral-900/90 border border-white/15 space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                <Calculator className="w-5 h-5 text-amber-400" />
-                Startup Cap Table & SAFE Dilution Estimator
-              </h3>
-              <p className="text-xs text-neutral-400">
-                Simulate investor equity dilution, post-money valuation, and
-                founder equity retention after raising a SAFE investment round.
-              </p>
-            </div>
-            <a
-              href="https://www.ycombinator.com/documents"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs font-mono font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 px-2.5 py-1 rounded-lg border border-amber-500/30 flex items-center gap-1"
-            >
-              <span>Download YC SAFE Template</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          </div>
-
-          {/* Sliders Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Pre-Money Valuation */}
-            <div className="space-y-2 p-4 rounded-2xl bg-black/40 border border-white/10">
-              <div className="flex justify-between text-xs">
-                <span className="text-neutral-400 font-medium">
-                  Pre-Money Valuation Cap:
-                </span>
-                <span className="font-mono font-black text-cyan-300">
-                  ${preMoneyValuation.toLocaleString()}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={1000000}
-                max={50000000}
-                step={500000}
-                value={preMoneyValuation}
-                onChange={(e) => setPreMoneyValuation(Number(e.target.value))}
-                className="w-full accent-cyan-400 cursor-pointer"
-              />
-            </div>
-
-            {/* SAFE Investment */}
-            <div className="space-y-2 p-4 rounded-2xl bg-black/40 border border-white/10">
-              <div className="flex justify-between text-xs">
-                <span className="text-neutral-400 font-medium">
-                  SAFE Round Investment Amount:
-                </span>
-                <span className="font-mono font-black text-emerald-300">
-                  ${safeInvestmentAmount.toLocaleString()}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={100000}
-                max={10000000}
-                step={100000}
-                value={safeInvestmentAmount}
-                onChange={(e) =>
-                  setSafeInvestmentAmount(Number(e.target.value))
-                }
-                className="w-full accent-emerald-400 cursor-pointer"
-              />
-            </div>
-
-            {/* Option Pool */}
-            <div className="space-y-2 p-4 rounded-2xl bg-black/40 border border-white/10">
-              <div className="flex justify-between text-xs">
-                <span className="text-neutral-400 font-medium">
-                  Unallocated Option Pool (ESOP):
-                </span>
-                <span className="font-mono font-black text-purple-300">
-                  {optionPoolPercent}%
-                </span>
-              </div>
-              <input
-                type="range"
-                min={5}
-                max={20}
-                step={1}
-                value={optionPoolPercent}
-                onChange={(e) => setOptionPoolPercent(Number(e.target.value))}
-                className="w-full accent-purple-400 cursor-pointer"
-              />
-            </div>
-
-            {/* Initial Founder Shares */}
-            <div className="space-y-2 p-4 rounded-2xl bg-black/40 border border-white/10">
-              <div className="flex justify-between text-xs">
-                <span className="text-neutral-400 font-medium">
-                  Initial Founder Shares Issued:
-                </span>
-                <span className="font-mono font-black text-amber-300">
-                  {initialFounderShares.toLocaleString()} shares
-                </span>
-              </div>
-              <input
-                type="range"
-                min={1000000}
-                max={20000000}
-                step={500000}
-                value={initialFounderShares}
-                onChange={(e) =>
-                  setInitialFounderShares(Number(e.target.value))
-                }
-                className="w-full accent-amber-400 cursor-pointer"
-              />
-            </div>
-          </div>
-
-          {/* Results Summary Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center font-mono">
-            <div className="p-4 rounded-2xl bg-cyan-950/40 border border-cyan-500/30 space-y-1">
-              <span className="text-[10px] text-cyan-300 uppercase font-bold block">
-                Post-Money Valuation
-              </span>
-              <span className="text-xl font-black text-cyan-300">
-                ${postMoneyValuation.toLocaleString()}
-              </span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 space-y-1">
-              <span className="text-[10px] text-emerald-300 uppercase font-bold block">
-                SAFE Investor Ownership
-              </span>
-              <span className="text-xl font-black text-emerald-300">
-                {safeInvestorOwnership.toFixed(1)}%
-              </span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 space-y-1">
-              <span className="text-[10px] text-indigo-300 uppercase font-bold block">
-                Founder Retained Ownership
-              </span>
-              <span className="text-xl font-black text-indigo-300">
-                {founderPostOwnership.toFixed(1)}%
-              </span>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-500/30 space-y-1">
-              <span className="text-[10px] text-amber-300 uppercase font-bold block">
-                Est. Implied Share Price
-              </span>
-              <span className="text-xl font-black text-amber-300">
-                ${pricePerShare.toFixed(3)}/sh
-              </span>
             </div>
           </div>
         </div>

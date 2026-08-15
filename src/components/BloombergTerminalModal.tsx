@@ -26,6 +26,10 @@ import {
   FileText,
   Sliders,
   Cpu,
+  Download,
+  CreditCard,
+  Building2,
+  Award,
 } from "lucide-react";
 import { StockTicker } from "../types";
 import { triggerHaptic } from "../utils/haptics";
@@ -38,7 +42,16 @@ interface BloombergTerminalModalProps {
 }
 
 type CommandType =
-  "DES" | "ANR" | "FA" | "YCRV" | "ECST" | "COMM" | "L2" | "TOP" | "MOST";
+  | "DES"
+  | "ANR"
+  | "FA"
+  | "YCRV"
+  | "ECST"
+  | "COMM"
+  | "L2"
+  | "TOP"
+  | "MOST"
+  | "BIZCRED";
 
 export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
   isOpen,
@@ -48,6 +61,7 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
 }) => {
   const [activeCommand, setActiveCommand] = useState<CommandType>("DES");
   const [commandInput, setCommandInput] = useState("");
+  const [terminalTheme, setTerminalTheme] = useState<"amber" | "matrix" | "cyan">("amber");
   const [activeTicker, setActiveTicker] = useState<StockTicker>(
     () =>
       selectedStock ||
@@ -74,15 +88,58 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
   const [viewMode, setViewMode] = useState<"single" | "quad">("single");
   const [audioFeedback, setAudioFeedback] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
+  const [showAsciiModal, setShowAsciiModal] = useState(false);
   const [commandSuccessMsg, setCommandSuccessMsg] = useState<string | null>(
     null,
   );
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
+  const [copiedAscii, setCopiedAscii] = useState(false);
 
   const handleCopyCommand = (cmdStr: string) => {
     navigator.clipboard.writeText(cmdStr);
     setCopiedCmd(cmdStr);
     setTimeout(() => setCopiedCmd(null), 2000);
+  };
+
+  const getAsciiReport = () => {
+    return `+==========================================================================+
+|  STOCK BLOC QUANT WORKSTATION v4.2 // SECURITY TEARSHEET SNAPSHOT        |
++==========================================================================+
+| TICKER: ${activeTicker.symbol.padEnd(6)} | NAME: ${activeTicker.name.padEnd(26)} | TIME: ${new Date().toISOString().slice(0, 19)}Z |
+| PRICE:  $${activeTicker.price.toFixed(2).padEnd(6)} | CHANGE: ${(activeTicker.change >= 0 ? "+" : "") + activeTicker.change.toFixed(2)} (${(activeTicker.changePercent >= 0 ? "+" : "") + activeTicker.changePercent.toFixed(2)}%) | MKTCAP: ${(activeTicker.marketCap || "N/A").padEnd(10)} |
++--------------------------------------------------------------------------+
+| VALUATION & FUNDAMENTALS:                                                |
+| - P/E Ratio: ${(activeTicker.peRatio || "N/A").padEnd(8)} | 52W Range: $${(activeTicker.low52 || 0).toFixed(2)} - $${(activeTicker.high52 || 0).toFixed(2)}             |
+| - Div Yield: ${(activeTicker.dividendYield || "0.0%").padEnd(8)} | Volume: ${(activeTicker.volume || "N/A").padEnd(12)}               |
++--------------------------------------------------------------------------+
+| MACRO & FOMC BENCHMARKS:                                                 |
+| - Fed Funds Target: 4.75% - 5.00%  | 25bps Rate Cut Probability: 72.4%   |
+| - US 10-Year Yield: 4.22%          | 10Y-2Y Spread: +0.03% (Normalizing) |
++--------------------------------------------------------------------------+
+| WALL STREET CONSENSUS: BUY (91% Buy / 9% Hold / 0% Sell)                 |
+| - 12-Month Target: $${(activeTicker.price * 1.22).toFixed(2)} (+22.0% Implied Upside Potential)        |
++==========================================================================+
+| Generated via Stock Bloc Terminal (stockbloc.app)                        |
++==========================================================================+`;
+  };
+
+  const handleCopyAscii = () => {
+    navigator.clipboard.writeText(getAsciiReport());
+    setCopiedAscii(true);
+    setTimeout(() => setCopiedAscii(false), 2500);
+  };
+
+  const handleDownloadAscii = () => {
+    const report = getAsciiReport();
+    const blob = new Blob([report], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `STOCKBLOC_${activeTicker.symbol}_TERMINAL_REPORT.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // Synchronize when selectedStock prop changes
@@ -154,6 +211,7 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
         "L2",
         "TOP",
         "MOST",
+        "BIZCRED",
       ].find((c) => c === part) as CommandType | undefined;
       if (matchedCmd) {
         targetCmd = matchedCmd;
@@ -210,16 +268,46 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
     { price: (activeTicker.price - + 0.45).toFixed(2), size: 15400, mm: "NYSE" },
   ];
 
+  const themeClasses = {
+    amber: {
+      container: "bg-[#040810] border-amber-500/50 text-amber-200 shadow-amber-500/10",
+      header: "bg-black/90 border-amber-500/30 text-amber-300",
+      accent: "text-amber-400 border-amber-500/40 bg-amber-500/20",
+      badge: "bg-amber-500 text-black",
+      activeBtn: "bg-amber-500 text-black font-black border-amber-400 shadow-md shadow-amber-500/20",
+      inactiveBtn: "bg-black/50 text-amber-300 border-amber-500/30 hover:bg-amber-500/20",
+      input: "bg-black/80 border-amber-500/50 text-amber-300 placeholder-amber-700/80 focus:border-amber-400",
+    },
+    matrix: {
+      container: "bg-[#020e06] border-emerald-500/50 text-emerald-200 shadow-emerald-500/10",
+      header: "bg-black/90 border-emerald-500/30 text-emerald-300",
+      accent: "text-emerald-400 border-emerald-500/40 bg-emerald-500/20",
+      badge: "bg-emerald-500 text-black",
+      activeBtn: "bg-emerald-500 text-black font-black border-emerald-400 shadow-md shadow-emerald-500/20",
+      inactiveBtn: "bg-black/50 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20",
+      input: "bg-black/80 border-emerald-500/50 text-emerald-300 placeholder-emerald-700/80 focus:border-emerald-400",
+    },
+    cyan: {
+      container: "bg-[#020d18] border-cyan-500/50 text-cyan-200 shadow-cyan-500/10",
+      header: "bg-black/90 border-cyan-500/30 text-cyan-300",
+      accent: "text-cyan-400 border-cyan-500/40 bg-cyan-500/20",
+      badge: "bg-cyan-500 text-black",
+      activeBtn: "bg-cyan-500 text-black font-black border-cyan-400 shadow-md shadow-cyan-500/20",
+      inactiveBtn: "bg-black/50 text-cyan-300 border-cyan-500/30 hover:bg-cyan-500/20",
+      input: "bg-black/80 border-cyan-500/50 text-cyan-300 placeholder-cyan-700/80 focus:border-cyan-400",
+    },
+  }[terminalTheme];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-xl animate-fadeIn">
       {/* TERMINAL CONTAINER */}
-      <div className="w-full max-w-6xl max-h-[92vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden font-mono text-xs transition-colors bg-[#030810] border-amber-500/40 text-amber-200">
+      <div className={`w-full max-w-6xl max-h-[92vh] flex flex-col rounded-2xl border shadow-2xl overflow-hidden font-mono text-xs transition-colors ${themeClasses.container}`}>
         {/* TERMINAL HEADER & TICKER TAPE */}
-        <div className="p-3 border-b flex flex-col gap-2 bg-black/90 border-amber-500/30 text-amber-300">
-          <div className="flex items-center justify-between gap-2">
+        <div className={`p-3 border-b flex flex-col gap-2 ${themeClasses.header}`}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="p-1 rounded bg-amber-500/20 text-amber-400 font-bold border border-amber-500/40 flex items-center gap-1">
-                <Terminal className="w-4 h-4 text-amber-400 animate-pulse" />
+              <span className={`p-1 rounded font-bold border flex items-center gap-1 ${themeClasses.accent}`}>
+                <Terminal className="w-4 h-4 animate-pulse" />
                 <span className="font-black text-xs tracking-wider">
                   SB TERMINAL
                 </span>
@@ -232,8 +320,67 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
               </span>
             </div>
 
-            {/* Right Header Actions */}
+            {/* CRT Phosphor Theme Switcher + Right Header Actions */}
             <div className="flex items-center gap-2">
+              {/* Theme Switcher Pills */}
+              <div className="flex items-center bg-black/60 rounded-lg p-0.5 border border-white/10 text-[10px] font-bold">
+                <button
+                  onClick={() => {
+                    triggerHaptic("selection");
+                    setTerminalTheme("amber");
+                  }}
+                  className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                    terminalTheme === "amber"
+                      ? "bg-amber-400 text-black font-extrabold"
+                      : "text-amber-400/70 hover:text-amber-300"
+                  }`}
+                  title="Amber CRT Phosphor Theme"
+                >
+                  AMBER
+                </button>
+                <button
+                  onClick={() => {
+                    triggerHaptic("selection");
+                    setTerminalTheme("matrix");
+                  }}
+                  className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                    terminalTheme === "matrix"
+                      ? "bg-emerald-400 text-black font-extrabold"
+                      : "text-emerald-400/70 hover:text-emerald-300"
+                  }`}
+                  title="Matrix VT100 Green Phosphor Theme"
+                >
+                  MATRIX
+                </button>
+                <button
+                  onClick={() => {
+                    triggerHaptic("selection");
+                    setTerminalTheme("cyan");
+                  }}
+                  className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                    terminalTheme === "cyan"
+                      ? "bg-cyan-400 text-black font-extrabold"
+                      : "text-cyan-400/70 hover:text-cyan-300"
+                  }`}
+                  title="Cyber Cyan Workstation Theme"
+                >
+                  CYAN
+                </button>
+              </div>
+
+              {/* ASCII Snapshot Report Button */}
+              <button
+                onClick={() => {
+                  triggerHaptic("selection");
+                  setShowAsciiModal(true);
+                }}
+                className="px-2.5 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 text-[11px] font-bold flex items-center gap-1 active:scale-95 transition-all cursor-pointer"
+                title="View Institutional ASCII Monospace Report"
+              >
+                <FileText className="w-3.5 h-3.5 text-indigo-300" />
+                <span className="hidden sm:inline">ASCII REPORT</span>
+              </button>
+
               <button
                 onClick={() => setShowHelp(!showHelp)}
                 className={`px-2.5 py-1 rounded-lg border text-xs font-mono font-black transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 ${
@@ -244,7 +391,7 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
                 title="Open Terminal Command Cheat Sheet"
               >
                 <HelpCircle className="w-3.5 h-3.5 text-amber-400" />
-                <span>[?] COMMANDS</span>
+                <span>[?] CMD</span>
               </button>
 
               <button
@@ -275,7 +422,7 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
               >
                 <Grid className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">
-                  {viewMode === "quad" ? "QUAD VIEW" : "SINGLE FOCUS"}
+                  {viewMode === "quad" ? "QUAD VIEW" : "SINGLE"}
                 </span>
               </button>
 
@@ -290,7 +437,7 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
           </div>
 
           {/* REAL TIME MARKET TICKER TAPE */}
-          <div className="flex items-center gap-4 text-[10px] overflow-x-auto no-scrollbar pt-1 font-mono border-t border-amber-500/20 opacity-90">
+          <div className="flex items-center gap-4 text-[10px] overflow-x-auto no-scrollbar pt-1 font-mono border-t border-white/10 opacity-90">
             <span className="text-amber-400 font-bold shrink-0">INDICES:</span>
             <span className="shrink-0 flex items-center gap-1">
               <span className="text-neutral-400">S&P 500</span>
@@ -330,7 +477,7 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
         </div>
 
         {/* TERMINAL COMMAND RUNNER BAR */}
-        <div className="p-3 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-black/70 border-amber-500/30">
+        <div className="p-3 border-b flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-black/70 border-white/10">
           {/* Command Input Form */}
           <form
             onSubmit={handleExecuteCommand}
@@ -348,13 +495,13 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
                 type="text"
                 value={commandInput}
                 onChange={(e) => setCommandInput(e.target.value)}
-                placeholder="Type symbol + command (e.g. NVDA DES, WHOAMI, ABOUT)"
-                className="w-full font-mono text-xs px-3 py-2 rounded-lg border focus:outline-none uppercase bg-black/80 border-amber-500/50 text-amber-300 placeholder-amber-700/80 focus:border-amber-400"
+                placeholder="Type symbol + command (e.g. NVDA DES, BIZCRED, WHOAMI, ABOUT)"
+                className={`w-full font-mono text-xs px-3 py-2 rounded-lg border focus:outline-none uppercase ${themeClasses.input}`}
               />
             </div>
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer shrink-0 flex items-center gap-1"
+              className={`px-4 py-2 rounded-lg ${themeClasses.badge} font-black text-xs shadow-md active:scale-95 transition-all cursor-pointer shrink-0 flex items-center gap-1`}
             >
               <span>GO</span>
               <Play className="w-3 h-3 fill-black" />
@@ -367,10 +514,11 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
               { cmd: "DES", desc: "Description & Overview" },
               { cmd: "ANR", desc: "Analyst Recommendations" },
               { cmd: "FA", desc: "Financial Analysis" },
-              { cmd: "YCRV", desc: "Yield Curve (Macro)" },
-              { cmd: "ECST", desc: "Economic Statistics" },
-              { cmd: "COMM", desc: "Commodities" },
-              { cmd: "L2", desc: "Level 2 Order Book" },
+              { cmd: "YCRV", desc: "Yield Curve & FOMC Rate" },
+              { cmd: "ECST", desc: "Economic Statistics & Inflation" },
+              { cmd: "COMM", desc: "Commodities & Futures" },
+              { cmd: "L2", desc: "Level 2 Order Book Depth" },
+              { cmd: "BIZCRED", desc: "Corporate Credit & Tradelines" },
               { cmd: "TOP", desc: "Top News & Headlines" },
             ].map(({ cmd, desc }) => (
               <button
@@ -378,12 +526,12 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
                 onClick={() => handleSelectQuickCmd(cmd as CommandType)}
                 className={`group relative px-2.5 py-1.5 rounded-md text-[11px] font-bold border transition-all cursor-pointer flex-shrink-0 ${
                   activeCommand === cmd
-                    ? "bg-amber-500 text-black font-black border-amber-400"
-                    : "bg-black/50 text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
+                    ? themeClasses.activeBtn
+                    : themeClasses.inactiveBtn
                 }`}
               >
                 {cmd} <span className="text-[9px] opacity-75">&lt;GO&gt;</span>
-                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-amber-950 text-amber-300 text-[10px] rounded border border-amber-500/50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+                <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-2 py-1 bg-black/90 text-white text-[10px] rounded border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
                   {desc}
                 </span>
               </button>
@@ -989,17 +1137,193 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
                 </div>
               )}
 
-              {/* FALLBACK FOR OTHER COMMANDS (ECST / COMM / FA / TOP) */}
-              {(activeCommand === "ECST" ||
-                activeCommand === "COMM" ||
+              {/* COMMAND VIEW: BIZCRED (Corporate Credit & Tradelines) */}
+              {activeCommand === "BIZCRED" && (
+                <div className="p-5 rounded-2xl border space-y-4 bg-black/60 border-amber-500/30">
+                  <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
+                    <h3 className="text-sm font-black text-amber-400 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-amber-400" />
+                      BIZCRED &lt;GO&gt; Commercial Credit Matrix & Tradeline Monitor
+                    </h3>
+                    <span className="text-xs font-mono text-emerald-300 bg-emerald-500/20 px-2.5 py-0.5 rounded border border-emerald-500/30">
+                      PAYDEX 80+ TARGET (LOW RISK)
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-neutral-300">
+                    Real-time corporate credit tiering, D&B Paydex score targets, and active vendor reporting guidelines for 0% APY and institutional capital.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div className="p-3 rounded-xl bg-black/40 border border-emerald-500/30 space-y-1">
+                      <span className="text-neutral-400 text-[10px] block">
+                        Dun & Bradstreet Paydex
+                      </span>
+                      <strong className="text-emerald-400 text-lg font-mono font-black block">
+                        80 / 100
+                      </strong>
+                      <span className="text-[10px] text-emerald-300">
+                        Prompt / Ahead of Terms
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-black/40 border border-cyan-500/30 space-y-1">
+                      <span className="text-neutral-400 text-[10px] block">
+                        Experian Intelliscore Plus
+                      </span>
+                      <strong className="text-cyan-300 text-lg font-mono font-black block">
+                        78 / 100
+                      </strong>
+                      <span className="text-[10px] text-cyan-300">
+                        Commercial Tier 1 Range
+                      </span>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-black/40 border border-amber-500/30 space-y-1">
+                      <span className="text-neutral-400 text-[10px] block">
+                        Equifax Business Delinquency
+                      </span>
+                      <strong className="text-amber-300 text-lg font-mono font-black block">
+                        Class 1 (Low)
+                      </strong>
+                      <span className="text-[10px] text-amber-400">
+                        Zero Derogatories
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Tradeline Ladder Status */}
+                  <div className="space-y-2 pt-1">
+                    <h4 className="text-xs font-bold text-amber-300 uppercase">
+                      Recommended Tier 1 Net-30 Bureau Starters:
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 flex items-center justify-between">
+                        <div>
+                          <strong className="text-white font-bold block">Uline Net-30</strong>
+                          <span className="text-[10px] text-neutral-400">Min $50 invoice / Reports to D&B</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-400 font-mono">TIER 1 (STARTER)</span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 flex items-center justify-between">
+                        <div>
+                          <strong className="text-white font-bold block">Grainger Industrial</strong>
+                          <span className="text-[10px] text-neutral-400">Min $75 invoice / Reports to Experian</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-400 font-mono">TIER 1 (STARTER)</span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 flex items-center justify-between">
+                        <div>
+                          <strong className="text-white font-bold block">Quill Office Supplies</strong>
+                          <span className="text-[10px] text-neutral-400">Min $100 invoice / Reports to D&B</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-400 font-mono">TIER 1 (STARTER)</span>
+                      </div>
+
+                      <div className="p-2.5 rounded-lg bg-black/40 border border-white/10 flex items-center justify-between">
+                        <div>
+                          <strong className="text-white font-bold block">Nav Prime Tradeline</strong>
+                          <span className="text-[10px] text-neutral-400">Reports monthly tradeline to all 3</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-cyan-400 font-mono">TRI-BUREAU</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* COMMAND VIEW: ECST (Economic Statistics & FOMC) */}
+              {activeCommand === "ECST" && (
+                <div className="p-5 rounded-2xl border space-y-4 bg-black/60 border-amber-500/30">
+                  <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
+                    <h3 className="text-sm font-black text-amber-400 flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-amber-400" />
+                      ECST &lt;GO&gt; Macro Economic Statistics & FOMC Rate Probability
+                    </h3>
+                    <span className="text-xs font-mono text-cyan-300 bg-cyan-500/20 px-2.5 py-0.5 rounded border border-cyan-500/30">
+                      LIVE FED MONITOR
+                    </span>
+                  </div>
+
+                  {/* FOMC Rate Probability Bar */}
+                  <div className="p-4 rounded-xl bg-black/40 border border-amber-500/30 space-y-2">
+                    <div className="flex justify-between items-center text-xs">
+                      <strong className="text-amber-300 font-bold">
+                        CME FedWatch Target Rate Probability (Next Meeting):
+                      </strong>
+                      <span className="text-emerald-400 font-mono font-bold">
+                        72.4% PROBABILITY OF 25BPS CUT
+                      </span>
+                    </div>
+
+                    <div className="w-full h-3 rounded-full bg-neutral-800 overflow-hidden flex">
+                      <div className="h-full bg-emerald-500" style={{ width: "72.4%" }} title="25 bps cut (72.4%)" />
+                      <div className="h-full bg-amber-500" style={{ width: "27.6%" }} title="Hold / Pause (27.6%)" />
+                    </div>
+
+                    <div className="flex justify-between text-[10px] text-neutral-400 font-mono pt-1">
+                      <span className="flex items-center gap-1 text-emerald-400">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+                        25 bps Rate Cut (4.50% - 4.75%): <strong>72.4%</strong>
+                      </span>
+                      <span className="flex items-center gap-1 text-amber-300">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 inline-block" />
+                        Rate Hold (4.75% - 5.00%): <strong>27.6%</strong>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
+                      <span className="text-neutral-400 text-[10px] block">
+                        US CPI (Headline YoY)
+                      </span>
+                      <strong className="text-emerald-400 text-base font-mono block">
+                        2.6%
+                      </strong>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
+                      <span className="text-neutral-400 text-[10px] block">
+                        Core PCE Deflator
+                      </span>
+                      <strong className="text-cyan-300 text-base font-mono block">
+                        2.7%
+                      </strong>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
+                      <span className="text-neutral-400 text-[10px] block">
+                        US Unemployment Rate
+                      </span>
+                      <strong className="text-amber-300 text-base font-mono block">
+                        4.1%
+                      </strong>
+                    </div>
+
+                    <div className="p-3 rounded-xl bg-black/40 border border-white/10 space-y-1">
+                      <span className="text-neutral-400 text-[10px] block">
+                        US GDP Growth (QoQ Ann.)
+                      </span>
+                      <strong className="text-emerald-400 text-base font-mono block">
+                        +2.8%
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* FALLBACK FOR OTHER COMMANDS (COMM / FA / TOP) */}
+              {(activeCommand === "COMM" ||
                 activeCommand === "FA" ||
                 activeCommand === "TOP") && (
                 <div className="p-5 rounded-2xl border space-y-4 bg-black/60 border-amber-500/30">
                   <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
                     <h3 className="text-sm font-black text-amber-400 flex items-center gap-2">
                       <Globe className="w-4 h-4 text-amber-400" />
-                      {activeCommand} &lt;GO&gt; Macro & Commodities
-                      Intelligence
+                      {activeCommand} &lt;GO&gt; Market Intelligence & Quotes
                     </h3>
                     <span className="text-xs font-mono text-cyan-300 bg-cyan-500/20 px-2.5 py-0.5 rounded border border-cyan-500/30">
                       LIVE STREAM
@@ -1009,28 +1333,10 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                     <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-1">
                       <span className="text-neutral-400 text-[10px] block">
-                        US CPI Inflation (YoY)
-                      </span>
-                      <strong className="text-emerald-400 text-base font-mono block">
-                        2.6%
-                      </strong>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                      <span className="text-neutral-400 text-[10px] block">
-                        Federal Funds Rate Target
-                      </span>
-                      <strong className="text-cyan-300 text-base font-mono block">
-                        4.75% 5.00%
-                      </strong>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-1">
-                      <span className="text-neutral-400 text-[10px] block">
                         WTI Crude Oil Spot
                       </span>
                       <strong className="text-emerald-400 text-base font-mono block">
-                        $78.45 / bbl
+                        $78.45 / bbl (+1.15%)
                       </strong>
                     </div>
 
@@ -1039,7 +1345,25 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
                         Gold Spot (oz)
                       </span>
                       <strong className="text-amber-400 text-base font-mono block">
-                        $2,740.10 / oz
+                        $2,740.10 / oz (+0.35%)
+                      </strong>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-1">
+                      <span className="text-neutral-400 text-[10px] block">
+                        US 10-Year Benchmark
+                      </span>
+                      <strong className="text-cyan-300 text-base font-mono block">
+                        4.22% (-3.1 bps)
+                      </strong>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-black/40 border border-white/10 space-y-1">
+                      <span className="text-neutral-400 text-[10px] block">
+                        Bitcoin USD Spot
+                      </span>
+                      <strong className="text-emerald-400 text-base font-mono block">
+                        $96,400 (+2.80%)
                       </strong>
                     </div>
                   </div>
@@ -1067,6 +1391,54 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* ASCII REPORT MODAL OVERLAY */}
+      {showAsciiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/90 backdrop-blur-2xl animate-fadeIn">
+          <div className="w-full max-w-3xl max-h-[85vh] overflow-y-auto bg-[#050912] border-2 border-indigo-500/70 rounded-3xl p-5 sm:p-6 shadow-2xl text-indigo-100 font-mono space-y-4 relative">
+            <div className="flex items-center justify-between border-b border-indigo-500/30 pb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-indigo-400" />
+                <h3 className="text-base font-black text-white">
+                  ASCII TERMINAL REPORT SNAPSHOT ({activeTicker.symbol})
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowAsciiModal(false)}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <pre className="p-4 rounded-xl bg-black/90 border border-indigo-500/30 font-mono text-[11px] text-emerald-300 leading-relaxed overflow-x-auto whitespace-pre selection:bg-indigo-500 selection:text-white">
+              {getAsciiReport()}
+            </pre>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <span className="text-xs text-neutral-400">
+                Institutional plain-text snapshot formatted for email, trade journals, and notes.
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleCopyAscii}
+                  className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-lg shadow-indigo-600/30 active:scale-95"
+                >
+                  {copiedAscii ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span>{copiedAscii ? "COPIED TO CLIPBOARD" : "COPY ASCII"}</span>
+                </button>
+                <button
+                  onClick={handleDownloadAscii}
+                  className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-lg shadow-emerald-600/30 active:scale-95"
+                >
+                  <Download className="w-4 h-4" />
+                  <span>DOWNLOAD .TXT</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Floating [?] COMMANDS Button */}
       <button
@@ -1157,6 +1529,12 @@ export const BloombergTerminalModal: React.FC<BloombergTerminalModalProps> = ({
                   title: "Level 2 Order Book Depth",
                   desc: "Real-time market maker bids, asks, depth size & order spread metrics.",
                   example: `${activeTicker.symbol} L2`,
+                },
+                {
+                  cmd: "BIZCRED",
+                  title: "Corporate Credit & Tradeline Matrix",
+                  desc: "Tier 1-3 vendor credit ladder, Paydex 80+ benchmarks & business score builder.",
+                  example: "BIZCRED",
                 },
               ].map(({ cmd, title, desc, example }) => (
                 <div
