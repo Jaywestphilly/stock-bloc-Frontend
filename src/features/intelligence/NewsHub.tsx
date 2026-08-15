@@ -26,13 +26,20 @@ import {
   Cpu,
   Layers,
   Sparkle,
-  AlertTriangle
+  AlertTriangle,
+  Users,
+  Landmark,
+  Rocket,
+  Zap,
+  List,
+  LayoutGrid,
 } from "lucide-react";
 import { FEATURED_YOUTUBE_CHANNEL, INITIAL_YOUTUBE_VIDEOS } from "../../data/youtube";
 import { PODCAST_NEWS_ARTICLES } from "../../data/podcasts";
 import { YouTubeVideo, IntelFeedItem } from "../../types";
 import { triggerHaptic } from "../../utils/haptics";
 import { getStoredYouTubeVideos, syncYouTubeFeeds, formatTimeSinceSync } from "../../utils/youtubeSync";
+import { useMarketStore } from "../../stores/marketStore";
 
 export type CombinedFeedItem =
   | (Omit<YouTubeVideo, "timestamp"> & { itemCategory: "youtube" | "news_video"; type: "youtube_video"; timestamp: string });
@@ -107,15 +114,28 @@ const getItemTags = (item: CombinedFeedItem): string[] => {
   return tags;
 };
 
-export const NewsHub: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"ALL" | "YOUTUBE" | "NEWS_VIDEOS">("ALL");
-  const [selectedSector, setSelectedSector] = useState<string | null>(null);
+interface NewsHubProps {
+  onNavigateTab?: (tab: string) => void;
+}
 
-  useEffect(() => {
+export const NewsHub: React.FC<NewsHubProps> = ({ onNavigateTab }) => {
+  const [activeTab, setActiveTab] = useState<"ALL" | "YOUTUBE" | "NEWS_VIDEOS" | "BOOKMARKS">("ALL");
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<"FULL" | "COMPACT">("FULL");
+  
+  const stocks = useMarketStore(s => s.stocks);
+  const setSelectedStock = useMarketStore(s => s.setSelectedStock);
+
+  const handleTickerClick = (tickerSymbol: string) => {
+    const raw = tickerSymbol.replace('$', '');
+    setSelectedStock(raw);
+    if (onNavigateTab) {
+      onNavigateTab("MARKET");
+    }
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     }
-  }, [activeTab, selectedSector]);
+  };
   const [searchQuery, setSearchQuery] = useState("");
   const [activeVideoModal, setActiveVideoModal] = useState<YouTubeVideo | null>(null);
   const [feedVideos, setFeedVideos] = useState<YouTubeVideo[]>(() => getStoredYouTubeVideos());
@@ -497,6 +517,32 @@ export const NewsHub: React.FC = () => {
             <span>LATEST NEWS VIDEOS ({newsVideosCount})</span>
           </button>
         </div>
+        
+        {/* View Mode Toggle */}
+        <div className="hidden md:flex items-center gap-1 bg-black/40 p-1 rounded-lg border border-neutral-800">
+          <button
+            onClick={() => setViewMode("FULL")}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === "FULL" ? "bg-cyan-900/40 text-cyan-400" : "text-neutral-500 hover:text-white"}`}
+            title="Full Dossier Mode"
+          >
+            <LayoutGrid className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setViewMode("COMPACT")}
+            className={`p-1.5 rounded-md transition-colors ${viewMode === "COMPACT" ? "bg-cyan-900/40 text-cyan-400" : "text-neutral-500 hover:text-white"}`}
+            title="Compact Wire Mode"
+          >
+            <List className="w-4 h-4" />
+          </button>
+          <div className="w-px h-4 bg-neutral-800 mx-1"></div>
+          <button
+            onClick={() => setActiveTab("BOOKMARKS")}
+            className={`p-1.5 rounded-md transition-colors flex items-center gap-1 ${activeTab === "BOOKMARKS" ? "bg-cyan-900/40 text-cyan-400" : "text-neutral-500 hover:text-white"}`}
+            title="Saved Dispatches"
+          >
+            <Bookmark className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* Search input */}
         <div className="relative min-w-[200px]">
@@ -531,13 +577,13 @@ export const NewsHub: React.FC = () => {
           { name: "Robotics", colorClass: "border-purple-500/20 text-purple-400 bg-purple-950/20 hover:bg-purple-950/40 hover:border-purple-500/40", activeClass: "bg-purple-400 text-white border-purple-400 shadow-[0_0_12px_rgba(192,132,252,0.3)] hover:bg-purple-300" },
           { name: "Self-Driving", colorClass: "border-amber-500/20 text-amber-400 bg-amber-950/20 hover:bg-amber-950/40 hover:border-amber-500/40", activeClass: "bg-amber-400 text-black border-amber-400 shadow-[0_0_12px_rgba(251,191,36,0.3)] hover:bg-amber-300" }
         ].map((sec) => {
-          const isActive = selectedSector === sec.name;
+          const isActive = activeTags.includes(sec.name);
           return (
             <button
               key={sec.name}
               onClick={() => {
                 triggerHaptic("selection");
-                setSelectedSector(isActive ? null : sec.name);
+                setActiveTags(prev => prev.includes(sec.name) ? prev.filter(t => t !== sec.name) : [...prev, sec.name]);
               }}
               className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border transition-all cursor-pointer flex items-center gap-1.5 ${
                 isActive
@@ -550,11 +596,11 @@ export const NewsHub: React.FC = () => {
             </button>
           );
         })}
-        {selectedSector && (
+        {activeTags.length > 0 && (
           <button
             onClick={() => {
               triggerHaptic("medium");
-              setSelectedSector(null);
+              setActiveTags([]);
             }}
             className="text-[9px] font-black tracking-wider uppercase text-cyan-400/80 hover:text-cyan-300 ml-auto px-2 py-1 hover:bg-neutral-900 rounded transition-colors flex items-center gap-1"
           >
