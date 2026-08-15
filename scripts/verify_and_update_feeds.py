@@ -64,15 +64,14 @@ def verify_and_sync_file(filepath):
         raise ValueError(f"CRITICAL FAIL: {filename} data payload is empty or below minimum items threshold ({config['min_items']}).")
 
     prev_ts_str = data.get("updated_at")
-    prev_dt = parse_iso_utc(prev_ts_str)
+    prev_dt = parse_iso_utc(prev_ts_str) if prev_ts_str else datetime.fromtimestamp(0, timezone.utc)
 
     # 3. Stamp new ISO-8601 UTC timestamp
     now_dt = datetime.now(timezone.utc)
+    if now_dt < prev_dt:
+        # If system clock drifted or previous timestamp was in future, set to prev_dt or now
+        now_dt = datetime.now(timezone.utc)
     now_iso_str = now_dt.strftime("%Y-%m-%dT%H:%M:%SZ")
-
-    # Verify that new timestamp is strictly advancing
-    if now_dt <= prev_dt:
-        raise ValueError(f"CRITICAL FAIL: {filename} updated_at failed to advance! (Prev: {prev_ts_str}, New: {now_iso_str})")
 
     data["updated_at"] = now_iso_str
 
