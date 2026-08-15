@@ -10,8 +10,6 @@ interface ModalState {
   setIsAiCopilotOpen: (is: boolean) => void;
   isBrandLinktreeOpen: boolean;
   setIsBrandLinktreeOpen: (is: boolean) => void;
-  isOnboardingOpen: boolean;
-  setIsOnboardingOpen: (is: boolean) => void;
   isImageScannerOpen: boolean;
   setIsImageScannerOpen: (is: boolean) => void;
   isGroundingSearchOpen: boolean;
@@ -49,8 +47,6 @@ export const useModalStore = create<ModalState>((set) => ({
   setIsAiCopilotOpen: (isAiCopilotOpen) => set({ isAiCopilotOpen }),
   isBrandLinktreeOpen: false,
   setIsBrandLinktreeOpen: (isBrandLinktreeOpen) => set({ isBrandLinktreeOpen }),
-  isOnboardingOpen: false,
-  setIsOnboardingOpen: (isOnboardingOpen) => set({ isOnboardingOpen }),
   isImageScannerOpen: false,
   setIsImageScannerOpen: (isImageScannerOpen) => set({ isImageScannerOpen }),
   isGroundingSearchOpen: false,

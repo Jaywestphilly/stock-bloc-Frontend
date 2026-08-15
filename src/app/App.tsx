@@ -116,10 +116,6 @@ const DisclaimerModal = safeLazy(
   () => import("../components/DisclaimerModal"),
   "DisclaimerModal"
 );
-const OnboardingModal = safeLazy(
-  () => import("../components/OnboardingModal"),
-  "OnboardingModal"
-);
 const DataStatusPanel = safeLazy(
   () => import("../components/DataStatusPanel"),
   "DataStatusPanel"
@@ -342,7 +338,6 @@ export function App() {
     setIsBrokerageModalOpen(false);
     setIsShareModalOpen(false);
     setIsDataStatusOpen(false);
-    setIsOnboardingOpen(false);
     setShareStock(null);
     setBrokerageStock(null);
   }, []);
@@ -497,30 +492,8 @@ export function App() {
   const { isBrandLinktreeOpen, setIsBrandLinktreeOpen } = useModalStore();
 
   // New Feature Modals
-  const { isOnboardingOpen, setIsOnboardingOpen } = useModalStore();
   const { isAuthOpen, setIsAuthOpen } = useModalStore();
   const { isDisclaimerOpen, setIsDisclaimerOpen } = useModalStore();
-
-  // Auto-show Onboarding for first-time visitors (auto-skip for agents / headless browsers)
-  useEffect(() => {
-    try {
-      if (isAgentOrHeadless()) {
-        try { localStorage.setItem("stock_bloc_onboarding_dismissed", "true"); } catch (e) {}
-        setIsOnboardingOpen(false);
-        return;
-      }
-
-      let dismissed = null; try { dismissed = localStorage.getItem("stock_bloc_onboarding_dismissed"); } catch (e) {}
-      if (!dismissed) {
-        const timer = setTimeout(() => {
-          setIsOnboardingOpen(true);
-        }, 1200);
-        return () => clearTimeout(timer);
-      }
-    } catch (e) {
-      console.warn("localStorage error", e);
-    }
-  }, [setIsOnboardingOpen]);
 
   // Command Palette & Data Status
     const { isDataStatusOpen, setIsDataStatusOpen } = useModalStore();
@@ -946,7 +919,6 @@ export function App() {
         activeTab={activeTab}
         onSelectTab={handleSelectTab}
         onOpenTerminal={handleOpenBloombergTerminal}
-        onOpenOnboarding={() => setIsOnboardingOpen(true)}
       />
 
       <>
@@ -1627,13 +1599,6 @@ export function App() {
         isOpen={isDataStatusOpen}
         onClose={() => setIsDataStatusOpen(false)}
         lastSyncTime={lastSyncTime}
-      />
-
-      {/* Guided 2-Step First-Time User Onboarding Modal */}
-      <OnboardingModal
-        isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
-        onNavigateTab={handleSelectTab}
       />
 
       </Suspense>

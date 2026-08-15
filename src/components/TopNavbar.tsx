@@ -26,10 +26,9 @@ interface TopNavbarProps {
   activeTab: ViewTab;
   onSelectTab: (tab: ViewTab) => void;
   onOpenTerminal?: () => void;
-  onOpenOnboarding?: () => void;
 }
 
-export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, onOpenTerminal, onOpenOnboarding }) => {
+export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, onOpenTerminal }) => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   const marketsMenu = [
@@ -46,7 +45,6 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
   ];
 
   const educationMenu = [
-    { id: "onboarding", label: "Guided 2-Step Terminal Tour", icon: Sparkles },
     { id: "terminal_guide", label: "Terminal Guide & Manual", icon: Terminal },
     { id: "mit_courses", label: "MIT & University Courses", icon: GraduationCap },
     { id: "investopedia", label: "Investopedia Free Trading Game", icon: Sparkles },
@@ -97,11 +95,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
                   onClick={() => {
                     triggerHaptic("selection");
                     setActiveDropdown(null);
-                    if (item.id === "onboarding") {
-                      if (onOpenOnboarding) onOpenOnboarding();
-                    } else {
-                      onSelectTab(item.id as ViewTab);
-                    }
+                    onSelectTab(item.id as ViewTab);
                   }}
                   className="w-full px-3 py-2 text-left text-[11px] font-bold text-cyan-100 hover:bg-cyan-500/20 hover:text-white flex items-center gap-2 rounded-lg transition-colors cursor-pointer"
                 >
