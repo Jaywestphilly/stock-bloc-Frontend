@@ -90,11 +90,13 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-30 w-full backdrop-blur-2xl bg-black/95 border-b border-cyan-500/30 text-white transition-colors relative overflow-hidden">
       {/* Top Cyber Telemetry Bar */}
-      <div className="flex items-center justify-between px-3 sm:px-5 pt-1.5 pb-1 text-[10px] font-mono tracking-widest text-cyan-400/90 bg-black/60 border-b border-cyan-500/20 select-none">
+      <div className="flex items-center justify-between px-3 sm:px-5 pt-1.5 pb-1 text-[10px] font-martian tracking-widest text-cyan-400/90 bg-black/60 border-b border-cyan-500/20 select-none">
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 bg-emerald-400 animate-ping inline-block" />
-            SYS.QUANT-88 // {timeStr || "19:42:01"}
+            <span className="font-zen text-[9px] text-cyan-300">SYS.QUANT-88</span>
+            <span className="text-cyan-600">//</span>
+            <span className="text-cyan-200">{timeStr || "19:42:01"}</span>
           </span>
         </div>
 
@@ -106,7 +108,7 @@ export const Header: React.FC<HeaderProps> = ({
               triggerHaptic("selection");
               if (onOpenDataStatus) onOpenDataStatus();
             }}
-            className={`px-2 py-0.5 rounded border text-[9px] font-bold uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
+            className={`px-2 py-0.5 rounded border text-[9px] font-martian font-bold uppercase tracking-wider flex items-center gap-1 transition-all cursor-pointer ${
               dataStale
                 ? "bg-amber-500/20 text-amber-300 border-amber-500/50 hover:bg-amber-500/30"
                 : "bg-emerald-500/20 text-emerald-300 border-emerald-400/40 hover:bg-emerald-500/30"
@@ -117,7 +119,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span>{compactStatusText}</span>
           </button>
 
-          <span className="hidden md:inline text-[9px] text-emerald-300 font-bold bg-emerald-500/20 px-2 py-0.5 border border-emerald-400/40 rounded">
+          <span className="hidden md:inline text-[9px] text-emerald-300 font-martian font-bold bg-emerald-500/20 px-2 py-0.5 border border-emerald-400/40 rounded">
             [QUANT-NODE: ONLINE]
           </span>
         </div>
@@ -141,11 +143,11 @@ export const Header: React.FC<HeaderProps> = ({
           />
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="font-black text-base tracking-wider text-cyan-100 uppercase group-hover:text-cyan-300 transition-colors flex items-center gap-1">
-                STOCK BLOC<span className="text-cyan-400">.</span>
+              <h1 className="font-zen text-sm sm:text-base tracking-widest text-cyan-100 uppercase group-hover:text-cyan-300 transition-colors flex items-center gap-1">
+                STOCK BLOC<span className="text-cyan-400 animate-pulse">.</span>
               </h1>
             </div>
-            <p className="text-[9px] text-cyan-400/80 font-mono tracking-wider uppercase leading-none mt-0.5">
+            <p className="text-[9px] text-cyan-400/80 font-martian tracking-wider uppercase leading-none mt-0.5">
               QUANT WEALTH MATRIX
             </p>
           </div>
@@ -158,11 +160,12 @@ export const Header: React.FC<HeaderProps> = ({
               triggerHaptic("selection");
               if (onSelectTab) onSelectTab("community");
             }}
-            className="px-2.5 py-1.5 bg-neutral-900 border border-cyan-500/40 alien-block-cut-sm text-cyan-300 hover:bg-cyan-950/30 transition-all active:scale-95 flex items-center gap-1 cursor-pointer"
-            title="Community Hub & Chat"
+            className="px-2.5 py-1.5 bg-neutral-900 border border-cyan-400/60 alien-block-cut-sm text-cyan-300 hover:bg-cyan-950/40 transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer glow-cyan shadow-sm"
+            title="Community Hub, Clickable Trader Profiles & Live Market Chat"
           >
             <Users className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline text-[11px] font-black uppercase">Community</span>
+            <span className="hidden sm:inline text-[11px] font-black uppercase font-alien-hud">Community</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           </button>
 
           <button

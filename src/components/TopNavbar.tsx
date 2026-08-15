@@ -19,6 +19,8 @@ import {
   Youtube,
   Globe,
   BarChart3,
+  Users,
+  MessageSquare,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
 
@@ -74,10 +76,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
         onMouseLeave={() => setActiveDropdown(null)}
       >
         <button
-          className={`px-3 py-1.5 rounded-xl font-black text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
+          className={`px-3 py-1.5 alien-block-cut-sm font-alien-hud text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
             isActive || activeDropdown === menuKey
-              ? "bg-cyan-400 text-black shadow-lg shadow-cyan-400/30 border border-cyan-200"
-              : "text-cyan-300 hover:text-white hover:bg-cyan-950/40 border border-cyan-500/20"
+              ? "bg-cyan-400 text-black shadow-lg shadow-cyan-400/40 border border-cyan-200 glow-cyan"
+              : "text-cyan-300 hover:text-white hover:bg-cyan-950/40 border border-cyan-500/30"
           }`}
         >
           <IconHeader className="w-3.5 h-3.5 shrink-0" />
@@ -86,7 +88,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
         </button>
 
         {activeDropdown === menuKey && (
-          <div className="absolute top-full left-0 mt-1 w-56 bg-neutral-950 border border-cyan-500/40 rounded-xl shadow-2xl p-1 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2">
+          <div className="absolute top-full left-0 mt-1 w-60 bg-neutral-950/95 border border-cyan-500/50 alien-block-cut-sm shadow-2xl p-1 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 backdrop-blur-xl">
             {items.map((item) => {
               const Icon = item.icon;
               return (
@@ -97,7 +99,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
                     setActiveDropdown(null);
                     onSelectTab(item.id as ViewTab);
                   }}
-                  className="w-full px-3 py-2 text-left text-[11px] font-bold text-cyan-100 hover:bg-cyan-500/20 hover:text-white flex items-center gap-2 rounded-lg transition-colors cursor-pointer"
+                  className="w-full px-3 py-2 text-left font-alien-hud text-[10px] text-cyan-100 hover:bg-cyan-500/20 hover:text-white flex items-center gap-2 transition-colors cursor-pointer"
                 >
                   <Icon className="w-3.5 h-3.5 text-cyan-400" />
                   <span>{item.label}</span>
@@ -116,7 +118,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
 
   return (
     <nav
-      className="hidden md:flex items-center justify-center gap-2 px-3 py-2 bg-black/95 border-b border-cyan-500/30 overflow-visible font-mono text-xs select-none relative z-40"
+      className="hidden md:flex items-center justify-center gap-2 px-3 py-2 bg-black/95 border-b border-cyan-500/30 overflow-visible font-martian text-xs select-none relative z-40"
       aria-label="Desktop Top Navigation"
     >
       <div className="flex items-center gap-2">
@@ -126,10 +128,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
             triggerHaptic("selection");
             onSelectTab("news");
           }}
-          className={`px-3 py-1.5 rounded-xl font-black text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
+          className={`px-3 py-1.5 alien-block-cut-sm font-alien-hud text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
             activeTab === "news"
-              ? "bg-cyan-400 text-black shadow-lg shadow-cyan-400/40 border border-cyan-200"
-              : "text-cyan-300 hover:text-white hover:bg-cyan-950/40 border border-cyan-500/20"
+              ? "bg-cyan-400 text-black shadow-lg shadow-cyan-400/40 border border-cyan-200 glow-cyan"
+              : "text-cyan-300 hover:text-white hover:bg-cyan-950/40 border border-cyan-500/30"
           }`}
           title="Combined YouTube & Intel Feed"
         >
@@ -137,7 +139,25 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
           <span>YOUTUBE & INTEL FEED</span>
         </button>
 
-        {/* 2. MARKETS */}
+        {/* 2. COMMUNITY HUB & LIVE TERMINAL CHAT */}
+        <button
+          onClick={() => {
+            triggerHaptic("selection");
+            onSelectTab("community");
+          }}
+          className={`px-3 py-1.5 alien-block-cut-sm font-alien-hud text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
+            activeTab === "community"
+              ? "bg-cyan-400 text-black shadow-lg shadow-cyan-400/40 border border-cyan-200 glow-cyan font-bold"
+              : "text-cyan-300 hover:text-white hover:bg-cyan-950/40 border border-cyan-500/40"
+          }`}
+          title="Community Alpha Theses, Profiles & Live Terminal Chat"
+        >
+          <Users className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+          <span>COMMUNITY</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+        </button>
+
+        {/* 3. MARKETS */}
         {renderDropdown("MARKETS", "markets", TrendingUp, marketsMenu, isMarketsActive)}
 
         {/* 3. AI */}
@@ -149,17 +169,14 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
             triggerHaptic("selection");
             onSelectTab("real_estate");
           }}
-          className={`px-2.5 py-1 rounded-xl font-black text-[10px] sm:text-[11px] flex items-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none ${
+          className={`px-2.5 py-1 alien-block-cut-sm font-alien-hud text-[10px] sm:text-[11px] flex items-center gap-1.5 transition-all cursor-pointer focus-visible:outline-none ${
             activeTab === "real_estate"
-              ? "bg-amber-400 text-black shadow-lg shadow-amber-400/30 border border-amber-200"
-              : "text-amber-300 hover:text-white hover:bg-amber-950/40 border border-amber-500/20"
+              ? "bg-amber-400 text-black shadow-lg shadow-amber-400/30 border border-amber-200 glow-amber"
+              : "text-amber-300 hover:text-white hover:bg-amber-950/40 border border-amber-500/30"
           }`}
         >
           <Building2 className="w-3.5 h-3.5 shrink-0" />
-          <span className="flex flex-col text-center leading-none tracking-tight">
-            <span>REAL</span>
-            <span>ESTATE</span>
-          </span>
+          <span>REAL ESTATE</span>
         </button>
 
         {/* 5. CREDIT */}
@@ -168,10 +185,10 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
             triggerHaptic("selection");
             onSelectTab("credit");
           }}
-          className={`px-3 py-1.5 rounded-xl font-black text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
+          className={`px-3 py-1.5 alien-block-cut-sm font-alien-hud text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
             activeTab === "credit"
-              ? "bg-emerald-400 text-black shadow-lg shadow-emerald-400/30 border border-emerald-200"
-              : "text-emerald-300 hover:text-white hover:bg-emerald-950/40 border border-emerald-500/20"
+              ? "bg-emerald-400 text-black shadow-lg shadow-emerald-400/30 border border-emerald-200 glow-emerald"
+              : "text-emerald-300 hover:text-white hover:bg-emerald-950/40 border border-emerald-500/30"
           }`}
         >
           <ShieldCheck className="w-3.5 h-3.5" />
@@ -190,15 +207,15 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
             triggerHaptic("selection");
             onSelectTab("youtube");
           }}
-          className={`px-3 py-1.5 rounded-xl font-black text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
+          className={`px-3 py-1.5 alien-block-cut-sm font-alien-hud text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
             activeTab === "youtube"
-              ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30 border border-rose-300"
-              : "text-rose-300 hover:text-white hover:bg-rose-950/40 border border-rose-500/20"
+              ? "bg-rose-500 text-white shadow-lg shadow-rose-500/30 border border-rose-300 glow-rose"
+              : "text-rose-300 hover:text-white hover:bg-rose-950/40 border border-rose-500/30"
           }`}
           title="Stock Bloc YouTube Channel Videos (@stockbloc)"
         >
           <Youtube className="w-3.5 h-3.5 text-rose-400" />
-          <span>YOUTUBE VIDEOS</span>
+          <span>YOUTUBE</span>
         </button>
 
         {/* 8. BOOKS & STORE (Top Button) */}
@@ -207,24 +224,24 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
             triggerHaptic("selection");
             onSelectTab("pricing");
           }}
-          className={`px-3 py-1.5 rounded-xl font-black text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
+          className={`px-3 py-1.5 alien-block-cut-sm font-alien-hud text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
             activeTab === "pricing"
-              ? "bg-purple-400 text-black shadow-lg shadow-purple-400/30 border border-purple-200"
-              : "text-purple-300 hover:text-white hover:bg-purple-950/40 border border-purple-500/20"
+              ? "bg-purple-400 text-black shadow-lg shadow-purple-400/30 border border-purple-200 glow-violet"
+              : "text-purple-300 hover:text-white hover:bg-purple-950/40 border border-purple-500/30"
           }`}
         >
           <BookOpen className="w-3.5 h-3.5 text-purple-400" />
           <span>BOOKS & STORE</span>
         </button>
 
-        {/* 7. FREE TERMINAL (Top Button) */}
+        {/* 9. FREE TERMINAL (Top Button) */}
         {onOpenTerminal && (
           <button
             onClick={() => {
               triggerHaptic("selection");
               onOpenTerminal();
             }}
-            className="px-3.5 py-1.5 rounded-xl font-black text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none bg-amber-400 text-black shadow-lg shadow-amber-400/30 border border-amber-200 hover:bg-amber-300"
+            className="px-3.5 py-1.5 alien-block-cut-sm font-alien-hud text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none bg-amber-400 text-black shadow-lg shadow-amber-400/30 border border-amber-200 hover:bg-amber-300 glow-amber"
             title="Open Stock Bloc Workstation Terminal"
           >
             <Terminal className="w-3.5 h-3.5 text-black animate-pulse" />

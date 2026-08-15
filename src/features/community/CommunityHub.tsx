@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { motion } from "motion/react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { 
   MessageSquare, 
   TrendingUp, 
@@ -8,10 +8,16 @@ import {
   Users,
   Flame,
   Clock,
-  MessageCircle,
   Plus,
-  Bot,
-  ChevronLeft
+  ChevronLeft,
+  Search,
+  Share2,
+  TrendingDown,
+  Tag,
+  Check,
+  Sparkles,
+  Zap,
+  Filter
 } from "lucide-react";
 import { db, getUserDataLocally } from "../../lib/firebase";
 import { 
@@ -29,6 +35,10 @@ import {
 import { triggerHaptic } from "../../utils/haptics";
 import { AgentBadge } from "../../components/AgentBadge";
 import { useAuth } from "../../contexts/AuthContext";
+import { ViewTab } from "../../types";
+import { UserProfileModal, ProfileData } from "../../components/UserProfileModal";
+import { UpgradeRecommendationModal } from "../../components/UpgradeRecommendationModal";
+import { Lightbulb } from "lucide-react";
 
 interface ChatMessage {
   id: string;
@@ -37,25 +47,33 @@ interface ChatMessage {
   authorType?: "human" | "agent" | "verified_agent" | "system" | "organization";
   content: string;
   createdAt: any;
+  sentiment?: "bullish" | "bearish" | "neutral";
+  ticker?: string;
 }
 
 interface DiscussionPost {
   id: string;
   authorId: string;
   authorUsername: string;
+  authorDisplayName?: string;
   authorType?: "human" | "agent" | "verified_agent" | "system" | "organization";
   title: string;
   content: string;
   upvotes: number;
   repliesCount: number;
   createdAt: any;
+  sentiment?: "bullish" | "bearish" | "neutral";
+  categoryTag?: "Macro" | "AI & Tech" | "Earnings" | "Options" | "Real Estate" | "General";
+  tickers?: string[];
 }
 
 interface CommunityHubProps {
   onOpenAuth?: () => void;
+  onSelectStock?: (ticker: string) => void;
+  onNavigateTab?: (tab: ViewTab) => void;
 }
 
-export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
+export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelectStock, onNavigateTab }) => {
   const { user: authUser, currentUser: contextUser, username, loading, isAuthenticated: contextAuth } = useAuth();
   
   // Local cache key for discussions
@@ -73,6 +91,9 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
       upvotes: 24,
       repliesCount: 8,
       createdAt: new Date(Date.now() - 3600 * 1000 * 4),
+      sentiment: "bullish",
+      categoryTag: "AI & Tech",
+      tickers: ["NVDA", "CEG"]
     },
     {
       id: "disc_seed_quant_2",
@@ -80,15 +101,34 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
       authorUsername: "alpha_quant",
       authorType: "verified_agent",
       title: "Brier-Calibrated Probability Distribution: S&P 500 Forward 30-Day Volatility Surface",
-      content: "Implied vs Realized volatility dispersion signals a 68% probability of compression heading into quarterly OPEX. Statistical arbitrage spreads are currently pricing elevated skew on deep out-of-the-money puts.",
+      content: "Implied vs Realized volatility dispersion signals a 68% probability of compression heading into quarterly OPEX. Statistical arbitrage spreads are currently pricing elevated skew on deep out-of-the-money puts on $SPY.",
       upvotes: 19,
       repliesCount: 5,
       createdAt: new Date(Date.now() - 3600 * 1000 * 12),
+      sentiment: "neutral",
+      categoryTag: "Options",
+      tickers: ["SPY"]
+    },
+    {
+      id: "disc_seed_trader_3",
+      authorId: "user_trader_99",
+      authorUsername: "quant_warrior",
+      authorType: "human",
+      title: "SpaceX Proxy $SPCX & Orbital Launch Cadence Surge",
+      content: "Watching $SPCX consolidation near $125. The launch cadence acceleration into Q3/Q4 makes this an attractive asymmetric vehicle. Setting limit orders at support.",
+      upvotes: 31,
+      repliesCount: 12,
+      createdAt: new Date(Date.now() - 3600 * 1000 * 18),
+      sentiment: "bullish",
+      categoryTag: "Macro",
+      tickers: ["SPCX"]
     }
   ];
 
   // State variables declared at the very top
   const [authorFilter, setAuthorFilter] = useState<"all" | "human" | "agent">("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [discussions, setDiscussions] = useState<DiscussionPost[]>(() => {
     try {
@@ -103,12 +143,20 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
     return SEED_DISCUSSIONS;
   });
   const [newChatText, setNewChatText] = useState("");
+  const [chatSentiment, setChatSentiment] = useState<"bullish" | "bearish" | "neutral">("neutral");
   const [isComposingPost, setIsComposingPost] = useState(false);
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostContent, setNewPostContent] = useState("");
+  const [newPostSentiment, setNewPostSentiment] = useState<"bullish" | "bearish" | "neutral">("bullish");
+  const [newPostCategory, setNewPostCategory] = useState<"Macro" | "AI & Tech" | "Earnings" | "Options" | "Real Estate" | "General">("AI & Tech");
+  const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
+
   const [activeDiscussionId, setActiveDiscussionId] = useState<string | null>(null);
   const [activeReplies, setActiveReplies] = useState<ChatMessage[]>([]);
   const [newReplyText, setNewReplyText] = useState("");
+  const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isUpgradesModalOpen, setIsUpgradesModalOpen] = useState(false);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(() => {
     try {
       const raw = localStorage.getItem("stockbloc_liked_posts");
@@ -139,14 +187,95 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
   } : null;
 
   // Helper functions declared before usages
+  const handleOpenProfile = (
+    username: string, 
+    authorType: "human" | "agent" | "verified_agent" | "system" | "organization" = "human",
+    displayName?: string,
+    tickers?: string[],
+    bio?: string
+  ) => {
+    triggerHaptic("selection");
+    const isAg = authorType === "agent" || authorType === "verified_agent";
+    setSelectedProfile({
+      username: username.replace(/^@/, ""),
+      displayName: displayName || username.replace(/^@/, ""),
+      authorType: authorType,
+      tickers: tickers && tickers.length > 0 ? tickers : ["NVDA", "SPCX", "CEG", "SPY"],
+      bio: bio || (isAg
+        ? "Autonomous decentralized quantitative agent executing probabilistic delta-neutral alpha models and real-time order-flow telemetry."
+        : "Systematic equities and options trader tracking datacenter momentum, AI infrastructure, and macro volatility."),
+      reputationScore: isAg ? 948 : 812,
+      thesesCount: isAg ? 18 : 9,
+      upvotesReceived: isAg ? 142 : 54,
+      memberSince: isAg ? "Genesis Block (Q1 2025)" : "Member since 2025",
+      winRate: isAg ? "94.2%" : "88.6%"
+    });
+    setIsProfileModalOpen(true);
+  };
+
   const navigateToAgentProfile = (handle: string) => {
-    window.history.pushState({ tab: 'agent_profile' }, "", `/agents/${handle}`);
-    window.dispatchEvent(new PopStateEvent("popstate", { state: { tab: 'agent_profile' } }));
+    handleOpenProfile(handle, "verified_agent");
+  };
+
+  const handleTickerClick = (ticker: string) => {
+    triggerHaptic("selection");
+    if (onSelectStock) {
+      onSelectStock(ticker.replace('$', '').toUpperCase());
+    } else if (onNavigateTab) {
+      onNavigateTab("watchlist");
+    }
+  };
+
+  const handleSharePost = (post: DiscussionPost) => {
+    triggerHaptic("light");
+    const shareText = `Stock Bloc Intel by @${post.authorUsername}: "${post.title}" - Read more on Stock Bloc Terminal`;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(shareText);
+      setCopiedPostId(post.id);
+      setTimeout(() => setCopiedPostId(null), 2000);
+    }
   };
 
   const isAgent = (authorType?: string) => authorType === "agent" || authorType === "verified_agent";
-  const filteredDiscussions = discussions.filter(post => authorFilter === "all" ? true : (authorFilter === "human" ? !isAgent(post.authorType) : isAgent(post.authorType)));
-  const filteredChat = chatMessages.filter(msg => authorFilter === "all" ? true : (authorFilter === "human" ? !isAgent(msg.authorType) : isAgent(msg.authorType)));
+
+  // Filtered discussions by author, category, and search text
+  const filteredDiscussions = useMemo(() => {
+    return discussions.filter(post => {
+      // Author filter
+      if (authorFilter === "human" && isAgent(post.authorType)) return false;
+      if (authorFilter === "agent" && !isAgent(post.authorType)) return false;
+
+      // Category filter
+      if (categoryFilter !== "all" && post.categoryTag !== categoryFilter) return false;
+
+      // Search query filter
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const inTitle = post.title?.toLowerCase().includes(q);
+        const inContent = post.content?.toLowerCase().includes(q);
+        const inAuthor = post.authorUsername?.toLowerCase().includes(q);
+        const inTickers = post.tickers?.some(t => t.toLowerCase().includes(q));
+        if (!inTitle && !inContent && !inAuthor && !inTickers) return false;
+      }
+
+      return true;
+    });
+  }, [discussions, authorFilter, categoryFilter, searchQuery]);
+
+  const filteredChat = useMemo(() => {
+    return chatMessages.filter(msg => {
+      if (authorFilter === "human" && isAgent(msg.authorType)) return false;
+      if (authorFilter === "agent" && !isAgent(msg.authorType)) return false;
+      return true;
+    });
+  }, [chatMessages, authorFilter]);
+
+  // Extract tickers like $NVDA from text
+  const extractTickers = (text: string): string[] => {
+    const matches = text.match(/\$[A-Za-z0-9]+/g);
+    if (!matches) return [];
+    return Array.from(new Set(matches.map(m => m.replace('$', '').toUpperCase())));
+  };
 
   const handleNewPost = () => {
     triggerHaptic("selection");
@@ -157,17 +286,38 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
     setIsComposingPost((prev) => !prev);
   };
 
-  const renderContentWithMentions = (text: string) => {
+  const renderContentWithMentionsAndCashtags = (text: string) => {
     if (!text) return null;
-    const parts = text.split(/(@\w+)/g);
+    // Regex splits by @mentions or $CASHTAGS
+    const parts = text.split(/(@\w+|\$[A-Za-z0-9]+)/g);
     return parts.map((part, i) => {
       if (part.startsWith('@')) {
         const handle = part.slice(1);
         return (
           <button 
             key={i} 
-            onClick={(e) => { e.stopPropagation(); navigateToAgentProfile(handle); }}
-            className="text-cyan-400 font-bold hover:underline cursor-pointer"
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              handleOpenProfile(handle, handle.includes("agent") || handle.includes("neural") || handle.includes("quant") ? "agent" : "human"); 
+            }}
+            className="text-cyan-400 font-bold hover:underline hover:text-cyan-200 cursor-pointer inline-flex items-center"
+            title={`View @${handle}'s Trading Profile`}
+          >
+            {part}
+          </button>
+        );
+      }
+      if (part.startsWith('$')) {
+        const ticker = part.slice(1).toUpperCase();
+        return (
+          <button
+            key={i}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleTickerClick(ticker);
+            }}
+            className="text-amber-300 font-martian font-bold hover:text-amber-200 hover:underline bg-amber-500/10 px-1 py-0.5 rounded border border-amber-500/30 mx-0.5 inline-flex items-center transition-colors cursor-pointer"
+            title={`View $${ticker} in Watchlist`}
           >
             {part}
           </button>
@@ -247,6 +397,9 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
           upvotes: data.upvotes || 0,
           repliesCount: data.repliesCount || data.replies || 0,
           createdAt: data.createdAt || data.timestamp || new Date(),
+          sentiment: data.sentiment || "neutral",
+          categoryTag: data.categoryTag || "General",
+          tickers: data.tickers || []
         });
       });
 
@@ -350,11 +503,16 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
     e.preventDefault();
     if (!newChatText.trim() || !currentUser) return;
 
+    const trimmed = newChatText.trim();
+    const detectedTickers = extractTickers(trimmed);
+
     const chatPayload = {
       authorId: currentUser.uid,
       authorUsername: currentUser.username,
       authorType: "human" as const,
-      content: newChatText.trim(),
+      content: trimmed,
+      sentiment: chatSentiment,
+      ticker: detectedTickers[0] || undefined,
       createdAt: serverTimestamp(),
       timestamp: new Date().toISOString()
     };
@@ -365,7 +523,9 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
       authorId: currentUser.uid,
       authorUsername: currentUser.username,
       authorType: "human",
-      content: newChatText.trim(),
+      content: trimmed,
+      sentiment: chatSentiment,
+      ticker: detectedTickers[0],
       createdAt: new Date()
     };
     setChatMessages(prev => [...prev, localMsg]);
@@ -388,6 +548,11 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
     const authorUsername = currentUser.username || currentUser.displayName || "StockBlocMember";
     const localPostId = "disc_local_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6);
 
+    const detectedTickers = Array.from(new Set([
+      ...extractTickers(trimmedTitle),
+      ...extractTickers(trimmedContent)
+    ]));
+
     const postPayload = {
       authorId,
       authorUsername,
@@ -397,6 +562,9 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
       content: trimmedContent,
       upvotes: 0,
       repliesCount: 0,
+      sentiment: newPostSentiment,
+      categoryTag: newPostCategory,
+      tickers: detectedTickers,
       createdAt: serverTimestamp(),
       timestamp: new Date().toISOString(),
     };
@@ -410,6 +578,9 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
       content: trimmedContent,
       upvotes: 0,
       repliesCount: 0,
+      sentiment: newPostSentiment,
+      categoryTag: newPostCategory,
+      tickers: detectedTickers,
       createdAt: new Date(),
     };
 
@@ -556,170 +727,297 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
     }
   };
 
+  const categories = ["all", "Macro", "AI & Tech", "Earnings", "Options", "Real Estate", "General"];
+
   return (
-    <div className="w-full max-w-7xl xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto px-4 py-6 font-sans">
+    <div className="w-full max-w-7xl xl:max-w-[1600px] 2xl:max-w-[1800px] mx-auto px-3 sm:px-4 py-4 sm:py-6 font-sans">
       
-      {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
-
-            <select
-              value={authorFilter}
-              onChange={(e) => setAuthorFilter(e.target.value as any)}
-              className="bg-black border border-white/20 text-white text-xs rounded-lg px-2 py-1.5 outline-none focus:border-cyan-500"
-            >
-              <option value="all">All Content</option>
-              <option value="human">Humans</option>
-              <option value="agent">AI Agents</option>
-            </select>
-
+      {/* Top Header & Cyber Stats Bar */}
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#020d18] border border-cyan-500/40 alien-block-cut p-4 sm:p-5 shadow-2xl shadow-cyan-950/40">
         <div>
-          <h1 className="text-3xl font-black text-white flex items-center gap-3">
-            <Users className="w-8 h-8 text-cyan-400" />
-            Stock Bloc Community
-          </h1>
-          <p className="text-sm text-neutral-400 mt-2 font-mono">
-            Live market discussions, trade sharing, and real-time alerts.
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+            <h1 className="text-2xl sm:text-3xl font-zen font-black text-white flex items-center gap-3 tracking-wider">
+              <Users className="w-7 h-7 text-cyan-400" />
+              STOCK BLOC COMMUNITY
+            </h1>
+          </div>
+          <p className="text-xs sm:text-sm text-cyan-300/80 mt-1 font-martian">
+            Decentralized market intelligence, real-time cashtag chatter, and alpha dissemination.
           </p>
         </div>
-      </div>
 
-      {!isAuthenticated && (
-        <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between text-amber-200">
-          <p className="text-xs font-mono font-bold">You must <button onClick={onOpenAuth} className="text-amber-400 hover:text-amber-300 underline cursor-pointer">sign in</button> to participate in the community discussions.</p>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-200px)] min-h-[600px]">
-        
-        {/* LEFT PANE: Discussions (Reddit Style) */}
-        <div className="lg:col-span-2 flex flex-col bg-neutral-900/50 border border-white/10 rounded-3xl overflow-hidden">
-          <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/40">
-            {activeDiscussionId ? (
+        {/* Global Controls: Creator Type Filter & Search Bar */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative flex-1 sm:w-60">
+            <Search className="w-4 h-4 text-cyan-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search ticker, thesis, or user..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-3 py-1.5 bg-black/70 border border-cyan-500/30 text-white font-martian text-xs alien-block-cut-sm focus:outline-none focus:border-cyan-400 focus:glow-cyan placeholder:text-neutral-500"
+            />
+            {searchQuery && (
               <button
-                onClick={() => {
-                  triggerHaptic("light");
-                  setActiveDiscussionId(null);
-                }}
-                className="flex items-center gap-2 text-sm font-bold text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white text-xs"
               >
-                <ChevronLeft className="w-5 h-5" />
-                Back to Trending
-              </button>
-            ) : (
-              <h2 className="text-lg font-black text-white flex items-center gap-2">
-                <Flame className="w-5 h-5 text-rose-500" />
-                Trending Discussions
-              </h2>
-            )}
-            
-            {!activeDiscussionId && (
-              <button 
-                onClick={handleNewPost}
-                className="px-4 py-2 rounded-xl bg-cyan-500 text-black font-black text-xs flex items-center gap-2 hover:bg-cyan-400 disabled:opacity-50 transition-all cursor-pointer shadow-lg shadow-cyan-500/20"
-              >
-                <Plus className="w-4 h-4" />
-                New Post
+                ✕
               </button>
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+          <div className="flex items-center gap-1 bg-black/60 border border-cyan-500/30 p-1 alien-block-cut-sm">
+            <span className="text-[10px] font-alien-hud text-cyan-400 px-1 hidden sm:inline">AUTHORS:</span>
+            <button
+              onClick={() => { triggerHaptic("selection"); setAuthorFilter("all"); }}
+              className={`px-2.5 py-1 text-[10px] font-alien-hud uppercase transition-all alien-block-cut-sm ${
+                authorFilter === "all" ? "bg-cyan-500 text-black font-bold glow-cyan" : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => { triggerHaptic("selection"); setAuthorFilter("human"); }}
+              className={`px-2.5 py-1 text-[10px] font-alien-hud uppercase transition-all alien-block-cut-sm ${
+                authorFilter === "human" ? "bg-emerald-500 text-black font-bold glow-emerald" : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              Humans
+            </button>
+            <button
+              onClick={() => { triggerHaptic("selection"); setAuthorFilter("agent"); }}
+              className={`px-2.5 py-1 text-[10px] font-alien-hud uppercase transition-all alien-block-cut-sm ${
+                authorFilter === "agent" ? "bg-purple-500 text-white font-bold glow-violet" : "text-neutral-400 hover:text-white"
+              }`}
+            >
+              AI Agents
+            </button>
+          </div>
+
+          {/* Recommend Upgrades Button */}
+          <button
+            id="community-propose-upgrades-btn"
+            onClick={() => {
+              triggerHaptic("selection");
+              setIsUpgradesModalOpen(true);
+            }}
+            className="px-3 py-1.5 alien-block-cut-sm bg-amber-400 text-black font-alien-hud font-black text-xs flex items-center gap-1.5 hover:bg-amber-300 transition-all cursor-pointer glow-amber shadow-lg"
+            title="Recommend Features & Upgrades for Users and AI Agents"
+          >
+            <Lightbulb className="w-3.5 h-3.5 text-black" />
+            <span className="hidden sm:inline">PROPOSE UPGRADES</span>
+            <span className="sm:hidden">UPGRADES</span>
+          </button>
+        </div>
+      </div>
+
+      {!isAuthenticated && (
+        <div className="mb-6 p-3.5 alien-block-cut-sm bg-amber-500/10 border border-amber-500/40 flex items-center justify-between text-amber-200">
+          <p className="text-xs font-martian font-bold">
+            ⚡ You must <button onClick={onOpenAuth} className="text-amber-300 font-black hover:text-amber-200 underline cursor-pointer">sign in</button> to post new discussions, upvote theses, and chat in real-time.
+          </p>
+        </div>
+      )}
+
+      {/* Main Grid Pane */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[640px]">
+        
+        {/* LEFT PANE: Discussions Stream */}
+        <div className="lg:col-span-2 flex flex-col bg-[#020b16] border border-cyan-500/30 alien-block-cut overflow-hidden shadow-xl">
+          
+          {/* Discussions Header & Category Pills */}
+          <div className="p-3.5 border-b border-cyan-500/20 bg-black/60 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              {activeDiscussionId ? (
+                <button
+                  onClick={() => {
+                    triggerHaptic("light");
+                    setActiveDiscussionId(null);
+                  }}
+                  className="flex items-center gap-2 text-xs sm:text-sm font-alien-hud font-bold text-cyan-300 hover:text-white transition-colors cursor-pointer"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Back to Discussions
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-rose-500 animate-pulse" />
+                  <h2 className="text-base sm:text-lg font-zen font-bold text-white tracking-wide">
+                    MARKET THESES & INTEL
+                  </h2>
+                  <span className="text-[10px] font-martian px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                    {filteredDiscussions.length} Posts
+                  </span>
+                </div>
+              )}
+              
+              {!activeDiscussionId && (
+                <button 
+                  onClick={handleNewPost}
+                  className="px-3.5 py-1.5 alien-block-cut-sm bg-cyan-400 text-black font-alien-hud font-black text-xs flex items-center gap-1.5 hover:bg-cyan-300 disabled:opacity-50 transition-all cursor-pointer shadow-lg shadow-cyan-500/30 glow-cyan"
+                >
+                  <Plus className="w-4 h-4" />
+                  New Post
+                </button>
+              )}
+            </div>
+
+            {/* Category Filter Pills */}
+            {!activeDiscussionId && (
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
+                <span className="text-[10px] font-alien-hud text-neutral-400 shrink-0 flex items-center gap-1">
+                  <Filter className="w-3 h-3 text-cyan-400" /> SECTOR:
+                </span>
+                {categories.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => { triggerHaptic("selection"); setCategoryFilter(cat); }}
+                    className={`px-2.5 py-0.5 text-[10px] font-alien-hud uppercase shrink-0 alien-block-cut-sm border transition-all ${
+                      categoryFilter === cat
+                        ? "bg-cyan-500 text-black border-cyan-400 font-black shadow-md glow-cyan"
+                        : "bg-black/40 text-neutral-400 border-cyan-900/60 hover:text-cyan-200 hover:border-cyan-500/40"
+                    }`}
+                  >
+                    {cat === "all" ? "All Sectors" : cat}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Posts Feed & Thread Viewer */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar max-h-[750px]">
             {activeDiscussionId ? (
               <div className="space-y-4">
                 {discussions.filter(p => p.id === activeDiscussionId).map(post => {
                   const isLiked = likedPosts.has(post.id);
                   return (
-                    <div key={`active-${post.id}`} className="p-5 rounded-2xl bg-black border border-white/15 flex gap-4">
+                    <div key={`active-${post.id}`} className="p-5 alien-block-cut bg-black/90 border border-cyan-500/40 flex gap-4">
                       <div className="flex flex-col items-center gap-1">
                         <button 
                           onClick={() => handleUpvote(post.id)}
                           title={isLiked ? "Unlike post" : "Upvote post"}
-                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isLiked ? "bg-rose-500/20 text-rose-400" : "hover:bg-white/10 text-neutral-400 hover:text-rose-400"}`}
+                          className={`p-2 alien-block-cut-sm transition-colors cursor-pointer ${isLiked ? "bg-rose-500/20 text-rose-400 border border-rose-500/40" : "hover:bg-cyan-950/40 text-neutral-400 hover:text-rose-400 border border-white/5"}`}
                         >
                           <TrendingUp className="w-5 h-5" />
                         </button>
-                        <span className={`text-xs font-mono font-bold ${isLiked ? "text-rose-400" : "text-white"}`}>{post.upvotes || 0}</span>
+                        <span className={`text-xs font-martian font-bold ${isLiked ? "text-rose-400" : "text-cyan-300"}`}>{post.upvotes || 0}</span>
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 mb-2">
-                          <div className="flex items-center gap-1.5">
-                            {(post.authorType === "agent" || post.authorType === "verified_agent") ? (
-                              <button 
-                                onClick={() => navigateToAgentProfile(post.authorUsername)}
-                                className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
-                              >
-                                <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
-                                <AgentBadge className="scale-75 origin-left" />
-                              </button>
-                            ) : (
-                              <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
-                            )}
-                          </div>
-                          <span>•</span>
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(post.createdAt)}</span>
-                        </div>
-                        <h3 className="text-xl font-black text-white leading-snug mb-3">{post.title}</h3>
-                        <p className="text-base text-neutral-200 whitespace-pre-wrap">{renderContentWithMentions(post.content)}</p>
-
-                        <div className="mt-4 pt-3 border-t border-white/10 flex items-center gap-4">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-martian text-neutral-400 mb-2">
                           <button 
-                            onClick={() => handleUpvote(post.id)}
-                            className={`flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer px-2.5 py-1 rounded-lg ${isLiked ? "bg-rose-500/15 text-rose-400 border border-rose-500/30" : "text-neutral-400 hover:text-white bg-white/5 hover:bg-white/10"}`}
+                            onClick={() => handleOpenProfile(post.authorUsername, post.authorType, post.authorDisplayName, post.tickers)}
+                            className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer group"
+                            title={`View @${post.authorUsername}'s Profile`}
                           >
-                            <ThumbsUp className={`w-3.5 h-3.5 ${isLiked ? "fill-rose-400" : ""}`} />
-                            {isLiked ? "Liked" : "Like"} ({post.upvotes || 0})
+                            <span className="text-cyan-400 group-hover:text-cyan-200 group-hover:underline font-bold">@{post.authorUsername}</span>
+                            {(post.authorType === "agent" || post.authorType === "verified_agent") && (
+                              <AgentBadge className="scale-75 origin-left" />
+                            )}
                           </button>
-                          <span className="flex items-center gap-1.5 text-xs font-bold text-neutral-400">
-                            <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
-                            {activeReplies.length || post.repliesCount || 0} Replies
-                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-cyan-500" /> {formatTime(post.createdAt)}</span>
+
+                          {post.sentiment && (
+                            <span className={`px-2 py-0.5 text-[9px] font-alien-hud uppercase alien-block-cut-sm border ${
+                              post.sentiment === "bullish"
+                                ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/50"
+                                : post.sentiment === "bearish"
+                                ? "bg-rose-950/80 text-rose-300 border-rose-500/50"
+                                : "bg-neutral-900 text-neutral-300 border-neutral-700"
+                            }`}>
+                              {post.sentiment === "bullish" ? "📈 BULLISH" : post.sentiment === "bearish" ? "📉 BEARISH" : "⚖️ NEUTRAL"}
+                            </span>
+                          )}
+
+                          {post.categoryTag && (
+                            <span className="px-2 py-0.5 bg-cyan-950/60 text-cyan-300 border border-cyan-500/40 text-[9px] font-alien-hud alien-block-cut-sm">
+                              {post.categoryTag}
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className="text-xl font-bold font-zen text-white leading-snug mb-3">{post.title}</h3>
+                        <p className="text-base text-neutral-200 font-sans leading-relaxed whitespace-pre-wrap">{renderContentWithMentionsAndCashtags(post.content)}</p>
+
+                        <div className="mt-4 pt-3 border-t border-cyan-900/40 flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <button 
+                              onClick={() => handleUpvote(post.id)}
+                              className={`flex items-center gap-1.5 text-xs font-alien-hud transition-colors cursor-pointer px-3 py-1.5 alien-block-cut-sm ${isLiked ? "bg-rose-500/20 text-rose-400 border border-rose-500/40 glow-rose" : "text-neutral-400 hover:text-white bg-black/60 border border-cyan-500/30 hover:border-cyan-400"}`}
+                            >
+                              <ThumbsUp className={`w-3.5 h-3.5 ${isLiked ? "fill-rose-400" : ""}`} />
+                              {isLiked ? "Liked" : "Like"} ({post.upvotes || 0})
+                            </button>
+                            <span className="flex items-center gap-1.5 text-xs font-alien-hud text-cyan-400">
+                              <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                              {activeReplies.length || post.repliesCount || 0} Replies
+                            </span>
+                          </div>
+
+                          <button
+                            onClick={() => handleSharePost(post)}
+                            className="flex items-center gap-1.5 text-xs font-alien-hud text-cyan-300 hover:text-white px-2.5 py-1 bg-black/60 border border-cyan-500/30 alien-block-cut-sm hover:border-cyan-400 transition-all cursor-pointer"
+                          >
+                            {copiedPostId === post.id ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                <span className="text-emerald-400 font-bold">Link Copied</span>
+                              </>
+                            ) : (
+                              <>
+                                <Share2 className="w-3.5 h-3.5 text-cyan-400" />
+                                <span>Share Intel</span>
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
                     </div>
                   );
                 })}
                 
-                <div className="pl-6 border-l-2 border-white/5 space-y-4 pt-2">
-                  <h4 className="text-sm font-bold text-neutral-400 flex items-center gap-2">
+                {/* Replies Thread */}
+                <div className="pl-4 sm:pl-6 border-l-2 border-cyan-500/30 space-y-4 pt-2">
+                  <h4 className="text-xs sm:text-sm font-alien-hud text-cyan-300 flex items-center gap-2 uppercase tracking-wider">
                     <MessageSquare className="w-4 h-4 text-cyan-400" /> 
                     Discussion Replies ({activeReplies.length})
                   </h4>
                   
                   {activeReplies.length === 0 ? (
-                    <div className="p-4 rounded-xl bg-neutral-900/30 border border-white/5 text-center text-neutral-500 text-xs">
-                      No replies yet. Be the first to share your thoughts or trade perspective!
+                    <div className="p-4 alien-block-cut-sm bg-black/60 border border-cyan-500/20 text-center text-neutral-400 font-martian text-xs">
+                      No replies yet. Be the first to share your perspective or counter-thesis!
                     </div>
                   ) : (
                     activeReplies.map(reply => (
-                      <div key={reply.id} className="p-4 rounded-xl bg-neutral-900/40 border border-white/5 flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 mb-1">
-                          <div className="flex items-center gap-1.5">
-                            {(reply.authorType === "agent" || reply.authorType === "verified_agent") ? (
-                              <button 
-                                onClick={() => navigateToAgentProfile(reply.authorUsername)}
-                                className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
-                              >
-                                <span className="text-cyan-400 font-bold">@{reply.authorUsername}</span>
-                                <AgentBadge className="scale-[0.65] origin-left" />
-                              </button>
-                            ) : (
-                              <span className="text-cyan-400 font-bold">@{reply.authorUsername}</span>
+                      <div key={reply.id} className="p-4 alien-block-cut-sm bg-black/70 border border-cyan-500/20 flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-[11px] font-martian text-neutral-400 mb-1">
+                          <button 
+                            onClick={() => handleOpenProfile(reply.authorUsername, reply.authorType)}
+                            className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer group"
+                            title={`View @${reply.authorUsername}'s Profile`}
+                          >
+                            <span className="text-cyan-400 group-hover:text-cyan-200 group-hover:underline font-bold">@{reply.authorUsername}</span>
+                            {(reply.authorType === "agent" || reply.authorType === "verified_agent") && (
+                              <AgentBadge className="scale-[0.65] origin-left" />
                             )}
-                          </div>
+                          </button>
                           <span>•</span>
                           <span>{formatTime(reply.createdAt)}</span>
                         </div>
-                        <p className="text-sm text-neutral-200 whitespace-pre-wrap">{renderContentWithMentions(reply.content)}</p>
+                        <p className="text-sm text-neutral-200 font-sans whitespace-pre-wrap">{renderContentWithMentionsAndCashtags(reply.content)}</p>
                       </div>
                     ))
                   )}
                   
                   <div ref={repliesEndRef} />
 
-                  <form onSubmit={handleSendReply} className="mt-4 flex flex-col gap-2 bg-neutral-900/70 p-3 rounded-2xl border border-white/10">
+                  <form onSubmit={handleSendReply} className="mt-4 flex flex-col gap-2.5 bg-black/80 p-3.5 alien-block-cut border border-cyan-500/40">
                     <textarea
-                      placeholder={currentUser ? "Write a reply... (Press Enter or Cmd+Enter to send)" : "Sign in to join the discussion and reply..."}
+                      placeholder={currentUser ? "Write a reply or price target... (e.g. Accumulating more $NVDA under $130)" : "Sign in to join the discussion and reply..."}
                       readOnly={!currentUser}
                       onClick={() => { if (!currentUser && onOpenAuth) onOpenAuth(); }}
                       value={newReplyText}
@@ -730,16 +1028,16 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
                           handleSendReply(e);
                         }
                       }}
-                      className="w-full px-3 py-2.5 bg-black border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500 min-h-[75px] resize-none"
+                      className="w-full px-3 py-2.5 bg-neutral-950 border border-cyan-500/30 text-white font-sans text-sm focus:outline-none focus:border-cyan-400 min-h-[75px] resize-none alien-block-cut-sm"
                     />
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] text-neutral-500 font-mono">
+                      <span className="text-[10px] text-cyan-400/70 font-martian">
                         {currentUser ? `Replying as @${currentUser.username}` : "Sign in required to reply"}
                       </span>
                       <button
                         type="submit"
                         disabled={!newReplyText.trim()}
-                        className="px-4 py-2 rounded-lg bg-cyan-500 text-black text-xs font-black hover:bg-cyan-400 disabled:opacity-40 disabled:bg-neutral-800 disabled:text-neutral-500 transition-all cursor-pointer flex items-center gap-2"
+                        className="px-4 py-2 alien-block-cut-sm bg-cyan-400 text-black text-xs font-alien-hud font-black hover:bg-cyan-300 disabled:opacity-40 disabled:bg-neutral-800 disabled:text-neutral-500 transition-all cursor-pointer flex items-center gap-2 glow-cyan"
                       >
                         <Send className="w-3.5 h-3.5" />
                         Reply
@@ -754,35 +1052,97 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
                   <motion.div 
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-2xl bg-black border border-cyan-500/30 space-y-3"
+                    className="p-4 sm:p-5 alien-block-cut bg-black/95 border border-cyan-400 space-y-3.5 shadow-2xl shadow-cyan-500/20"
                   >
+                    <div className="flex items-center justify-between border-b border-cyan-500/30 pb-2">
+                      <h3 className="text-sm font-zen font-bold text-cyan-300 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-cyan-400" />
+                        PUBLISH MARKET THESIS
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        {/* Sentiment Selector */}
+                        <div className="flex items-center gap-1 bg-black p-1 alien-block-cut-sm border border-cyan-500/30">
+                          <button
+                            type="button"
+                            onClick={() => setNewPostSentiment("bullish")}
+                            className={`px-2 py-0.5 text-[9px] font-alien-hud uppercase alien-block-cut-sm ${
+                              newPostSentiment === "bullish" ? "bg-emerald-500 text-black font-bold" : "text-neutral-400"
+                            }`}
+                          >
+                            Bullish
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setNewPostSentiment("bearish")}
+                            className={`px-2 py-0.5 text-[9px] font-alien-hud uppercase alien-block-cut-sm ${
+                              newPostSentiment === "bearish" ? "bg-rose-500 text-white font-bold" : "text-neutral-400"
+                            }`}
+                          >
+                            Bearish
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setNewPostSentiment("neutral")}
+                            className={`px-2 py-0.5 text-[9px] font-alien-hud uppercase alien-block-cut-sm ${
+                              newPostSentiment === "neutral" ? "bg-cyan-500 text-black font-bold" : "text-neutral-400"
+                            }`}
+                          >
+                            Neutral
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
                     <input
                       type="text"
-                      placeholder="Post Title (e.g., Thoughts on NVDA earnings?)"
+                      placeholder="Post Title (e.g., $NVDA Datacenter Moat & Q3 Earnings Outlook)"
                       value={newPostTitle}
                       onChange={(e) => setNewPostTitle(e.target.value)}
-                      className="w-full px-3 py-2 bg-neutral-900 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500"
+                      className="w-full px-3 py-2 bg-neutral-950 border border-cyan-500/30 text-white font-sans text-sm focus:outline-none focus:border-cyan-400 alien-block-cut-sm"
                     />
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-alien-hud text-cyan-400">CATEGORY:</span>
+                      <select
+                        value={newPostCategory}
+                        onChange={(e) => setNewPostCategory(e.target.value as any)}
+                        className="bg-black border border-cyan-500/30 text-cyan-200 text-xs font-martian alien-block-cut-sm px-2 py-1 outline-none focus:border-cyan-400"
+                      >
+                        <option value="Macro">Macro & Rates</option>
+                        <option value="AI & Tech">AI & Semiconductors</option>
+                        <option value="Earnings">Earnings & Guidance</option>
+                        <option value="Options">Options & Volatility</option>
+                        <option value="Real Estate">Real Estate & REITs</option>
+                        <option value="General">General Trading</option>
+                      </select>
+                    </div>
+
                     <textarea
-                      placeholder="Body text (optional)..."
+                      placeholder="Share your quantitative rationale, key support/resistance levels, or catalysts... Use $TICKER to link directly to watchlist."
                       value={newPostContent}
                       onChange={(e) => setNewPostContent(e.target.value)}
-                      className="w-full px-3 py-2 bg-neutral-900 border border-white/10 rounded-xl text-white text-sm focus:outline-none focus:border-cyan-500 min-h-[100px] resize-none"
+                      className="w-full px-3 py-2 bg-neutral-950 border border-cyan-500/30 text-white font-sans text-sm focus:outline-none focus:border-cyan-400 min-h-[110px] resize-none alien-block-cut-sm"
                     />
-                    <div className="flex justify-end gap-2">
-                      <button 
-                        onClick={() => setIsComposingPost(false)}
-                        className="px-4 py-2 rounded-xl text-neutral-400 hover:text-white text-xs font-bold transition-colors cursor-pointer"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        onClick={handleCreatePost}
-                        disabled={!newPostTitle.trim() || !newPostContent.trim()}
-                        className="px-4 py-2 rounded-xl bg-cyan-500 text-black text-xs font-black disabled:opacity-50 transition-all cursor-pointer"
-                      >
-                        Post Discussion
-                      </button>
+
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-[10px] text-cyan-400/80 font-martian">
+                        💡 Tip: Tag tickers with $ (e.g. $SPCX, $NVDA, $CEG) to generate interactive charts
+                      </span>
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={() => setIsComposingPost(false)}
+                          className="px-3.5 py-1.5 alien-block-cut-sm text-neutral-400 hover:text-white font-alien-hud text-xs transition-colors cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={handleCreatePost}
+                          disabled={!newPostTitle.trim() || !newPostContent.trim()}
+                          className="px-4 py-1.5 alien-block-cut-sm bg-cyan-400 text-black font-alien-hud font-black text-xs disabled:opacity-50 transition-all cursor-pointer glow-cyan"
+                        >
+                          Post Discussion
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -790,72 +1150,105 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
                 {filteredDiscussions.map((post) => {
                   const isLiked = likedPosts.has(post.id);
                   return (
-                    <div key={post.id} className="p-4 rounded-2xl bg-black border border-white/5 hover:border-white/20 transition-all group flex gap-4">
-                      <div className="flex flex-col items-center gap-1">
+                    <div key={post.id} className="p-4 sm:p-5 alien-block-cut bg-black/85 border border-cyan-500/20 hover:border-cyan-400/60 transition-all group flex gap-3 sm:gap-4 shadow-md">
+                      <div className="flex flex-col items-center gap-1 shrink-0">
                         <button 
                           onClick={(e) => {
                             e.stopPropagation();
                             handleUpvote(post.id);
                           }}
                           title={isLiked ? "Unlike post" : "Upvote post"}
-                          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${isLiked ? "bg-rose-500/20 text-rose-400" : "hover:bg-white/10 text-neutral-400 hover:text-rose-400"}`}
+                          className={`p-2 alien-block-cut-sm transition-colors cursor-pointer ${isLiked ? "bg-rose-500/20 text-rose-400 border border-rose-500/40" : "hover:bg-cyan-950/40 text-neutral-400 hover:text-rose-400 border border-white/5"}`}
                         >
-                          <TrendingUp className="w-5 h-5" />
+                          <TrendingUp className="w-4 sm:w-5 h-4 sm:h-5" />
                         </button>
-                        <span className={`text-xs font-mono font-bold ${isLiked ? "text-rose-400" : "text-white"}`}>{post.upvotes || 0}</span>
+                        <span className={`text-xs font-martian font-bold ${isLiked ? "text-rose-400" : "text-cyan-300"}`}>{post.upvotes || 0}</span>
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 text-[11px] font-mono text-neutral-400 mb-1">
-                          <div className="flex items-center gap-1.5">
-                            {(post.authorType === "agent" || post.authorType === "verified_agent") ? (
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigateToAgentProfile(post.authorUsername);
-                                }}
-                                className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
-                              >
-                                <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
-                                <AgentBadge className="scale-75 origin-left" />
-                              </button>
-                            ) : (
-                              <span className="text-cyan-400 font-bold">@{post.authorUsername}</span>
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-martian text-neutral-400 mb-1.5">
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenProfile(post.authorUsername, post.authorType, post.authorDisplayName, post.tickers);
+                            }}
+                            className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer group"
+                            title={`View @${post.authorUsername}'s Profile`}
+                          >
+                            <span className="text-cyan-400 group-hover:text-cyan-200 group-hover:underline font-bold">@{post.authorUsername}</span>
+                            {(post.authorType === "agent" || post.authorType === "verified_agent") && (
+                              <AgentBadge className="scale-75 origin-left" />
                             )}
-                          </div>
+                          </button>
                           <span>•</span>
-                          <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(post.createdAt)}</span>
+                          <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-cyan-500" /> {formatTime(post.createdAt)}</span>
+
+                          {post.sentiment && (
+                            <span className={`px-1.5 py-0.2 text-[8px] font-alien-hud uppercase alien-block-cut-sm border ${
+                              post.sentiment === "bullish"
+                                ? "bg-emerald-950/80 text-emerald-300 border-emerald-500/50"
+                                : post.sentiment === "bearish"
+                                ? "bg-rose-950/80 text-rose-300 border-rose-500/50"
+                                : "bg-neutral-900 text-neutral-300 border-neutral-700"
+                            }`}>
+                              {post.sentiment === "bullish" ? "📈 BULL" : post.sentiment === "bearish" ? "📉 BEAR" : "⚖️ NEUTRAL"}
+                            </span>
+                          )}
+
+                          {post.categoryTag && (
+                            <span className="px-1.5 py-0.2 bg-cyan-950/60 text-cyan-300 border border-cyan-500/30 text-[8px] font-alien-hud alien-block-cut-sm">
+                              {post.categoryTag}
+                            </span>
+                          )}
                         </div>
+
                         <h3 
                           onClick={() => { triggerHaptic("light"); setActiveDiscussionId(post.id); }}
-                          className="text-base font-bold text-white leading-snug mb-2 cursor-pointer hover:text-cyan-300 transition-colors"
+                          className="text-base sm:text-lg font-bold font-zen text-white leading-snug mb-2 cursor-pointer hover:text-cyan-300 transition-colors"
                         >
                           {post.title}
                         </h3>
                         <p 
                           onClick={() => { triggerHaptic("light"); setActiveDiscussionId(post.id); }}
-                          className="text-sm text-neutral-300 line-clamp-3 cursor-pointer"
+                          className="text-xs sm:text-sm text-neutral-300 font-sans line-clamp-3 cursor-pointer leading-relaxed"
                         >
-                          {renderContentWithMentions(post.content)}
+                          {renderContentWithMentionsAndCashtags(post.content)}
                         </p>
                         
-                        <div className="mt-3 flex items-center gap-4">
-                          <button 
-                            onClick={() => { triggerHaptic("light"); setActiveDiscussionId(post.id); }}
-                            className="flex items-center gap-1.5 text-xs font-bold text-neutral-400 hover:text-cyan-400 transition-colors cursor-pointer px-2 py-1 rounded-md hover:bg-white/5"
-                          >
-                            <MessageSquare className="w-4 h-4 text-cyan-400" />
-                            {post.repliesCount || 0} Comments
-                          </button>
-                          <button 
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-cyan-900/30">
+                          <div className="flex items-center gap-3">
+                            <button 
+                              onClick={() => { triggerHaptic("light"); setActiveDiscussionId(post.id); }}
+                              className="flex items-center gap-1.5 text-xs font-alien-hud text-neutral-400 hover:text-cyan-300 transition-colors cursor-pointer px-2 py-1 alien-block-cut-sm bg-black/40 border border-cyan-500/20"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
+                              {post.repliesCount || 0} Comments
+                            </button>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleUpvote(post.id);
+                              }}
+                              className={`flex items-center gap-1.5 text-xs font-alien-hud transition-colors cursor-pointer px-2 py-1 alien-block-cut-sm border ${isLiked ? "bg-rose-500/20 text-rose-400 border-rose-500/40" : "text-neutral-400 hover:text-white bg-black/40 border-cyan-500/20"}`}
+                            >
+                              <ThumbsUp className={`w-3.5 h-3.5 ${isLiked ? "fill-rose-400" : ""}`} />
+                              {isLiked ? "Liked" : "Like"}
+                            </button>
+                          </div>
+
+                          <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleUpvote(post.id);
+                              handleSharePost(post);
                             }}
-                            className={`flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer px-2 py-1 rounded-md ${isLiked ? "bg-rose-500/15 text-rose-400" : "text-neutral-400 hover:text-white hover:bg-white/5"}`}
+                            className="flex items-center gap-1 text-[11px] font-alien-hud text-cyan-400 hover:text-white transition-colors cursor-pointer px-2 py-1"
+                            title="Share Intel"
                           >
-                            <ThumbsUp className={`w-4 h-4 ${isLiked ? "fill-rose-400" : ""}`} />
-                            {isLiked ? "Liked" : "Like"}
+                            {copiedPostId === post.id ? (
+                              <span className="text-emerald-400 font-bold flex items-center gap-1"><Check className="w-3 h-3" /> Copied</span>
+                            ) : (
+                              <span className="flex items-center gap-1"><Share2 className="w-3 h-3" /> Share</span>
+                            )}
                           </button>
                         </div>
                       </div>
@@ -864,20 +1257,24 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
                 })}
     
                 {filteredDiscussions.length === 0 && (
-                  <div className="h-full py-16 flex flex-col items-center justify-center text-neutral-500">
-                    <MessageSquare className="w-12 h-12 mb-3 opacity-20" />
-                    <p className="text-sm font-bold text-neutral-300">
-                      {discussions.length === 0 ? "No discussions yet." : `No ${authorFilter === "human" ? "human" : "AI agent"} discussions found.`}
+                  <div className="py-16 flex flex-col items-center justify-center text-neutral-500">
+                    <MessageSquare className="w-12 h-12 mb-3 opacity-30 text-cyan-500" />
+                    <p className="text-sm font-bold font-zen text-neutral-300">
+                      {discussions.length === 0 ? "No discussions yet." : `No discussions found matching criteria.`}
                     </p>
-                    <p className="text-xs mt-1 text-neutral-500">
-                      {discussions.length === 0 ? "Be the first to start a conversation!" : "Try switching your filter to All Content or start a new thread."}
+                    <p className="text-xs mt-1 font-martian text-neutral-400">
+                      {discussions.length === 0 ? "Be the first to start a conversation!" : "Try resetting your search query or category filters."}
                     </p>
-                    {authorFilter !== "all" && discussions.length > 0 && (
+                    {(searchQuery || categoryFilter !== "all" || authorFilter !== "all") && (
                       <button
-                        onClick={() => setAuthorFilter("all")}
-                        className="mt-3 px-3 py-1 bg-white/5 hover:bg-white/10 text-cyan-400 text-xs rounded-lg font-mono transition-colors cursor-pointer"
+                        onClick={() => {
+                          setSearchQuery("");
+                          setCategoryFilter("all");
+                          setAuthorFilter("all");
+                        }}
+                        className="mt-3 px-3 py-1.5 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 text-xs alien-block-cut-sm font-alien-hud border border-cyan-500/40 transition-colors cursor-pointer"
                       >
-                        View All Discussions ({discussions.length})
+                        Reset All Filters ({discussions.length} Total)
                       </button>
                     )}
                   </div>
@@ -887,65 +1284,132 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth }) => {
           </div>
         </div>
 
-        {/* RIGHT PANE: Live Chat Stream */}
-        <div className="flex flex-col bg-neutral-900/50 border border-white/10 rounded-3xl overflow-hidden relative">
-          <div className="p-4 border-b border-white/10 bg-black/40 flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <h2 className="text-sm font-black text-white">Live Market Chat</h2>
+        {/* RIGHT PANE: Live Terminal Market Chat */}
+        <div className="flex flex-col bg-[#020b16] border border-cyan-500/30 alien-block-cut overflow-hidden relative shadow-xl">
+          <div className="p-3.5 border-b border-cyan-500/20 bg-black/60 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <h2 className="text-xs sm:text-sm font-zen font-black text-white tracking-wider">LIVE MARKET CHAT</h2>
+            </div>
+            <span className="text-[9px] font-martian px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 alien-block-cut-sm">
+              STREAM: ACTIVE
+            </span>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+          <div className="flex-1 overflow-y-auto p-3.5 space-y-3 custom-scrollbar max-h-[600px]">
             {filteredChat.map((msg) => (
               <div key={msg.id} className="flex flex-col">
                 <div className="flex items-baseline gap-2">
-                  <div className="flex items-center gap-1.5">
-                    {(msg.authorType === "agent" || msg.authorType === "verified_agent") ? (
-                      <button 
-                        onClick={() => navigateToAgentProfile(msg.authorUsername)}
-                        className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer"
-                      >
-                        <span className="text-xs font-bold text-emerald-400">@{msg.authorUsername}</span>
-                        <AgentBadge className="scale-[0.65] origin-left" />
-                      </button>
-                    ) : (
-                      <span className="text-xs font-bold text-emerald-400">@{msg.authorUsername}</span>
+                  <button 
+                    onClick={() => handleOpenProfile(msg.authorUsername, msg.authorType)}
+                    className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer group"
+                    title={`View @${msg.authorUsername}'s Profile`}
+                  >
+                    <span className="text-xs font-bold font-martian text-emerald-400 group-hover:text-emerald-300 group-hover:underline">@{msg.authorUsername}</span>
+                    {(msg.authorType === "agent" || msg.authorType === "verified_agent") && (
+                      <AgentBadge className="scale-[0.65] origin-left" />
                     )}
-                  </div>
-                  <span className="text-[9px] text-neutral-500 font-mono">{formatTime(msg.createdAt)}</span>
+                  </button>
+                  <span className="text-[9px] text-neutral-500 font-martian">{formatTime(msg.createdAt)}</span>
+
+                  {msg.sentiment && msg.sentiment !== "neutral" && (
+                    <span className={`text-[8px] font-alien-hud px-1 py-0.2 alien-block-cut-sm ${
+                      msg.sentiment === "bullish" ? "bg-emerald-950 text-emerald-300 border border-emerald-500/40" : "bg-rose-950 text-rose-300 border border-rose-500/40"
+                    }`}>
+                      {msg.sentiment === "bullish" ? "BULL" : "BEAR"}
+                    </span>
+                  )}
                 </div>
-                <div className="mt-0.5 text-sm text-neutral-200 bg-black/40 p-2.5 rounded-xl rounded-tl-none border border-white/5 inline-block self-start max-w-[95%]">
-                  {msg.content}
+                <div className="mt-1 text-xs sm:text-sm text-neutral-200 font-sans bg-black/60 p-2.5 alien-block-cut-sm border border-cyan-500/20 inline-block self-start max-w-[95%]">
+                  {renderContentWithMentionsAndCashtags(msg.content)}
                 </div>
               </div>
             ))}
             <div ref={chatEndRef} />
           </div>
 
-          <form onSubmit={handleSendChat} className="p-3 bg-black/60 border-t border-white/10 backdrop-blur-md">
+          {/* Chat Composer */}
+          <form onSubmit={handleSendChat} className="p-3 bg-black/90 border-t border-cyan-500/30 backdrop-blur-md space-y-2">
+            <div className="flex items-center justify-between text-[10px] text-neutral-400">
+              <span className="font-martian text-cyan-400/80">Sentiment Pill:</span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setChatSentiment("bullish")}
+                  className={`px-2 py-0.5 text-[9px] font-alien-hud uppercase alien-block-cut-sm border ${
+                    chatSentiment === "bullish" ? "bg-emerald-500 text-black border-emerald-400 font-bold" : "bg-black/50 text-neutral-400 border-neutral-700"
+                  }`}
+                >
+                  Bullish
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatSentiment("bearish")}
+                  className={`px-2 py-0.5 text-[9px] font-alien-hud uppercase alien-block-cut-sm border ${
+                    chatSentiment === "bearish" ? "bg-rose-500 text-white border-rose-400 font-bold" : "bg-black/50 text-neutral-400 border-neutral-700"
+                  }`}
+                >
+                  Bearish
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChatSentiment("neutral")}
+                  className={`px-2 py-0.5 text-[9px] font-alien-hud uppercase alien-block-cut-sm border ${
+                    chatSentiment === "neutral" ? "bg-cyan-500 text-black border-cyan-400 font-bold" : "bg-black/50 text-neutral-400 border-neutral-700"
+                  }`}
+                >
+                  Neutral
+                </button>
+              </div>
+            </div>
+
             <div className="relative">
               <input
                 type="text"
-                placeholder={currentUser ? "Type a message..." : "Sign in to chat..."}
+                placeholder={currentUser ? "Type market alpha or $TICKER..." : "Sign in to chat..."}
                 readOnly={!currentUser}
                 onClick={() => { if (!currentUser && onOpenAuth) onOpenAuth(); }}
                 value={newChatText}
                 onChange={(e) => setNewChatText(e.target.value)}
-                className="w-full pl-3 pr-10 py-2.5 bg-neutral-900 border border-white/15 rounded-xl text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                className="w-full pl-3 pr-10 py-2 bg-neutral-950 border border-cyan-500/30 text-xs text-white placeholder-neutral-500 font-sans focus:outline-none focus:border-cyan-400 alien-block-cut-sm"
               />
               <button
                 type="submit"
                 disabled={!newChatText.trim() || !currentUser}
-                className="absolute right-1.5 top-1.5 p-1.5 rounded-lg bg-emerald-500 text-black hover:bg-emerald-400 disabled:opacity-30 disabled:bg-neutral-700 transition-all cursor-pointer"
+                className="absolute right-1.5 top-1.5 p-1.5 alien-block-cut-sm bg-cyan-400 text-black hover:bg-cyan-300 disabled:opacity-30 disabled:bg-neutral-800 disabled:text-neutral-500 transition-all cursor-pointer"
               >
-                <Send className="w-4 h-4 ml-0.5" />
+                <Send className="w-3.5 h-3.5" />
               </button>
             </div>
           </form>
         </div>
 
       </div>
+
+      {/* User / Agent Profile Modal Overlay */}
+      <UserProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        profile={selectedProfile}
+        onSelectStock={(ticker) => {
+          setIsProfileModalOpen(false);
+          handleTickerClick(ticker);
+        }}
+        onNavigateTab={onNavigateTab}
+        onMentionUser={(handle) => {
+          setNewChatText((prev) => `${prev ? prev + ' ' : ''}@${handle} `);
+        }}
+      />
+
+      {/* Upgrade & Change Recommendation Modal Overlay */}
+      <UpgradeRecommendationModal
+        isOpen={isUpgradesModalOpen}
+        onClose={() => setIsUpgradesModalOpen(false)}
+        onOpenAuth={onOpenAuth}
+      />
     </div>
   );
 };
 
 export default CommunityHub;
+

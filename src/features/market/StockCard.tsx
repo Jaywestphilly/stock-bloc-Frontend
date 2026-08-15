@@ -784,7 +784,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
         )}
 
         <div
-          className="flex items-center justify-between w-full font-mono"
+          className="flex items-center justify-between w-full"
         >
           {/* Left Ticker & Subtitle/Shares & News Sentiment */}
           <div className="flex flex-col min-w-[120px] max-w-[160px] pr-2">
@@ -801,20 +801,20 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                 <Star className={`w-4 h-4 ${isStarred ? "fill-amber-400" : ""}`} />
               </button>
               <span
-                className={`font-black text-base tracking-wider ${isSyncing ? "glitch-text-refresh text-cyan-300" : "text-cyan-100"}`}
+                className={`font-zen text-sm sm:text-base tracking-wider ${isSyncing ? "glitch-text-refresh text-cyan-300" : "text-cyan-100"}`}
               >
                 ${stock.symbol}
               </span>
               <div
-                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border alien-block-cut-sm transition-all bg-[#020b16] border-cyan-500/40"
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 border alien-block-cut-sm transition-all bg-[#020b16] border-cyan-500/40"
                 title={`SB Rating: ${computeDeterministicSignal(stock).score}/100`}
               >
-                <span className="text-[10px] font-black font-mono tracking-tight text-cyan-300">
+                <span className="text-[10px] font-martian font-black tracking-tight text-cyan-300">
                   SB {computeDeterministicSignal(stock).score}
                 </span>
               </div>
               {stock.symbol.toUpperCase() === "SPCX" && (
-                <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-black uppercase alien-block-cut-sm flex items-center gap-1 shadow-md shadow-amber-500/10">
+                <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[9px] font-alien-hud alien-block-cut-sm flex items-center gap-1 shadow-md shadow-amber-500/10">
                   <Star className="w-3 h-3 fill-amber-300" />
                   TOP CONVICTION
                 </span>
@@ -831,7 +831,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                 </span>
               )}
             </div>
-            <span className="text-[11px] font-medium text-cyan-400/80 truncate">
+            <span className="text-[11px] font-medium font-sans text-cyan-400/80 truncate">
               {stock.name}
             </span>
           </div>
@@ -845,7 +845,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
           {/* Right Price, % Pill & Tap-to-Expand Indicator */}
           <div className="flex flex-col items-end justify-center pl-2 min-w-[95px]">
             <span
-              className={`font-mono font-black text-sm tracking-tight ${isSyncing ? "glitch-text-refresh text-cyan-200" : "text-white"}`}
+              className={`font-martian font-black text-sm tracking-tight ${isSyncing ? "glitch-text-refresh text-cyan-200" : "text-white"}`}
             >
               $
               {stock.price >= 1000
@@ -856,7 +856,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                 : stock.price.toFixed(2)}
             </span>
             <div
-              className={`min-w-[76px] text-center px-2 py-0.5 mt-1 alien-block-cut-sm font-black text-xs tracking-wider transition-all flex items-center justify-center gap-1 ${
+              className={`min-w-[76px] text-center px-2 py-0.5 mt-1 alien-block-cut-sm font-martian font-bold text-xs tracking-wider transition-all flex items-center justify-center gap-1 ${
                 isPositive
                   ? "bg-emerald-950/90 text-emerald-300 border-2 border-emerald-400 glow-emerald"
                   : "bg-rose-950/90 text-rose-300 border-2 border-rose-500 glow-rose"

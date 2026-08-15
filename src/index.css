@@ -26,8 +26,11 @@
   --font-primary: "Space Grotesk", system-ui, -apple-system, sans-serif;
   --font-display: "Michroma", "Oxanium", "Orbitron", sans-serif;
   --font-alien: "Oxanium", "Chakra Petch", "Orbitron", sans-serif;
+  --font-orbitron: "Orbitron", "Oxanium", sans-serif;
+  --font-zen: "Zen Dots", "Michroma", "Oxanium", sans-serif;
+  --font-martian: "Martian Mono", "JetBrains Mono", monospace;
   --font-rune: "Syne", "Michroma", sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-mono: "JetBrains Mono", "Martian Mono", monospace;
 }
 
 @layer base {
@@ -60,6 +63,15 @@
   font-family: var(--font-mono) !important;
 }
 
+.font-martian {
+  font-family: var(--font-martian) !important;
+  letter-spacing: -0.02em;
+}
+
+.font-cyber-mono {
+  font-family: "Martian Mono", "JetBrains Mono", monospace !important;
+}
+
 .font-sans {
   font-family: var(--font-primary) !important;
 }
@@ -77,6 +89,22 @@
 .font-oxanium {
   font-family: "Oxanium", sans-serif !important;
   letter-spacing: 0.03em;
+}
+
+.font-orbitron {
+  font-family: "Orbitron", "Oxanium", sans-serif !important;
+  letter-spacing: 0.06em;
+}
+
+.font-zen {
+  font-family: "Zen Dots", "Michroma", sans-serif !important;
+  letter-spacing: 0.04em;
+}
+
+.font-alien-hud {
+  font-family: "Oxanium", "Orbitron", "Chakra Petch", sans-serif !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .font-chakra {

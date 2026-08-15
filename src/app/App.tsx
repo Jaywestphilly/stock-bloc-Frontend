@@ -1349,7 +1349,7 @@ export function App() {
 
         {activeTab === "youtube" && <YouTubeHub />}
 
-        {activeTab === "news" && <NewsHub />}
+        {activeTab === "news" && <NewsHub onNavigateTab={handleSelectTab} />}
 
         {activeTab === "terminal_guide" && (
           <TerminalGuideHub
