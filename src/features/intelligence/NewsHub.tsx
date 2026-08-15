@@ -128,7 +128,8 @@ export const NewsHub: React.FC<NewsHubProps> = ({ onNavigateTab }) => {
 
   const handleTickerClick = (tickerSymbol: string) => {
     const raw = tickerSymbol.replace('$', '');
-    setSelectedStock(raw);
+    const found = stocks.find(s => s.symbol === raw);
+    if (found) setSelectedStock(found);
     if (onNavigateTab) {
       onNavigateTab("MARKET");
     }
@@ -349,9 +350,10 @@ export const NewsHub: React.FC<NewsHubProps> = ({ onNavigateTab }) => {
     seenVideoIds.add(sId);
 
     // Sector filter
-    if (selectedSector) {
+    if (activeTags.length > 0) {
       const tags = getItemTags(item);
-      if (!tags.includes(selectedSector)) return false;
+      const hasMatch = activeTags.some(t => tags.includes(t));
+      if (!hasMatch) return false;
     }
 
     // Search query match
