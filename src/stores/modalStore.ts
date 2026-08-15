@@ -36,6 +36,8 @@ interface ModalState {
   setIsSearchOpen: (is: boolean) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  isMissionHubOpen: boolean;
+  setIsMissionHubOpen: (is: boolean) => void;
 }
 
 export const useModalStore = create<ModalState>((set) => ({
@@ -73,4 +75,6 @@ export const useModalStore = create<ModalState>((set) => ({
   setIsSearchOpen: (isSearchOpen) => set({ isSearchOpen }),
   searchQuery: "",
   setSearchQuery: (searchQuery) => set({ searchQuery }),
+  isMissionHubOpen: false,
+  setIsMissionHubOpen: (isMissionHubOpen) => set({ isMissionHubOpen }),
 }));

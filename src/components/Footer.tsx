@@ -62,6 +62,12 @@ export const Footer: React.FC<FooterProps> = ({
             <p className="text-neutral-400 font-sans text-xs leading-relaxed">
               Institutional quant terminal for individual investors. Democratizing wealth intelligence across stocks, 13F flows, credit, real estate, and clean energy.
             </p>
+            <button
+              onClick={() => onSelectTab("brand")}
+              className="text-[11px] text-cyan-400 hover:text-cyan-300 underline font-mono flex items-center gap-1 cursor-pointer"
+            >
+              <span>About Us & Platform Mission &rarr;</span>
+            </button>
           </div>
 
           {/* Col 2: Core Hubs */}

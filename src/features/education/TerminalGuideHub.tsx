@@ -23,6 +23,7 @@ import {
   GraduationCap,
 } from "lucide-react";
 import { triggerHaptic } from "../../utils/haptics";
+import { useModalStore } from "../../stores/modalStore";
 
 interface TerminalGuideHubProps {
   onOpenTerminal: () => void;
@@ -33,6 +34,7 @@ export const TerminalGuideHub: React.FC<TerminalGuideHubProps> = ({
   onOpenTerminal,
   onNavigateTab,
 }) => {
+  const { setIsMissionHubOpen } = useModalStore();
   const [copiedCmd, setCopiedCmd] = useState<string | null>(null);
   const [activeTabSection, setActiveTabSection] = useState<
     "overview" | "commands" | "syntax" | "quad"
@@ -360,23 +362,38 @@ export const TerminalGuideHub: React.FC<TerminalGuideHubProps> = ({
                     </h4>
                   </div>
 
-                  <button
-                    onClick={() => handleCopyCommand(cmd.example)}
-                    className="p-1.5 bg-neutral-800 hover:bg-neutral-700 text-cyan-300 rounded-lg text-[11px] font-mono flex items-center gap-1 cursor-pointer transition-colors"
-                    title={`Copy ${cmd.example}`}
-                  >
-                    {copiedCmd === cmd.example ? (
-                      <>
-                        <Check className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">COPIED</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3.5 h-3.5" />
-                        <span>{cmd.example}</span>
-                      </>
+                  <div className="flex items-center gap-1.5">
+                    {cmd.code === "WHOAMI" && (
+                      <button
+                        onClick={() => {
+                          triggerHaptic("selection");
+                          setIsMissionHubOpen(true);
+                        }}
+                        className="px-2 py-1 bg-cyan-400 text-black font-bold text-[10px] rounded hover:bg-cyan-300 transition-colors cursor-pointer"
+                        title="Open Mission Manifesto & Business Hub"
+                      >
+                        OPEN HUB
+                      </button>
                     )}
-                  </button>
+
+                    <button
+                      onClick={() => handleCopyCommand(cmd.example)}
+                      className="p-1.5 bg-neutral-800 hover:bg-neutral-700 text-cyan-300 rounded-lg text-[11px] font-mono flex items-center gap-1 cursor-pointer transition-colors"
+                      title={`Copy ${cmd.example}`}
+                    >
+                      {copiedCmd === cmd.example ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span className="text-emerald-400">COPIED</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>{cmd.example}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <p className="text-xs text-cyan-200/70 font-sans leading-relaxed">

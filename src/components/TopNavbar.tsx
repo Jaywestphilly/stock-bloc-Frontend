@@ -28,9 +28,10 @@ interface TopNavbarProps {
   activeTab: ViewTab;
   onSelectTab: (tab: ViewTab) => void;
   onOpenTerminal?: () => void;
+  onOpenMissionHub?: () => void;
 }
 
-export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, onOpenTerminal }) => {
+export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, onOpenTerminal, onOpenMissionHub }) => {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
   const marketsMenu = [
@@ -234,7 +235,28 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
           <span>BOOKS & STORE</span>
         </button>
 
-        {/* 9. FREE TERMINAL (Top Button) */}
+        {/* 9. ABOUT US & MISSION HUB */}
+        <button
+          onClick={() => {
+            triggerHaptic("selection");
+            if (onOpenMissionHub) {
+              onOpenMissionHub();
+            } else {
+              onSelectTab("brand");
+            }
+          }}
+          className={`px-3 py-1.5 alien-block-cut-sm font-alien-hud text-[11px] flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap focus-visible:outline-none ${
+            activeTab === "brand"
+              ? "bg-cyan-400 text-black shadow-lg shadow-cyan-400/30 border border-cyan-200 glow-cyan font-black"
+              : "text-cyan-300 hover:text-white hover:bg-cyan-950/40 border border-cyan-500/40"
+          }`}
+          title="About Stock Bloc, Mission Statement & Business Model"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          <span>ABOUT US</span>
+        </button>
+
+        {/* 10. FREE TERMINAL (Top Button) */}
         {onOpenTerminal && (
           <button
             onClick={() => {

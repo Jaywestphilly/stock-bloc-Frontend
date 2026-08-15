@@ -46,6 +46,7 @@ interface HeaderProps {
   onSelectTab?: (tab: ViewTab) => void;
   isDayMode?: boolean;
   onToggleDayMode?: () => void;
+  onOpenMissionHub?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -65,6 +66,7 @@ export const Header: React.FC<HeaderProps> = ({
   onSelectTab,
   isDayMode = false,
   onToggleDayMode,
+  onOpenMissionHub,
 }) => {
   const { marketDataUpdatedAt, marketDataIsStale } = useMarketStore();
   const [timeStr, setTimeStr] = useState("");

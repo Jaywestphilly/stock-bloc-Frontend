@@ -258,6 +258,7 @@ import { AppleWatchGlanceView } from "../components/AppleWatchGlanceView";
 import { DisclaimerBar } from "../components/DisclaimerBar";
 import { trackEvent } from "../utils/analytics";
 import { FloatingCommunityButton } from "../components/FloatingCommunityButton";
+import { MissionHubModal } from "../components/MissionHubModal";
 import { INITIAL_STOCKS, STOCK_NEWS_FEED } from "../data/stocks";
 import { StockTicker, SectorCategory, SortField, ViewTab } from "../types";
 import {
@@ -494,6 +495,7 @@ export function App() {
   // New Feature Modals
   const { isAuthOpen, setIsAuthOpen } = useModalStore();
   const { isDisclaimerOpen, setIsDisclaimerOpen } = useModalStore();
+  const { isMissionHubOpen, setIsMissionHubOpen } = useModalStore();
 
   // Command Palette & Data Status
     const { isDataStatusOpen, setIsDataStatusOpen } = useModalStore();
@@ -912,6 +914,7 @@ export function App() {
         onSelectTab={handleSelectTab}
         isDayMode={isDayMode}
         onToggleDayMode={handleToggleDayMode}
+        onOpenMissionHub={() => setIsMissionHubOpen(true)}
       />
 
       {/* Desktop Top Navigation Bar */}
@@ -919,6 +922,7 @@ export function App() {
         activeTab={activeTab}
         onSelectTab={handleSelectTab}
         onOpenTerminal={handleOpenBloombergTerminal}
+        onOpenMissionHub={() => setIsMissionHubOpen(true)}
       />
 
       <>
@@ -1599,6 +1603,14 @@ export function App() {
         isOpen={isDataStatusOpen}
         onClose={() => setIsDataStatusOpen(false)}
         lastSyncTime={lastSyncTime}
+      />
+
+      {/* Stock Bloc Mission & Business Model Hub Modal */}
+      <MissionHubModal
+        isOpen={isMissionHubOpen}
+        onClose={() => setIsMissionHubOpen(false)}
+        onSelectTab={handleSelectTab}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       </Suspense>
