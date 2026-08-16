@@ -753,34 +753,40 @@ export const WarGovUfoHub: React.FC<WarGovUfoHubProps> = ({
 
           {/* Equity Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {filteredWatchlist.map((stock) => (
-              <div
-                key={stock.ticker}
-                onClick={() => handleSelectTicker(stock.ticker)}
-                className="p-4 rounded-2xl bg-[#030e18]/90 hover:bg-cyan-950/60 border border-cyan-500/30 transition-all cursor-pointer space-y-3 group"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-base text-amber-300 group-hover:text-amber-200 transition-colors">
-                      ${stock.ticker}
-                    </span>
-                    <span className="text-[9px] font-bold text-cyan-300 bg-cyan-950 px-2 py-0.5 border border-cyan-500/30 alien-block-cut-sm">
-                      {stock.clearanceLevel}
-                    </span>
-                  </div>
+            {filteredWatchlist.map((stock) => {
+              const isUp = stock.changePercent >= 0;
+              return (
+                <div
+                  key={stock.ticker}
+                  onClick={() => handleSelectTicker(stock.ticker)}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-3 group ${
+                    isUp
+                      ? "bg-gradient-to-br from-[#031c12]/90 via-[#02140d]/90 to-[#020d18]/90 border-emerald-500/40 hover:border-emerald-400/80 shadow-lg shadow-emerald-950/30"
+                      : "bg-gradient-to-br from-[#24050d]/90 via-[#180308]/90 to-[#020d18]/90 border-rose-500/40 hover:border-rose-400/80 shadow-lg shadow-rose-950/30"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="font-black text-base text-amber-300 group-hover:text-amber-200 transition-colors">
+                        ${stock.ticker}
+                      </span>
+                      <span className="text-[9px] font-bold text-cyan-300 bg-cyan-950 px-2 py-0.5 border border-cyan-500/30 alien-block-cut-sm">
+                        {stock.clearanceLevel}
+                      </span>
+                    </div>
 
-                  <div className="text-right font-mono">
-                    <span className="font-bold text-sm text-cyan-100">${stock.price.toFixed(2)}</span>
-                    <span
-                      className={`text-[10px] font-black block ${
-                        stock.changePercent >= 0 ? "text-emerald-400" : "text-rose-400"
-                      }`}
-                    >
-                      {stock.changePercent >= 0 ? "+" : ""}
-                      {stock.changePercent.toFixed(2)}%
-                    </span>
+                    <div className="text-right font-mono">
+                      <span className="font-bold text-sm text-cyan-100">${stock.price.toFixed(2)}</span>
+                      <span
+                        className={`text-[10px] font-black block ${
+                          isUp ? "text-emerald-400" : "text-rose-400"
+                        }`}
+                      >
+                        {isUp ? "+" : ""}
+                        {stock.changePercent.toFixed(2)}%
+                      </span>
+                    </div>
                   </div>
-                </div>
 
                 <div>
                   <h3 className="text-xs font-black text-cyan-100">{stock.name}</h3>
@@ -823,7 +829,8 @@ export const WarGovUfoHub: React.FC<WarGovUfoHubProps> = ({
                   </button>
                 </div>
               </div>
-            ))}
+            );
+          })}
           </div>
         </div>
       )}

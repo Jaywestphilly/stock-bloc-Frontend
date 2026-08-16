@@ -453,56 +453,90 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     window.open(ROBINHOOD_REFERRAL_URL, "_blank");
   };
 
-  const isPositive = stock.changePercent >= 0;
-  const isHighVolatility = Math.abs(stock.changePercent) >= 3;
+  const isPositive = (stock.changePercent ?? 0) >= 0;
+  const isHighVolatility = Math.abs(stock.changePercent ?? 0) >= 3;
 
-  // Dynamic Volatility Overlay styling based on stock 7D volatility vs sector average
+  // Determine vibrant, high-contrast Red / Green card styling strictly based on positive gainers vs negative losers
+  const cardTheme = useMemo(() => {
+    const isLiveUpFlash = priceFlashState === "up";
+    const isLiveDownFlash = priceFlashState === "down";
+
+    if (isPositive) {
+      // POSITIVE GAINER (GREEN)
+      const baseRgb = "16, 185, 129"; // emerald-500 (#10b981)
+      const glowRgb = "0, 255, 136"; // cyan-emerald (#00ff88)
+      const deepRgb = "4, 120, 87"; // emerald-700
+      
+      // Dynamic depth scaling based on magnitude of gain
+      const gainIntensity = Math.min(0.26, 0.10 + Math.min(6, Math.max(0, stock.changePercent)) * 0.025);
+      const effectiveOpacity = isLiveUpFlash ? 0.38 : gainIntensity;
+
+      return {
+        isPositive: true,
+        background: `radial-gradient(ellipse at 35% 50%, rgba(${baseRgb}, ${effectiveOpacity * 1.5}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.6}) 60%, rgba(3, 20, 14, 0.92) 100%)`,
+        borderColor: isLiveUpFlash
+          ? "rgba(52, 211, 153, 0.95)"
+          : stock.isPinned
+            ? "rgba(0, 255, 136, 0.85)"
+            : "rgba(16, 185, 129, 0.45)",
+        boxShadow: stock.isPinned
+          ? `0 0 25px rgba(${glowRgb}, 0.35), inset 0 0 20px rgba(${glowRgb}, 0.15)`
+          : isLiveUpFlash
+            ? `0 0 32px rgba(${glowRgb}, 0.5), inset 0 0 20px rgba(${glowRgb}, 0.25)`
+            : `0 0 20px rgba(${baseRgb}, 0.15), inset 0 0 15px rgba(${baseRgb}, 0.08)`,
+      };
+    } else {
+      // NEGATIVE LOSER (RED)
+      const baseRgb = "239, 68, 68"; // rose-500 (#ef4444)
+      const glowRgb = "255, 0, 85"; // rose-neon (#ff0055)
+      const deepRgb = "190, 18, 60"; // rose-700
+      
+      // Dynamic depth scaling based on magnitude of drop
+      const dropIntensity = Math.min(0.26, 0.10 + Math.min(6, Math.max(0, Math.abs(stock.changePercent))) * 0.025);
+      const effectiveOpacity = isLiveDownFlash ? 0.38 : dropIntensity;
+
+      return {
+        isPositive: false,
+        background: `radial-gradient(ellipse at 35% 50%, rgba(${baseRgb}, ${effectiveOpacity * 1.5}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.6}) 60%, rgba(28, 4, 10, 0.92) 100%)`,
+        borderColor: isLiveDownFlash
+          ? "rgba(251, 113, 133, 0.95)"
+          : stock.isPinned
+            ? "rgba(255, 0, 85, 0.85)"
+            : "rgba(239, 68, 68, 0.45)",
+        boxShadow: stock.isPinned
+          ? `0 0 25px rgba(${glowRgb}, 0.35), inset 0 0 20px rgba(${glowRgb}, 0.15)`
+          : isLiveDownFlash
+            ? `0 0 32px rgba(${glowRgb}, 0.5), inset 0 0 20px rgba(${glowRgb}, 0.25)`
+            : `0 0 20px rgba(${baseRgb}, 0.15), inset 0 0 15px rgba(${baseRgb}, 0.08)`,
+      };
+    }
+  }, [isPositive, stock.changePercent, stock.isPinned, priceFlashState]);
+
+  // Volatility calculation for the 7D variance badge
   const volatilityOverlay = useMemo(() => {
     const stockVol = getStockVolatility(stock);
     const cat = stock.category;
     const sectorAvgVol = SECTOR_VOLATILITY_AVERAGES[cat] || 5;
     const relVol = stockVol / (sectorAvgVol || 1);
     
-    let color = "0, 242, 255"; // Default Cyan
-    let opacity = 0.05;
     let text = "1.0x (Avg)";
     let textColor = "text-cyan-400/80";
-    let glow = "shadow-cyan-500/5";
 
     if (relVol > 1.3) {
-      // Highly Volatile relative to sector (Red/Amber)
-      color = "239, 68, 68"; // Rose-red
-      opacity = Math.min(0.28, 0.08 + (relVol - 1) * 0.12);
       text = `${relVol.toFixed(1)}x (High)`;
       textColor = "text-rose-400";
-      glow = "shadow-rose-500/10";
     } else if (relVol > 1.05) {
-      // Slightly Volatile (Amber)
-      color = "245, 158, 11"; // Amber
-      opacity = Math.min(0.18, 0.06 + (relVol - 1) * 0.1);
       text = `${relVol.toFixed(1)}x (Elevated)`;
       textColor = "text-amber-400";
-      glow = "shadow-amber-500/5";
     } else if (relVol < 0.75) {
-      // Ultra Stable relative to sector (Emerald)
-      color = "16, 185, 129"; // Emerald
-      opacity = Math.min(0.25, 0.05 + (1 - relVol) * 0.12);
       text = `${relVol.toFixed(1)}x (Stable)`;
       textColor = "text-emerald-400";
-      glow = "shadow-emerald-500/5";
     } else {
-      // Normal range
-      color = "0, 242, 255"; // Cyan
-      opacity = 0.05;
       text = `${relVol.toFixed(1)}x (Normal)`;
       textColor = "text-cyan-400/80";
-      glow = "shadow-cyan-500/5";
     }
 
     return {
-      overlayColor: color,
-      overlayOpacity: opacity,
-      overlayGlow: glow,
       relVolText: text,
       relVolColor: textColor,
       relVolValue: relVol,
@@ -831,16 +865,13 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     }
   };
 
-  // Determine performance category for dynamic holographic border glow
+  // Determine performance category for dynamic holographic border glow (green glow for gainers, red glow for losers)
   const getPerformanceHoloClass = (changePct: number, category?: string) => {
     if (changePct >= 3.0 || category === "tsunami") {
       return "holo-card-surge";
     }
     if (changePct >= 0) {
       return "holo-card-bullish";
-    }
-    if (changePct >= -1.5) {
-      return "holo-card-neutral";
     }
     return "holo-card-bearish";
   };
@@ -863,7 +894,13 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
       className="StockCard relative w-full overflow-hidden my-0.5 select-none group/card-wrapper"
     >
       {/* Sleek Data Stream Edge Accent Beam */}
-      <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gradient-to-b from-cyan-400 via-teal-400 to-cyan-600/0 opacity-0 group-hover/card-wrapper:opacity-100 transition-opacity duration-300 pointer-events-none z-20" />
+      <div
+        className={`absolute left-0 top-0 bottom-0 w-[2px] transition-opacity duration-300 pointer-events-none z-20 ${
+          isPositive
+            ? "bg-gradient-to-b from-emerald-400 via-teal-300 to-emerald-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
+            : "bg-gradient-to-b from-rose-500 via-red-400 to-rose-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
+        }`}
+      />
 
       {/* Hidden Swipe Actions Background */}
       <div className="absolute inset-y-0 right-0 flex items-center gap-1.5 pr-2 z-0">
@@ -966,10 +1003,9 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
               : ""
         } ${isSyncing ? "glitch-border-refresh terminal-refresh-flash" : ""}`}
         style={{
-          background: `radial-gradient(circle at 35% 50%, rgba(${volatilityOverlay.overlayColor}, ${volatilityOverlay.overlayOpacity * 1.3}) 0%, rgba(${volatilityOverlay.overlayColor}, 0) 90%), rgba(4, 15, 24, ${0.85 - Math.min(0.4, volatilityOverlay.overlayOpacity * 1.6)})`,
-          boxShadow: stock.isPinned
-            ? `0 0 25px rgba(${volatilityOverlay.overlayColor}, 0.25), inset 0 0 20px rgba(${volatilityOverlay.overlayColor}, 0.1)`
-            : `0 0 20px rgba(${volatilityOverlay.overlayColor}, 0.08), inset 0 0 15px rgba(${volatilityOverlay.overlayColor}, 0.05)`,
+          background: cardTheme.background,
+          borderColor: cardTheme.borderColor,
+          boxShadow: cardTheme.boxShadow,
         }}
       >
         {/* Corner HUD Ticks */}
