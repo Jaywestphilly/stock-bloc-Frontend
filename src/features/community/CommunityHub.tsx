@@ -17,7 +17,13 @@ import {
   Check,
   Sparkles,
   Zap,
-  Filter
+  Filter,
+  Edit3,
+  ExternalLink,
+  Radio,
+  Copy,
+  Globe,
+  Award
 } from "lucide-react";
 import { db, getUserDataLocally } from "../../lib/firebase";
 import { 
@@ -38,6 +44,9 @@ import { useAuth } from "../../contexts/AuthContext";
 import { ViewTab } from "../../types";
 import { UserProfileModal, ProfileData } from "../../components/UserProfileModal";
 import { UpgradeRecommendationModal } from "../../components/UpgradeRecommendationModal";
+import { EditProfileModal, CustomProfileData } from "../../components/EditProfileModal";
+import { SBCertificationBadge } from "../../components/SBCertificationBadge";
+import { calculateSBCertification } from "../../utils/certificationRating";
 import { Lightbulb } from "lucide-react";
 
 interface ChatMessage {
@@ -49,6 +58,7 @@ interface ChatMessage {
   createdAt: any;
   sentiment?: "bullish" | "bearish" | "neutral";
   ticker?: string;
+  authorLink?: string;
 }
 
 interface DiscussionPost {
@@ -65,6 +75,7 @@ interface DiscussionPost {
   sentiment?: "bullish" | "bearish" | "neutral";
   categoryTag?: "Macro" | "AI & Tech" | "Earnings" | "Options" | "Real Estate" | "General";
   tickers?: string[];
+  authorLink?: string;
 }
 
 interface CommunityHubProps {
@@ -156,6 +167,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
   const [newReplyText, setNewReplyText] = useState("");
   const [selectedProfile, setSelectedProfile] = useState<ProfileData | null>(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [isUpgradesModalOpen, setIsUpgradesModalOpen] = useState(false);
   const [likedPosts, setLikedPosts] = useState<Set<string>>(() => {
     try {
@@ -168,8 +180,24 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
   const chatEndRef = useRef<HTMLDivElement>(null);
   const repliesEndRef = useRef<HTMLDivElement>(null);
 
+  // Deep Link URL detection on mount (?post=... or ?profile=...)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const postIdParam = params.get("post") || params.get("discussionId");
+      if (postIdParam) {
+        setActiveDiscussionId(postIdParam);
+      }
+      const profileParam = params.get("profile");
+      if (profileParam) {
+        handleOpenProfile(profileParam, profileParam.includes("agent") ? "agent" : "human");
+      }
+    }
+  }, []);
+
   // Read local profile & sessions if available
   const localProfile = getUserDataLocally<{ uid?: string; displayName?: string; email?: string; username?: string }>("profile", null);
+  const customProfile = getUserDataLocally<CustomProfileData>("custom_profile", null);
   const rawUserSession = typeof window !== 'undefined' ? (localStorage.getItem('user_session') || localStorage.getItem('stockbloc_user_profile') || localStorage.getItem('stock_bloc_profile')) : null;
 
   const isAuthenticated = Boolean(
@@ -182,8 +210,8 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
 
   const currentUser = isAuthenticated ? {
     uid: authUser?.uid || contextUser?.uid || localProfile?.uid || (rawUserSession ? "user_" + btoa(rawUserSession).slice(0, 8) : "user_member"),
-    username: username || contextUser?.username || contextUser?.displayName || authUser?.displayName || localProfile?.displayName || localProfile?.username || localProfile?.email?.split('@')[0] || "StockBlocMember",
-    displayName: contextUser?.displayName || authUser?.displayName || localProfile?.displayName || username || "Stock Bloc Member",
+    username: customProfile?.username || username || contextUser?.username || contextUser?.displayName || authUser?.displayName || localProfile?.displayName || localProfile?.username || localProfile?.email?.split('@')[0] || "StockBlocMember",
+    displayName: customProfile?.displayName || contextUser?.displayName || authUser?.displayName || localProfile?.displayName || username || "Stock Bloc Member",
   } : null;
 
   // Helper functions declared before usages
@@ -192,21 +220,37 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
     authorType: "human" | "agent" | "verified_agent" | "system" | "organization" = "human",
     displayName?: string,
     tickers?: string[],
-    bio?: string
+    bio?: string,
+    link?: string,
+    upvotes?: number,
+    thesesCount?: number
   ) => {
     triggerHaptic("selection");
+    const clean = username.replace(/^@/, "");
     const isAg = authorType === "agent" || authorType === "verified_agent";
+    
+    // Update URL history for shareability
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", "community");
+      url.searchParams.set("profile", clean);
+      window.history.pushState({ tab: "community", profile: clean }, "", url.toString());
+    }
+
+    const effectiveLink = link || (clean === customProfile?.username?.replace(/^@/, "") ? customProfile?.link : undefined) || (isAg ? `https://stock-bloc.ai.studio/agents/${clean}` : undefined);
+
     setSelectedProfile({
-      username: username.replace(/^@/, ""),
-      displayName: displayName || username.replace(/^@/, ""),
+      username: clean,
+      displayName: displayName || clean,
       authorType: authorType,
       tickers: tickers && tickers.length > 0 ? tickers : ["NVDA", "SPCX", "CEG", "SPY"],
       bio: bio || (isAg
         ? "Autonomous decentralized quantitative agent executing probabilistic delta-neutral alpha models and real-time order-flow telemetry."
         : "Systematic equities and options trader tracking datacenter momentum, AI infrastructure, and macro volatility."),
+      link: effectiveLink,
       reputationScore: isAg ? 948 : 812,
-      thesesCount: isAg ? 18 : 9,
-      upvotesReceived: isAg ? 142 : 54,
+      thesesCount: thesesCount !== undefined ? thesesCount : (isAg ? 18 : 9),
+      upvotesReceived: upvotes !== undefined ? upvotes : (isAg ? 142 : 54),
       memberSince: isAg ? "Genesis Block (Q1 2025)" : "Member since 2025",
       winRate: isAg ? "94.2%" : "88.6%"
     });
@@ -226,14 +270,56 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
     }
   };
 
-  const handleSharePost = (post: DiscussionPost) => {
+  const handleSelectDiscussion = (id: string | null) => {
+    setActiveDiscussionId(id);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", "community");
+      if (id) {
+        url.searchParams.set("post", id);
+      } else {
+        url.searchParams.delete("post");
+      }
+      window.history.pushState({ tab: "community", post: id || undefined }, "", url.toString());
+    }
+  };
+
+  const handleSharePost = async (post: DiscussionPost) => {
     triggerHaptic("light");
-    const shareText = `Stock Bloc Intel by @${post.authorUsername}: "${post.title}" - Read more on Stock Bloc Terminal`;
+    const origin = window.location.origin || "https://stock-bloc.ai.studio";
+    const shareUrl = `${origin}/community?post=${encodeURIComponent(post.id)}`;
+    const shareTitle = `Stock Bloc Market Intel: ${post.title}`;
+    const shareText = `Market Intelligence by @${post.authorUsername}: "${post.title}"\nRead on Stock Bloc Quant Terminal: ${shareUrl}`;
+
+    // 1. Try Native Web Share API first
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        // Fall back to clipboard if dismissed or blocked
+      }
+    }
+
+    // 2. Direct Clipboard Copy fallback with verified URL
     if (navigator.clipboard) {
       navigator.clipboard.writeText(shareText);
       setCopiedPostId(post.id);
-      setTimeout(() => setCopiedPostId(null), 2000);
+      setTimeout(() => setCopiedPostId(null), 2500);
     }
+  };
+
+  const handleShareToTwitter = (post: DiscussionPost, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    triggerHaptic("selection");
+    const origin = window.location.origin || "https://stock-bloc.ai.studio";
+    const shareUrl = `${origin}/community?post=${encodeURIComponent(post.id)}`;
+    const text = `Market Intel by @${post.authorUsername}: "${post.title}" on @stockbloc quant terminal`;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`, '_blank', 'noopener,noreferrer');
   };
 
   const isAgent = (authorType?: string) => authorType === "agent" || authorType === "verified_agent";
@@ -510,6 +596,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
       authorId: currentUser.uid,
       authorUsername: currentUser.username,
       authorType: "human" as const,
+      authorLink: customProfile?.link || undefined,
       content: trimmed,
       sentiment: chatSentiment,
       ticker: detectedTickers[0] || undefined,
@@ -523,6 +610,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
       authorId: currentUser.uid,
       authorUsername: currentUser.username,
       authorType: "human",
+      authorLink: customProfile?.link || undefined,
       content: trimmed,
       sentiment: chatSentiment,
       ticker: detectedTickers[0],
@@ -558,6 +646,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
       authorUsername,
       authorDisplayName: currentUser.displayName || authorUsername,
       authorType: "human" as const,
+      authorLink: customProfile?.link || undefined,
       title: trimmedTitle,
       content: trimmedContent,
       upvotes: 0,
@@ -574,6 +663,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
       authorId,
       authorUsername,
       authorType: "human",
+      authorLink: customProfile?.link || undefined,
       title: trimmedTitle,
       content: trimmedContent,
       upvotes: 0,
@@ -631,6 +721,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
       authorUsername,
       authorDisplayName: currentUser.displayName || authorUsername,
       authorType: "human" as const,
+      authorLink: customProfile?.link || undefined,
       content: trimmedReply,
       replyToId: activeDiscussionId,
       createdAt: serverTimestamp(),
@@ -642,6 +733,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
       authorId,
       authorUsername,
       authorType: "human",
+      authorLink: customProfile?.link || undefined,
       content: trimmedReply,
       createdAt: new Date(),
     };
@@ -796,6 +888,37 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
             </button>
           </div>
 
+          {/* Edit Profile Button and SB Certification Pill for Authenticated User */}
+          {isAuthenticated && (
+            <div className="flex items-center gap-2">
+              <SBCertificationBadge 
+                input={{
+                  authorType: "human",
+                  upvotesReceived: 54,
+                  thesesCount: 9,
+                  repliesCount: 22,
+                  chatCount: 38,
+                  reputationScore: 812,
+                  winRate: "88.6%"
+                }}
+                size="sm"
+              />
+              <button
+                id="community-edit-profile-btn"
+                onClick={() => {
+                  triggerHaptic("selection");
+                  setIsEditProfileModalOpen(true);
+                }}
+                className="px-3 py-1.5 alien-block-cut-sm bg-black/80 border border-cyan-400 text-cyan-300 font-alien-hud font-bold text-xs flex items-center gap-1.5 hover:bg-cyan-950 hover:border-cyan-300 transition-all cursor-pointer shadow-lg"
+                title="Edit Your Trading Profile, Strategy, Portfolio Link & Avatar"
+              >
+                <Edit3 className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="hidden sm:inline">EDIT MY PROFILE</span>
+                <span className="sm:hidden">PROFILE</span>
+              </button>
+            </div>
+          )}
+
           {/* Recommend Upgrades Button */}
           <button
             id="community-propose-upgrades-btn"
@@ -834,7 +957,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                 <button
                   onClick={() => {
                     triggerHaptic("light");
-                    setActiveDiscussionId(null);
+                    handleSelectDiscussion(null);
                   }}
                   className="flex items-center gap-2 text-xs sm:text-sm font-alien-hud font-bold text-cyan-300 hover:text-white transition-colors cursor-pointer"
                 >
@@ -909,7 +1032,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 text-[11px] font-martian text-neutral-400 mb-2">
                           <button 
-                            onClick={() => handleOpenProfile(post.authorUsername, post.authorType, post.authorDisplayName, post.tickers)}
+                            onClick={() => handleOpenProfile(post.authorUsername, post.authorType, post.authorDisplayName, post.tickers, undefined, post.authorLink, post.upvotes, 1)}
                             className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer group"
                             title={`View @${post.authorUsername}'s Profile`}
                           >
@@ -918,6 +1041,31 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                               <AgentBadge className="scale-75 origin-left" />
                             )}
                           </button>
+
+                          {/* SB Certification Badge */}
+                          <SBCertificationBadge 
+                            input={{
+                              authorType: post.authorType,
+                              upvotesReceived: post.upvotes || 0,
+                              thesesCount: 1
+                            }}
+                            size="xs"
+                          />
+
+                          {post.authorLink && (
+                            <a
+                              href={post.authorLink.startsWith("http") ? post.authorLink : `https://${post.authorLink}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-martian text-cyan-300 bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-500/30 alien-block-cut-sm transition-colors"
+                              title={`Visit ${post.authorLink}`}
+                            >
+                              <Globe className="w-2.5 h-2.5 text-cyan-400" />
+                              <span className="max-w-[120px] truncate">{post.authorLink.replace(/^https?:\/\//, '')}</span>
+                            </a>
+                          )}
+
                           <span>•</span>
                           <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-cyan-500" /> {formatTime(post.createdAt)}</span>
 
@@ -958,22 +1106,32 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                             </span>
                           </div>
 
-                          <button
-                            onClick={() => handleSharePost(post)}
-                            className="flex items-center gap-1.5 text-xs font-alien-hud text-cyan-300 hover:text-white px-2.5 py-1 bg-black/60 border border-cyan-500/30 alien-block-cut-sm hover:border-cyan-400 transition-all cursor-pointer"
-                          >
-                            {copiedPostId === post.id ? (
-                              <>
-                                <Check className="w-3.5 h-3.5 text-emerald-400" />
-                                <span className="text-emerald-400 font-bold">Link Copied</span>
-                              </>
-                            ) : (
-                              <>
-                                <Share2 className="w-3.5 h-3.5 text-cyan-400" />
-                                <span>Share Intel</span>
-                              </>
-                            )}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={(e) => handleShareToTwitter(post, e)}
+                              className="p-1.5 bg-black/70 border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 hover:text-white alien-block-cut-sm transition-colors cursor-pointer"
+                              title="Share on 𝕏 / Twitter"
+                            >
+                              <span className="text-xs font-bold font-sans">𝕏</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleSharePost(post)}
+                              className="flex items-center gap-1.5 text-xs font-alien-hud text-cyan-300 hover:text-white px-2.5 py-1 bg-black/60 border border-cyan-500/30 alien-block-cut-sm hover:border-cyan-400 transition-all cursor-pointer"
+                            >
+                              {copiedPostId === post.id ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                  <span className="text-emerald-400 font-bold">Link Copied</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Share2 className="w-3.5 h-3.5 text-cyan-400" />
+                                  <span>Share Intel</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -994,9 +1152,9 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                   ) : (
                     activeReplies.map(reply => (
                       <div key={reply.id} className="p-4 alien-block-cut-sm bg-black/70 border border-cyan-500/20 flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-[11px] font-martian text-neutral-400 mb-1">
+                        <div className="flex flex-wrap items-center gap-2 text-[11px] font-martian text-neutral-400 mb-1">
                           <button 
-                            onClick={() => handleOpenProfile(reply.authorUsername, reply.authorType)}
+                            onClick={() => handleOpenProfile(reply.authorUsername, reply.authorType, undefined, undefined, undefined, reply.authorLink)}
                             className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer group"
                             title={`View @${reply.authorUsername}'s Profile`}
                           >
@@ -1005,6 +1163,27 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                               <AgentBadge className="scale-[0.65] origin-left" />
                             )}
                           </button>
+
+                          <SBCertificationBadge 
+                            input={{
+                              authorType: reply.authorType,
+                              repliesCount: 1
+                            }}
+                            size="xs"
+                          />
+
+                          {reply.authorLink && (
+                            <a
+                              href={reply.authorLink.startsWith("http") ? reply.authorLink : `https://${reply.authorLink}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[9px] font-martian text-cyan-300 hover:text-white"
+                              title={`Visit ${reply.authorLink}`}
+                            >
+                              <Globe className="w-2.5 h-2.5 text-cyan-400" />
+                            </a>
+                          )}
+
                           <span>•</span>
                           <span>{formatTime(reply.createdAt)}</span>
                         </div>
@@ -1170,7 +1349,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleOpenProfile(post.authorUsername, post.authorType, post.authorDisplayName, post.tickers);
+                              handleOpenProfile(post.authorUsername, post.authorType, post.authorDisplayName, post.tickers, undefined, post.authorLink, post.upvotes, 1);
                             }}
                             className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer group"
                             title={`View @${post.authorUsername}'s Profile`}
@@ -1180,6 +1359,31 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                               <AgentBadge className="scale-75 origin-left" />
                             )}
                           </button>
+
+                          {/* SB Certification Badge */}
+                          <SBCertificationBadge 
+                            input={{
+                              authorType: post.authorType,
+                              upvotesReceived: post.upvotes || 0,
+                              thesesCount: 1
+                            }}
+                            size="xs"
+                          />
+
+                          {post.authorLink && (
+                            <a
+                              href={post.authorLink.startsWith("http") ? post.authorLink : `https://${post.authorLink}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="inline-flex items-center gap-1 px-1.5 py-0.2 text-[8px] font-martian text-cyan-300 bg-cyan-950/60 hover:bg-cyan-900 border border-cyan-500/30 alien-block-cut-sm transition-colors"
+                              title={`Visit ${post.authorLink}`}
+                            >
+                              <Globe className="w-2.5 h-2.5 text-cyan-400" />
+                              <span className="max-w-[90px] truncate">{post.authorLink.replace(/^https?:\/\//, '')}</span>
+                            </a>
+                          )}
+
                           <span>•</span>
                           <span className="flex items-center gap-1"><Clock className="w-3 h-3 text-cyan-500" /> {formatTime(post.createdAt)}</span>
 
@@ -1218,7 +1422,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-cyan-900/30">
                           <div className="flex items-center gap-3">
                             <button 
-                              onClick={() => { triggerHaptic("light"); setActiveDiscussionId(post.id); }}
+                              onClick={() => { triggerHaptic("light"); handleSelectDiscussion(post.id); }}
                               className="flex items-center gap-1.5 text-xs font-alien-hud text-neutral-400 hover:text-cyan-300 transition-colors cursor-pointer px-2 py-1 alien-block-cut-sm bg-black/40 border border-cyan-500/20"
                             >
                               <MessageSquare className="w-3.5 h-3.5 text-cyan-400" />
@@ -1236,20 +1440,30 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                             </button>
                           </div>
 
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSharePost(post);
-                            }}
-                            className="flex items-center gap-1 text-[11px] font-alien-hud text-cyan-400 hover:text-white transition-colors cursor-pointer px-2 py-1"
-                            title="Share Intel"
-                          >
-                            {copiedPostId === post.id ? (
-                              <span className="text-emerald-400 font-bold flex items-center gap-1"><Check className="w-3 h-3" /> Copied</span>
-                            ) : (
-                              <span className="flex items-center gap-1"><Share2 className="w-3 h-3" /> Share</span>
-                            )}
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={(e) => handleShareToTwitter(post, e)}
+                              className="p-1 bg-black/50 border border-cyan-500/20 hover:border-cyan-400 text-cyan-400 hover:text-white alien-block-cut-sm text-[10px] font-bold font-sans transition-colors cursor-pointer"
+                              title="Share on 𝕏 / Twitter"
+                            >
+                              𝕏
+                            </button>
+
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSharePost(post);
+                              }}
+                              className="flex items-center gap-1 text-[11px] font-alien-hud text-cyan-400 hover:text-white transition-colors cursor-pointer px-2 py-1"
+                              title="Share Intel"
+                            >
+                              {copiedPostId === post.id ? (
+                                <span className="text-emerald-400 font-bold flex items-center gap-1"><Check className="w-3 h-3" /> Copied</span>
+                              ) : (
+                                <span className="flex items-center gap-1"><Share2 className="w-3 h-3" /> Share</span>
+                              )}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1291,18 +1505,21 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
               <div className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
               <h2 className="text-xs sm:text-sm font-zen font-black text-white tracking-wider">LIVE MARKET CHAT</h2>
             </div>
-            <span className="text-[9px] font-martian px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 alien-block-cut-sm">
-              STREAM: ACTIVE
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-martian px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 alien-block-cut-sm flex items-center gap-1">
+                <Radio className="w-2.5 h-2.5 text-emerald-400 animate-pulse" />
+                142 ACTIVE NODES
+              </span>
+            </div>
           </div>
           
           <div className="flex-1 overflow-y-auto p-3.5 space-y-3 custom-scrollbar max-h-[600px]">
             {filteredChat.map((msg) => (
               <div key={msg.id} className="flex flex-col">
-                <div className="flex items-baseline gap-2">
+                <div className="flex flex-wrap items-baseline gap-1.5">
                   <button 
-                    onClick={() => handleOpenProfile(msg.authorUsername, msg.authorType)}
-                    className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer group"
+                    onClick={() => handleOpenProfile(msg.authorUsername, msg.authorType, undefined, undefined, undefined, msg.authorLink)}
+                    className="flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer group"
                     title={`View @${msg.authorUsername}'s Profile`}
                   >
                     <span className="text-xs font-bold font-martian text-emerald-400 group-hover:text-emerald-300 group-hover:underline">@{msg.authorUsername}</span>
@@ -1310,6 +1527,27 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                       <AgentBadge className="scale-[0.65] origin-left" />
                     )}
                   </button>
+
+                  <SBCertificationBadge 
+                    input={{
+                      authorType: msg.authorType,
+                      chatCount: 1
+                    }}
+                    size="xs"
+                  />
+
+                  {msg.authorLink && (
+                    <a
+                      href={msg.authorLink.startsWith("http") ? msg.authorLink : `https://${msg.authorLink}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center text-cyan-400 hover:text-cyan-200"
+                      title={`Visit ${msg.authorLink}`}
+                    >
+                      <Globe className="w-2.5 h-2.5" />
+                    </a>
+                  )}
+
                   <span className="text-[9px] text-neutral-500 font-martian">{formatTime(msg.createdAt)}</span>
 
                   {msg.sentiment && msg.sentiment !== "neutral" && (
@@ -1330,6 +1568,24 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
 
           {/* Chat Composer */}
           <form onSubmit={handleSendChat} className="p-3 bg-black/90 border-t border-cyan-500/30 backdrop-blur-md space-y-2">
+            {/* Quick Cashtag Insertion Chips */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-[10px] custom-scrollbar">
+              <span className="text-neutral-500 font-martian text-[9px] uppercase shrink-0">Tags:</span>
+              {["NVDA", "SPCX", "CEG", "PLTR", "SPY", "TSLA", "BTC"].map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => {
+                    triggerHaptic("selection");
+                    setNewChatText((prev) => `${prev ? prev + ' ' : ''}$${tag} `);
+                  }}
+                  className="px-1.5 py-0.5 alien-block-cut-sm bg-cyan-950/40 hover:bg-cyan-900/60 border border-cyan-500/30 text-cyan-300 font-martian text-[10px] shrink-0 transition-colors cursor-pointer"
+                >
+                  ${tag}
+                </button>
+              ))}
+            </div>
+
             <div className="flex items-center justify-between text-[10px] text-neutral-400">
               <span className="font-martian text-cyan-400/80">Sentiment Pill:</span>
               <div className="flex items-center gap-1">
@@ -1400,6 +1656,24 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
           setNewChatText((prev) => `${prev ? prev + ' ' : ''}@${handle} `);
         }}
       />
+
+      {/* Edit Profile Modal */}
+      {isEditProfileModalOpen && (
+        <EditProfileModal
+          isOpen={isEditProfileModalOpen}
+          onClose={() => setIsEditProfileModalOpen(false)}
+          onProfileUpdated={(updated) => {
+            if (selectedProfile && selectedProfile.username === (updated.username || currentUser?.username)) {
+              setSelectedProfile(prev => prev ? ({
+                ...prev,
+                displayName: updated.displayName || prev.displayName,
+                bio: updated.bio || prev.bio,
+                tickers: updated.tickers || prev.tickers
+              }) : null);
+            }
+          }}
+        />
+      )}
 
       {/* Upgrade & Change Recommendation Modal Overlay */}
       <UpgradeRecommendationModal

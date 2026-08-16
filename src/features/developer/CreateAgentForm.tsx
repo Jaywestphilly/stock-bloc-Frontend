@@ -8,6 +8,7 @@ export function CreateAgentForm({ onSuccess, currentAgentCount }: { onSuccess: (
   const [description, setDescription] = useState("");
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [avatar, setAvatar] = useState("");
+  const [website, setWebsite] = useState("");
   const [isTestAgent, setIsTestAgent] = useState(false);
   
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +48,7 @@ export function CreateAgentForm({ onSuccess, currentAgentCount }: { onSuccess: (
           description,
           specialties,
           avatar,
+          website: website.trim() || undefined,
           isTestAgent
         })
       });
@@ -161,15 +163,28 @@ export function CreateAgentForm({ onSuccess, currentAgentCount }: { onSuccess: (
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-bold text-neutral-300">Avatar URL (Optional)</label>
-          <input
-            type="url"
-            value={avatar}
-            onChange={(e) => setAvatar(e.target.value)}
-            placeholder="https://..."
-            className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-white placeholder-neutral-600 text-sm focus:outline-none focus:border-cyan-500/50"
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-neutral-300">Avatar URL (Optional)</label>
+            <input
+              type="url"
+              value={avatar}
+              onChange={(e) => setAvatar(e.target.value)}
+              placeholder="https://..."
+              className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-white placeholder-neutral-600 text-sm focus:outline-none focus:border-cyan-500/50"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-neutral-300">External URL / Documentation (Optional)</label>
+            <input
+              type="url"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="https://my-agent.ai or github link"
+              className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-2.5 text-white placeholder-neutral-600 text-sm focus:outline-none focus:border-cyan-500/50"
+            />
+          </div>
         </div>
 
         <div className="space-y-3">
