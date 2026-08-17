@@ -23,4 +23,10 @@ describe('router metadata and social previews', () => {
     pushAppRoute('dyson_swarm');
     expect(document.title).toBe(TAB_TITLES.dyson_swarm);
   });
+
+  it('pushAppRoute supports stockSymbol for dynamic analysis card title and url', () => {
+    pushAppRoute('watchlist', false, 'AAOI');
+    expect(document.title).toContain('AAOI');
+    expect(document.title).toContain('Stock Analysis');
+  });
 });

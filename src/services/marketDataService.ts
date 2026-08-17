@@ -350,11 +350,29 @@ export function calculateStockBlocSignal(stock: WatchlistStock, quant: QuantMetr
 export class MarketDataService {
   private static WATCHLIST_SYMBOLS = [
     "SPCX", "NVDA", "AEHR", "AAPL", "TSLA", "PLTR", "MSFT", "VST", "ASTS",
-    "POET", "QUBT", "XSD", "HBM", "LITE", "CRWV", "BE", "SNDK",
+    "POET", "AAOI", "QUBT", "XSD", "HBM", "LITE", "CRWV", "BE", "SNDK",
     "AMD", "GOOGL", "MU", "CORZ", "BTC-USD", "META", "TSM", "^NYA",
     "SPY", "^GSPC", "AMZN", "NVT", "AIPO", "QQQ", "APLD", "^IXIC",
     "MOD", "INTC", "HAWK", "SMH", "SOXX", "POWL", "ASML"
   ];
+
+  private static COMPANY_METADATA: Record<string, { name: string; sector: string; summary: string }> = {
+    AAOI: {
+      name: "Applied Optoelectronics, Inc.",
+      sector: "AI Optical Interconnects",
+      summary: "AI Datacenter Optical Transceivers: Vertically integrated design and manufacturing of 400G, 800G, and 1.6T high-speed optical transceivers, laser diodes, and active optical cables for hyperscale AI clusters."
+    },
+    AEHR: {
+      name: "Aehr Test Systems",
+      sector: "Silicon Carbide & Photonics",
+      summary: "Wafer Test & Silicon Carbide Burn-In: Critical FOX-XP wafer-level test systems for SiC power semiconductors, AI silicon photonics transceivers, and high-reliability datacenter power."
+    },
+    SPCX: {
+      name: "Space Exploration Technologies (SPCX Proxy)",
+      sector: "Orbital Space & AI",
+      summary: "Frontier Space & AI: Liquid exposure vehicle to SpaceX orbital launches, Starlink expansion, and pre-IPO AI compute giants."
+    }
+  };
 
   private static targetFiles = [
     path.join(process.cwd(), "market_watchlist_data.json"),
@@ -605,102 +623,111 @@ export class MarketDataService {
     let successCount = 0;
     const nowIso = new Date().toISOString();
 
-    for (const symbol of MarketDataService.WATCHLIST_SYMBOLS) {
-      const baseStock = baseWatchlist.find((s) => s.symbol === symbol) || {
-        symbol,
-        price: 0,
-        change: 0,
-        percent_change: 0,
-        sector: "Market",
-        analysis_summary: "Live quantitative tracking initiated.",
-        sparkline: [],
-        pinned: false,
-        name: symbol,
-        previousClose: 0,
-        volume: 0,
-        avgVolume: 0,
-        high52: 0,
-        low52: 0,
-      } as WatchlistStock;
+    // Fetch stock quotes in parallel batches of 8 for high throughput and sub-5s execution
+    const BATCH_SIZE = 8;
+    for (let i = 0; i < MarketDataService.WATCHLIST_SYMBOLS.length; i += BATCH_SIZE) {
+      const batchSymbols = MarketDataService.WATCHLIST_SYMBOLS.slice(i, i + BATCH_SIZE);
+      
+      const batchResults = await Promise.all(
+        batchSymbols.map(async (symbol) => {
+          const meta = MarketDataService.COMPANY_METADATA[symbol];
+          const existingBase = baseWatchlist.find((s) => s.symbol === symbol);
+          const baseStock: WatchlistStock = existingBase ? {
+            ...existingBase,
+            name: (existingBase.name && existingBase.name !== symbol) ? existingBase.name : (meta?.name || existingBase.name || symbol),
+            sector: (existingBase.sector && existingBase.sector !== "Market") ? existingBase.sector : (meta?.sector || existingBase.sector || "Market"),
+            analysis_summary: (existingBase.analysis_summary && existingBase.analysis_summary !== "Live quantitative tracking initiated.") ? existingBase.analysis_summary : (meta?.summary || existingBase.analysis_summary || "Live quantitative tracking initiated.")
+          } : ({
+            symbol,
+            price: 0,
+            change: 0,
+            percent_change: 0,
+            sector: meta?.sector || "Market",
+            analysis_summary: meta?.summary || "Live quantitative tracking initiated.",
+            sparkline: [],
+            pinned: false,
+            name: meta?.name || symbol,
+            previousClose: 0,
+            volume: 0,
+            avgVolume: 0,
+            high52: 0,
+            low52: 0,
+          } as WatchlistStock);
 
-      let fetched: Partial<WatchlistStock> | null = null;
+          let fetched: Partial<WatchlistStock> | null = null;
 
-      // 1. Try Alpha Vantage if API Key is configured
-      if (apiKey) {
-        const querySymbol = symbol === 'SPCX' ? 'SPCX' : symbol;
-        fetched = await MarketDataService.fetchAlphaVantageQuoteForSymbol(querySymbol, apiKey);
-      }
+          // 1. Try Alpha Vantage if API Key is configured
+          if (apiKey) {
+            const querySymbol = symbol === 'SPCX' ? 'SPCX' : symbol;
+            fetched = await MarketDataService.fetchAlphaVantageQuoteForSymbol(querySymbol, apiKey);
+          }
 
-      // 2. Fallback to Yahoo Finance if Alpha Vantage key absent or rate-limited/failed
-      if (!fetched) {
-        if (symbol === 'SPCX') {
-          fetched = await MarketDataService.fetchYahooQuoteForSymbol('SPCX'); // Destiny Tech100 proxy
-        } else {
-          fetched = await MarketDataService.fetchYahooQuoteForSymbol(symbol);
-        }
-      }
+          // 2. Fallback to Yahoo Finance if Alpha Vantage key absent or rate-limited/failed
+          if (!fetched) {
+            if (symbol === 'SPCX') {
+              fetched = await MarketDataService.fetchYahooQuoteForSymbol('SPCX'); // Destiny Tech100 proxy
+            } else {
+              fetched = await MarketDataService.fetchYahooQuoteForSymbol(symbol);
+            }
+          }
 
-      let mergedStock: WatchlistStock;
+          let mergedStock: WatchlistStock;
 
-      if (fetched && fetched.price && fetched.price > 0 && !isNaN(fetched.price)) {
-        successCount++;
-        mergedStock = {
-          ...baseStock,
-          ...fetched,
-          symbol: baseStock.symbol,
-          name: baseStock.name || fetched.name || baseStock.symbol,
-          price: fetched.price,
-          change: fetched.change ?? baseStock.change,
-          percent_change: fetched.percent_change ?? baseStock.percent_change,
-          sparkline: (fetched.sparkline && fetched.sparkline.length > 0) ? fetched.sparkline : baseStock.sparkline,
-          high52: fetched.high52 ?? baseStock.high52,
-          low52: fetched.low52 ?? baseStock.low52,
-          volume: fetched.volume ?? baseStock.volume,
-          last_updated: nowIso,
-          source: MarketDataService.getProviderName()
-        };
-      } else {
-        // Provider failed for this stock -> preserve last verified record
-        mergedStock = {
-          ...baseStock,
-          last_updated: baseStock.last_updated || persisted?.updated_at || nowIso,
-          source: baseStock.source || persisted?.source || "Preserved Verified Cache"
-        };
-      }
+          if (fetched && fetched.price && fetched.price > 0 && !isNaN(fetched.price)) {
+            successCount++;
+            mergedStock = {
+              ...baseStock,
+              ...fetched,
+              symbol: baseStock.symbol,
+              name: baseStock.name || fetched.name || baseStock.symbol,
+              price: fetched.price,
+              change: fetched.change ?? baseStock.change,
+              percent_change: fetched.percent_change ?? baseStock.percent_change,
+              sparkline: (fetched.sparkline && fetched.sparkline.length > 0) ? fetched.sparkline : baseStock.sparkline,
+              high52: fetched.high52 ?? baseStock.high52,
+              low52: fetched.low52 ?? baseStock.low52,
+              volume: fetched.volume ?? baseStock.volume,
+              last_updated: nowIso,
+              source: MarketDataService.getProviderName()
+            };
+          } else {
+            // Provider failed for this stock -> preserve last verified record
+            mergedStock = {
+              ...baseStock,
+              last_updated: baseStock.last_updated || persisted?.updated_at || nowIso,
+              source: baseStock.source || persisted?.source || "Preserved Verified Cache"
+            };
+          }
 
-      if (process.env.FINNHUB_API_KEY) {
-        let querySymbol = symbol;
-        if (symbol === '^IXIC') querySymbol = 'QQQ';
-        else if (symbol === '^GSPC' || symbol === '^NYA') querySymbol = 'SPY';
+          if (process.env.FINNHUB_API_KEY) {
+            let querySymbol = symbol;
+            if (symbol === '^IXIC') querySymbol = 'QQQ';
+            else if (symbol === '^GSPC' || symbol === '^NYA') querySymbol = 'SPY';
 
-        let news = await MarketDataService.fetchFinnhubNewsForSymbol(querySymbol, process.env.FINNHUB_API_KEY);
-        if ((!news || news.length === 0) && symbol !== querySymbol) {
-          news = await MarketDataService.fetchFinnhubNewsForSymbol(symbol, process.env.FINNHUB_API_KEY);
-        }
-        
-        if (news && news.length > 0) {
-          mergedStock.news = news;
-        } else if (baseStock.news) {
-          mergedStock.news = baseStock.news;
-        }
-      }
+            let news = await MarketDataService.fetchFinnhubNewsForSymbol(querySymbol, process.env.FINNHUB_API_KEY);
+            if ((!news || news.length === 0) && symbol !== querySymbol) {
+              news = await MarketDataService.fetchFinnhubNewsForSymbol(symbol, process.env.FINNHUB_API_KEY);
+            }
+            
+            if (news && news.length > 0) {
+              mergedStock.news = news;
+            } else if (baseStock.news) {
+              mergedStock.news = baseStock.news;
+            }
+          }
 
-      // Calculate Quant metrics & Stock Bloc Signal deterministically
-      const quant = computeQuantMetrics(mergedStock);
-      const signal = calculateStockBlocSignal(mergedStock, quant);
+          // Calculate Quant metrics & Stock Bloc Signal deterministically
+          const quant = computeQuantMetrics(mergedStock);
+          const signal = calculateStockBlocSignal(mergedStock, quant);
 
-      mergedStock.quant = quant;
-      mergedStock.signal = signal;
+          mergedStock.quant = quant;
+          mergedStock.signal = signal;
 
-      // Validate merged stock before accepting
-      const val = validateWatchlistStock(mergedStock);
-      if (!val.valid) {
-        console.warn(`Validation failed for ${symbol}:`, val.errors);
-        // Even if validation fails, we keep the symbol in the list to avoid dropping it
-        updatedWatchlist.push(mergedStock);
-      } else {
-        updatedWatchlist.push(mergedStock);
-      }
+          return mergedStock;
+        })
+      );
+
+      updatedWatchlist.push(...batchResults);
     }
 
     // Validate entire dataset

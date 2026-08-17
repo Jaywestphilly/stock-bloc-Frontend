@@ -218,7 +218,7 @@ export const TAB_IMAGES: Partial<Record<ViewTab | "terminal", string>> = {
 };
 
 /**
- * Get route state from window.location.pathname
+ * Get route state from window.location.pathname and query parameters
  */
 export function getRouteFromLocation(): RouteState {
   if (typeof window === "undefined") {
@@ -226,8 +226,29 @@ export function getRouteFromLocation(): RouteState {
   }
   const path = window.location.pathname.toLowerCase().replace(/\/$/, "") || "/";
 
+  // Check query parameters for stock ticker deep-linking
+  let stockSymbol: string | undefined;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const rawStock = params.get("stock") || params.get("ticker") || params.get("symbol");
+    if (rawStock && rawStock.trim().length > 0) {
+      stockSymbol = rawStock.trim().toUpperCase();
+    }
+  } catch (e) {
+    console.warn("Could not parse URL query parameters:", e);
+  }
+
   if (path === "/terminal") {
-    return { tab: "watchlist", isTerminalOpen: true };
+    return { tab: "watchlist", isTerminalOpen: true, stockSymbol };
+  }
+
+  // Handle direct /stock/:symbol route
+  if (path.startsWith("/stock/")) {
+    const pathParts = window.location.pathname.split("/");
+    if (pathParts[2]) {
+      stockSymbol = pathParts[2].trim().toUpperCase();
+    }
+    return { tab: "watchlist", isTerminalOpen: false, stockSymbol };
   }
 
   let tab = ROUTE_MAP[path];
@@ -245,7 +266,7 @@ export function getRouteFromLocation(): RouteState {
     else if (path.startsWith("/agents/")) tab = "agent_profile";
   }
 
-  return { tab: tab || "watchlist", isTerminalOpen: false };
+  return { tab: tab || "watchlist", isTerminalOpen: false, stockSymbol };
 }
 
 function updateMetaTag(selector: string, attribute: string, content: string) {
@@ -267,35 +288,45 @@ function updateMetaTag(selector: string, attribute: string, content: string) {
 /**
  * Update browser URL bar and document meta titles & social preview cards for deep linking
  */
-export function pushAppRoute(tab: ViewTab, isTerminalOpen = false) {
+export function pushAppRoute(tab: ViewTab, isTerminalOpen = false, stockSymbol?: string | null) {
   if (typeof window === "undefined") return;
 
   const routeKey = isTerminalOpen ? "terminal" : tab;
-  const targetPath = isTerminalOpen ? "/terminal" : TAB_TO_ROUTE[tab] || "/";
-  const currentPath = window.location.pathname;
+  let targetPath = isTerminalOpen ? "/terminal" : TAB_TO_ROUTE[tab] || "/";
 
-  const title =
-    TAB_TITLES[routeKey] || "Stock Bloc | Quant Wealth Terminal";
-  const description =
-    TAB_DESCRIPTIONS[routeKey] || TAB_DESCRIPTIONS.brand!;
+  // Append or preserve stock query parameter if a stock is actively inspected
+  if (stockSymbol) {
+    const cleanSymbol = encodeURIComponent(stockSymbol.toUpperCase());
+    targetPath = targetPath === "/" ? `/?stock=${cleanSymbol}` : `${targetPath}?stock=${cleanSymbol}`;
+  }
+
+  const currentPathWithSearch = `${window.location.pathname}${window.location.search}`;
+
+  const title = stockSymbol
+    ? `Stock Bloc | $${stockSymbol.toUpperCase()} Stock Analysis & Quantitative Card`
+    : (TAB_TITLES[routeKey] || "Stock Bloc | Quant Wealth Terminal");
+  const description = stockSymbol
+    ? `Live technical analysis, price momentum, Wall St consensus, institutional 13F holders, and AI thesis for $${stockSymbol.toUpperCase()} on Stock Bloc.`
+    : (TAB_DESCRIPTIONS[routeKey] || TAB_DESCRIPTIONS.brand!);
   const image =
     TAB_IMAGES[routeKey] || TAB_IMAGES.brand!;
 
-  if (currentPath !== targetPath) {
-    // Prevent overwriting sub-tab routes when the base route matches
+  if (currentPathWithSearch !== targetPath) {
+    // Prevent overwriting sub-tab routes when the base route matches and no stock is selected
     if (
-      (targetPath === "/credit" && currentPath.startsWith("/credit/")) ||
-      (targetPath === "/real-estate" && currentPath.startsWith("/real-estate/")) ||
-      (targetPath === "/research/dyson-swarm" && currentPath.startsWith("/research/dyson-swarm/")) ||
-      (targetPath === "/satellite-map" && currentPath.startsWith("/satellite-map/")) ||
-      (targetPath === "/research/ai-revolution" && currentPath.startsWith("/research/ai-revolution/")) ||
-      (targetPath === "/intelligence" && currentPath.startsWith("/intelligence/")) ||
-      (targetPath === "/war-gov-ufo" && currentPath.startsWith("/war-gov-ufo/")) ||
-      (targetPath === "/agents" && currentPath.startsWith("/agents/") && currentPath !== "/agents/feed")
+      !stockSymbol &&
+      ((targetPath === "/credit" && window.location.pathname.startsWith("/credit/")) ||
+      (targetPath === "/real-estate" && window.location.pathname.startsWith("/real-estate/")) ||
+      (targetPath === "/research/dyson-swarm" && window.location.pathname.startsWith("/research/dyson-swarm/")) ||
+      (targetPath === "/satellite-map" && window.location.pathname.startsWith("/satellite-map/")) ||
+      (targetPath === "/research/ai-revolution" && window.location.pathname.startsWith("/research/ai-revolution/")) ||
+      (targetPath === "/intelligence" && window.location.pathname.startsWith("/intelligence/")) ||
+      (targetPath === "/war-gov-ufo" && window.location.pathname.startsWith("/war-gov-ufo/")) ||
+      (targetPath === "/agents" && window.location.pathname.startsWith("/agents/") && window.location.pathname !== "/agents/feed"))
     ) {
       // Don't push over existing sub-tab
     } else {
-      window.history.pushState({ tab, isTerminalOpen }, "", targetPath);
+      window.history.pushState({ tab, isTerminalOpen, stockSymbol }, "", targetPath);
     }
   }
 

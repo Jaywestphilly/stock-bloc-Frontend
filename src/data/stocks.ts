@@ -207,9 +207,50 @@ export const INITIAL_STOCKS: StockTicker[] = [
     description: "Wafer Test & Silicon Carbide Burn-In: Critical FOX-XP wafer-level test systems for SiC power semiconductors, AI silicon photonics transceivers, and high-reliability datacenter power.",
     tags: ["Silicon Carbide", "Silicon Photonics", "Semiconductor Test", "AI Interconnects"],
     isPinned: false
+  },
+  {
+    symbol: "AAOI",
+    name: "Applied Optoelectronics, Inc.",
+    price: 13.15,
+    change: 0.85,
+    changePercent: 6.91,
+    category: "tsunami",
+    sparkline: [11.20, 11.65, 11.90, 12.15, 12.40, 12.75, 13.15],
+    history: {
+      "1D": [11.20, 11.65, 11.90, 12.15, 12.40, 12.75, 13.15].map((price, i) => ({ time: `${i}:00`, price })),
+      "1W": [11.20, 11.65, 11.90, 12.15, 12.40, 12.75, 13.15].map((price, i) => ({ time: `Day ${i+1}`, price })),
+      "1M": [11.20, 11.65, 11.90, 12.15, 12.40, 12.75, 13.15].map((price, i) => ({ time: `Week ${i+1}`, price })),
+      "1Y": [11.20, 11.65, 11.90, 12.15, 12.40, 12.75, 13.15].map((price, i) => ({ time: `Month ${i+1}`, price })),
+      "ALL": [11.20, 11.65, 11.90, 12.15, 12.40, 12.75, 13.15].map((price, i) => ({ time: `Year ${i+1}`, price }))
+    },
+    marketCap: "$685M",
+    high52: 35.50,
+    low52: 7.80,
+    volume: "8.4M",
+    description: "AI Datacenter Optical Transceivers: Vertically integrated design and manufacturing of 400G, 800G, and 1.6T high-speed optical transceivers, laser diodes, and active optical cables for hyperscale AI server clusters.",
+    tags: ["Optical Transceivers", "Silicon Photonics", "800G / 1.6T Optics", "AI Interconnects"],
+    isPinned: false
   }
 ];
 export const STOCK_NEWS_FEED: StockNews[] = [
+  {
+    id: "news_aaoi_1",
+    title: "Applied Optoelectronics Secures Hyperscale Supply Agreements for 800G & 1.6T AI Optical Transceivers",
+    source: "Optics & Photonics News",
+    timeAgo: "10m ago",
+    url: "https://www.ao-inc.com/news/",
+    relatedSymbol: "AAOI",
+    sentiment: "positive",
+  },
+  {
+    id: "news_aaoi_2",
+    title: "AAOI Accelerates US Manufacturing Expansion for High-Speed AI Interconnect Laser Diodes",
+    source: "Stock Bloc Research",
+    timeAgo: "30m ago",
+    url: "https://www.ao-inc.com/products/",
+    relatedSymbol: "AAOI",
+    sentiment: "positive",
+  },
   {
     id: "news_aehr_1",
     title: "Aehr Test Systems Receives $12.5M Order for FOX-XP Wafer-Level Burn-In Systems for AI Silicon Photonics",

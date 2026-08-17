@@ -300,6 +300,7 @@ export function App() {
   const { isSyncingLiveQuotes, setIsSyncingLiveQuotes } = useMarketStore();
   const { lastSyncTime, setLastSyncTime } = useMarketStore();
   const { marketDataUpdatedAt } = useMarketStore();
+  const { selectedStock, setSelectedStock } = useMarketStore();
 
   const formattedDataUpdateTime = useMemo(() => {
     const d = marketDataUpdatedAt ? new Date(marketDataUpdatedAt) : new Date();
@@ -312,7 +313,7 @@ export function App() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       if (params.get("watch") === "true" || params.get("mode") === "watch") {
-        return { tab: "apple_watch" as ViewTab, isTerminalOpen: false };
+        return { tab: "apple_watch" as ViewTab, isTerminalOpen: false, stockSymbol: undefined };
       }
     }
     return getRouteFromLocation();
@@ -323,6 +324,43 @@ export function App() {
   useEffect(() => {
     if (initialRoute.isTerminalOpen) setIsBloombergTerminalOpen(true);
   }, [initialRoute.isTerminalOpen, setIsBloombergTerminalOpen]);
+
+  // Automatically open stock analysis card if a stock symbol is in the URL deep link
+  useEffect(() => {
+    if (initialRoute.stockSymbol && !selectedStock) {
+      const symUpper = initialRoute.stockSymbol.toUpperCase();
+      const targetStock =
+        stocks.find((s) => s.symbol.toUpperCase() === symUpper) ||
+        INITIAL_STOCKS.find((s) => s.symbol.toUpperCase() === symUpper);
+      if (targetStock) {
+        setSelectedStock(targetStock);
+      } else {
+        setSelectedStock({
+          symbol: symUpper,
+          name: `${symUpper} Asset`,
+          price: 100.0,
+          change: 0,
+          changePercent: 0,
+          category: "tsunami",
+          sparkline: [100, 100, 100],
+          history: {
+            "1D": [{ time: "09:30", price: 100 }, { time: "16:00", price: 100 }],
+            "1W": [{ time: "Day 1", price: 100 }, { time: "Day 5", price: 100 }],
+            "1M": [{ time: "Week 1", price: 100 }, { time: "Week 4", price: 100 }],
+            "1Y": [{ time: "Q1", price: 100 }, { time: "Q4", price: 100 }],
+            "ALL": [{ time: "2024", price: 100 }, { time: "2026", price: 100 }],
+          },
+          marketCap: "$1.0B",
+          high52: 120,
+          low52: 80,
+          volume: "1.0M",
+          description: `Quantitative intelligence, technical momentum, and financial metrics for ${symUpper}.`,
+          tags: ["Quant Momentum", "AI Infrastructure"],
+          isPinned: false,
+        });
+      }
+    }
+  }, [initialRoute.stockSymbol, stocks]);
   const { isDayMode, setIsDayMode } = useUserStore();
 
   const { watchlistSubTab, setWatchlistSubTab, starredTickers, toggleStarredTicker } = useUserStore();
@@ -347,13 +385,13 @@ export function App() {
   // Helper to push history state when an overlay opens for back button handling
   const pushOverlayHistory = (isTerminal = false) => {
     if (typeof window !== "undefined") {
-      pushAppRoute(activeTab, isTerminal);
+      pushAppRoute(activeTab, isTerminal, selectedStock?.symbol);
     }
   };
 
   // Sync route history and window popstate
   useEffect(() => {
-    pushAppRoute(activeTab, isBloombergTerminalOpen);
+    pushAppRoute(activeTab, isBloombergTerminalOpen, selectedStock?.symbol);
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     }
@@ -361,9 +399,21 @@ export function App() {
     const handlePopState = () => {
       const route = getRouteFromLocation();
       setActiveTab(route.tab);
-      closeAllModals();
+      if (route.stockSymbol) {
+        const symUpper = route.stockSymbol.toUpperCase();
+        const found =
+          stocks.find((s) => s.symbol.toUpperCase() === symUpper) ||
+          INITIAL_STOCKS.find((s) => s.symbol.toUpperCase() === symUpper);
+        if (found) {
+          setSelectedStock(found);
+        }
+      } else {
+        setSelectedStock(null);
+      }
       if (route.isTerminalOpen) {
         setIsBloombergTerminalOpen(true);
+      } else {
+        setIsBloombergTerminalOpen(false);
       }
       if (typeof window !== "undefined") {
         window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -372,7 +422,7 @@ export function App() {
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [activeTab]);
+  }, [activeTab, isBloombergTerminalOpen, selectedStock?.symbol, stocks]);
 
   // Ensure scroll resets when category or subtab changes
   useEffect(() => {
@@ -487,7 +537,6 @@ export function App() {
     setIsDayMode(!isDayMode);
   };
 
-  const { selectedStock, setSelectedStock } = useMarketStore();
   const { shareStock, setShareStock } = useModalStore();
   const { isShareModalOpen, setIsShareModalOpen } = useModalStore();
   const { isAiCopilotOpen, setIsAiCopilotOpen } = useModalStore();

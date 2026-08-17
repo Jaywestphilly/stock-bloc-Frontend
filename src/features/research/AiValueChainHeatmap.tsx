@@ -182,6 +182,7 @@ export const VALUE_CHAIN_DATA: CompanyEntry[] = [
   { company: "Ciena Corporation", ticker: "CIEN", exchange: "NYSE", category: "Network", subCategory: "DCI & Routing", whatTheyDo: "Leading maker of optical networking and DCI equipment." },
   { company: "Coherent Corp", ticker: "COHR", exchange: "NYSE", category: "Network", subCategory: "Cabling & Optics", whatTheyDo: "Maker of optical components and transceivers." },
   { company: "Lumentum Holdings", ticker: "LITE", exchange: "NASDAQ", category: "Network", subCategory: "Cabling & Optics", whatTheyDo: "Maker of optical components for data center networking." },
+  { company: "Applied Optoelectronics", ticker: "AAOI", exchange: "NASDAQ", category: "Network", subCategory: "Cabling & Optics", whatTheyDo: "Vertically integrated manufacturer of 400G, 800G, and 1.6T AI datacenter optical transceivers and laser diodes." },
 
   // Internal Power / Cooling
   { company: "Vertiv Holdings", ticker: "VRT", exchange: "NYSE", category: "Internal Power / Cooling", subCategory: "Liquid Cooling & UPS", whatTheyDo: "Leading supplier of data center power, liquid cooling infrastructure, and UPS systems." },

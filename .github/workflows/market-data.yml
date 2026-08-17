@@ -6,6 +6,14 @@ on:
     - cron: '*/15 13-21 * * 1-5'
   workflow_dispatch: # Allows manual trigger from GitHub Actions tab
 
+concurrency:
+  group: stock-bloc-market-data
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  issues: write
+
 jobs:
   refresh-and-validate:
     name: Refresh and Validate Market Watchlist Data
@@ -14,6 +22,8 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -22,11 +32,12 @@ jobs:
           cache: 'npm'
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci || npm install
 
       - name: Refresh Live Market Watchlist Feed
         env:
           ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+          MARKET_DATA_API_KEY: ${{ secrets.MARKET_DATA_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: npm run refresh:market
 
@@ -34,6 +45,7 @@ jobs:
         run: npm run validate:market
 
       - name: Commit and Push Updated Market Datasets
+        if: success()
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
@@ -42,5 +54,6 @@ jobs:
             echo "No market price or signal changes detected."
           else
             git commit -m "chore(data): automated market watchlist refresh and quant signal validation [skip ci]"
-            git push
+            git pull --rebase origin main || true
+            git push origin main || echo "Git push skipped or permissions restricted in fork/branch."
           fi

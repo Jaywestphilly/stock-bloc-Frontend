@@ -367,6 +367,53 @@ const SPECIALIZED_DOSSIERS: MasterReportItem[] = [
       },
     ],
   },
+  {
+    id: "rep_tsunami_aaoi_optics",
+    category: "SUPERSONIC_TSUNAMI",
+    title: "Applied Optoelectronics ($AAOI) 800G/1.6T AI Optical Transceiver Dossier",
+    subtitle: "Hyperscale Datacenter Interconnects, Laser Diode Fab & Silicon Photonics Shift",
+    date: "Q4 SEC Intelligence Synthesis",
+    symbols: ["AAOI", "LITE", "COHR", "NVDA"],
+    secFormCode: "OPTICS TSUNAMI #05",
+    pagesCount: 11,
+    badge: "OPTICAL INTERCONNECT",
+    managerGoals: "Monopolize hyperscale 800G and 1.6T optical transceiver deployments across top-tier cloud providers, leveraging vertically integrated US laser diode fabrication to overcome AI networking bandwidth bottlenecks.",
+    summaryText: "Applied Optoelectronics ($AAOI) is a vertically integrated designer and manufacturer of high-speed fiber-optic networking hardware. As modern AI compute clusters transition from copper cables to high-bandwidth optical interconnects, AAOI has captured major hyperscaler design wins for 400G, 800G, and next-gen 1.6T optical transceivers. Its proprietary in-house molecular beam epitaxy (MBE) laser diode fabs in Texas grant a structural cost and lead-time advantage over non-integrated module assemblers.",
+    detailsTable: {
+      label1: "Next-Gen Transceivers",
+      value1: "800G & 1.6T AI Optics",
+      label2: "Vertical Integration",
+      value2: "In-House Laser Diode Fabs",
+      label3: "Hyperscale Moat",
+      value3: "Tier-1 Cloud Contracts",
+    },
+    rawItems: [
+      {
+        symbol: "AAOI",
+        companyName: "Applied Optoelectronics, Inc. (AI Optics)",
+        quarterlyChangeType: "ACCUMULATING",
+        portfolioPercent: 60.0,
+        epsActual: "$0.22 vs $0.16 Est",
+        aiThesis: "Direct beneficiary of 800G/1.6T optical transceiver upgrades required by GPU clusters (NVIDIA GB200 NVL72).",
+      },
+      {
+        symbol: "LITE",
+        companyName: "Lumentum Holdings (Telecom & DCI)",
+        quarterlyChangeType: "HOLD",
+        portfolioPercent: 20.0,
+        epsActual: "$0.88 vs $0.80 Est",
+        aiThesis: "Leading transceiver and optical component supplier for data center interconnects.",
+      },
+      {
+        symbol: "NVDA",
+        companyName: "NVIDIA Corporation (Quantum-X800 InfiniBand)",
+        quarterlyChangeType: "INCREASED",
+        portfolioPercent: 20.0,
+        epsActual: "$0.68 vs $0.64 Est",
+        aiThesis: "Pioneering 800Gb/s Quantum-X800 InfiniBand and Spectrum-X Ethernet switches driving optical demand.",
+      },
+    ],
+  },
 ];
 
 export const ReportRepository: React.FC = () => {
