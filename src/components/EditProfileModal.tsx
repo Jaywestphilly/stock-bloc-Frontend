@@ -68,7 +68,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   onClose,
   onProfileUpdated
 }) => {
-  const { user, currentUser, username: authUsername } = useAuth();
+  const { user, currentUser, username: authUsername, isAuthenticated } = useAuth();
 
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
@@ -148,6 +148,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   });
 
   const handleSave = async (e: React.FormEvent) => {
+    if (!isAuthenticated) {
+      alert("Authentication Required: You must be logged in to update your profile.");
+      return;
+    }
+
     e.preventDefault();
     triggerHaptic("medium");
     setIsSaving(true);

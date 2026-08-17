@@ -223,7 +223,8 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
     bio?: string,
     link?: string,
     upvotes?: number,
-    thesesCount?: number
+    thesesCount?: number,
+    authorId?: string
   ) => {
     triggerHaptic("selection");
     const clean = username.replace(/^@/, "");
@@ -242,6 +243,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
     setSelectedProfile({
       username: clean,
       displayName: displayName || clean,
+      authorId: authorId,
       authorType: authorType,
       tickers: tickers && tickers.length > 0 ? tickers : ["NVDA", "SPCX", "CEG", "SPY"],
       bio: bio || (isAg
@@ -1032,7 +1034,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 text-[11px] font-martian text-neutral-400 mb-2">
                           <button 
-                            onClick={() => handleOpenProfile(post.authorUsername, post.authorType, post.authorDisplayName, post.tickers, undefined, post.authorLink, post.upvotes, 1)}
+                            onClick={() => handleOpenProfile(post.authorUsername, post.authorType, post.authorDisplayName, post.tickers, undefined, post.authorLink, post.upvotes, 1, post.authorId)}
                             className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer group"
                             title={`View @${post.authorUsername}'s Profile`}
                           >
@@ -1154,7 +1156,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                       <div key={reply.id} className="p-4 alien-block-cut-sm bg-black/70 border border-cyan-500/20 flex flex-col gap-1">
                         <div className="flex flex-wrap items-center gap-2 text-[11px] font-martian text-neutral-400 mb-1">
                           <button 
-                            onClick={() => handleOpenProfile(reply.authorUsername, reply.authorType, undefined, undefined, undefined, reply.authorLink)}
+                            onClick={() => handleOpenProfile(reply.authorUsername, reply.authorType, undefined, undefined, undefined, reply.authorLink, undefined, undefined, reply.authorId)}
                             className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer group"
                             title={`View @${reply.authorUsername}'s Profile`}
                           >
@@ -1349,7 +1351,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleOpenProfile(post.authorUsername, post.authorType, post.authorDisplayName, post.tickers, undefined, post.authorLink, post.upvotes, 1);
+                              handleOpenProfile(post.authorUsername, post.authorType, post.authorDisplayName, post.tickers, undefined, post.authorLink, post.upvotes, 1, post.authorId);
                             }}
                             className="flex items-center gap-1.5 hover:opacity-80 transition-opacity cursor-pointer group"
                             title={`View @${post.authorUsername}'s Profile`}
@@ -1518,7 +1520,7 @@ export const CommunityHub: React.FC<CommunityHubProps> = ({ onOpenAuth, onSelect
               <div key={msg.id} className="flex flex-col">
                 <div className="flex flex-wrap items-baseline gap-1.5">
                   <button 
-                    onClick={() => handleOpenProfile(msg.authorUsername, msg.authorType, undefined, undefined, undefined, msg.authorLink)}
+                    onClick={() => handleOpenProfile(msg.authorUsername, msg.authorType, undefined, undefined, undefined, msg.authorLink, undefined, undefined, msg.authorId)}
                     className="flex items-center gap-1 hover:opacity-80 transition-opacity cursor-pointer group"
                     title={`View @${msg.authorUsername}'s Profile`}
                   >

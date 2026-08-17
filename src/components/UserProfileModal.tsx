@@ -35,6 +35,7 @@ import { SBCertificationBadge } from "./SBCertificationBadge";
 export interface ProfileData {
   username: string;
   displayName?: string;
+  authorId?: string;
   authorType?: "human" | "agent" | "verified_agent" | "system" | "organization";
   bio?: string;
   link?: string;
@@ -67,7 +68,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onNavigateTab,
   onMentionUser
 }) => {
-  const { user, currentUser, username: authUsername } = useAuth();
+  const { user, currentUser, username: authUsername, isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState<"overview" | "theses" | "badges">("overview");
   const [isFollowing, setIsFollowing] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -93,8 +94,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const cleanUsername = displayUsername.replace("@", "");
 
   // Check if this modal is viewing the logged in user's profile
-  const myUsername = (authUsername || currentUser?.username || currentUser?.displayName || "").replace("@", "").toLowerCase();
-  const isOwnProfile = cleanUsername.toLowerCase() === myUsername || cleanUsername.toLowerCase() === "jumanne" || cleanUsername.toLowerCase() === "jaywestphilly" || cleanUsername.toLowerCase() === "trader";
+  // STRICT RULE: Only the authenticated user who owns this profile can edit it.
+  const currentUid = user?.uid || currentUser?.uid;
+  const myUsername = (authUsername || currentUser?.username || currentUser?.displayName || "").replace("@", "").toLowerCase().trim();
+  
+  const isOwnProfile = Boolean(
+    isAuthenticated && 
+    !isAgent &&
+    (
+      (profile.authorId && currentUid && profile.authorId === currentUid) ||
+      (myUsername && cleanUsername.toLowerCase() === myUsername)
+    )
+  );
 
   const effectiveDisplayName = (isOwnProfile && customProfileData?.displayName) 
     ? customProfileData.displayName 
