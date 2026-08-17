@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-08-17T20:13:52.087Z",
-  "last_successful_update": "2026-08-17T20:13:52.087Z",
-  "source": "Alpha Vantage API",
+  "updated_at": "2026-08-17T20:18:29Z",
+  "last_successful_update": "2026-08-17T20:18:26.527Z",
+  "source": "Polygon.io / Yahoo Finance Quant Watchlist Feed",
   "status_label": "fresh",
-  "data_age_seconds": 2,
+  "data_age_seconds": 1,
   "watchlist": [
     {
       "symbol": "SPCX",
@@ -28,7 +28,7 @@
       "avgVolume": 114897574,
       "high52": 225.64,
       "low52": 104.83,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 68.06,
@@ -123,7 +123,7 @@
       "avgVolume": 81442206,
       "high52": 236.54,
       "low52": 164.07,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 53.61,
@@ -218,7 +218,7 @@
       "avgVolume": 2474690,
       "high52": 147.4,
       "low52": 16.38,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 89.1,
@@ -292,44 +292,139 @@
     },
     {
       "symbol": "AAPL",
-      "price": 305.93,
-      "change": 0.67,
-      "percent_change": 0.22,
+      "price": 305.59,
+      "change": -0.34,
+      "percent_change": -0.11,
       "sector": "Edge AI & Consumer Hardware",
       "analysis_summary": "Edge AI Thesis: Apple Intelligence integration driving multi-year hardware refresh cycle across global device ecosystem.",
       "sparkline": [
-        305.93
+        313.33,
+        308.26,
+        304.91,
+        302.25,
+        305.26,
+        305.93,
+        305.59
       ],
       "pinned": false,
       "name": "Apple Inc.",
-      "previousClose": 305.26,
-      "volume": 28229375,
-      "avgVolume": 28229375,
-      "high52": 307.49,
-      "low52": 304.3,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "previousClose": 305.93,
+      "volume": 32743947,
+      "avgVolume": 32743947,
+      "high52": 344.57,
+      "low52": 223.78,
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": null,
-        "sma20": 305.93,
-        "sma50": 305.93,
-        "sma200": 305.93,
-        "priceVsSma20Pct": 0,
-        "priceVsSma50Pct": 0,
-        "priceVsSma200Pct": 0,
+        "rsi14": 24.37,
+        "sma20": 306.5,
+        "sma50": 306.5,
+        "sma200": 306.5,
+        "priceVsSma20Pct": -0.3,
+        "priceVsSma50Pct": -0.3,
+        "priceVsSma200Pct": -0.3,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 51.1,
-        "volatility": null
+        "percentile52Week": 67.73,
+        "volatility": 15.22
       },
       "signal": {
-        "signalScore": 56,
+        "signalScore": 47,
         "signalLabel": "Neutral",
         "components": [
           {
             "name": "Momentum",
-            "score": 70,
+            "score": 30,
             "weight": 0.25,
-            "detail": "RSI 14 at 50 with 1-day change of +0.22%"
+            "detail": "RSI 14 at 24.37 with 1-day change of -0.11%"
+          },
+          {
+            "name": "Trend",
+            "score": 25,
+            "weight": 0.25,
+            "detail": "Trading -0.3% vs 20-day SMA"
+          },
+          {
+            "name": "Volume",
+            "score": 50,
+            "weight": 0.15,
+            "detail": "Volume ratio relative to 20-day avg: 1x"
+          },
+          {
+            "name": "52W Range Positioning",
+            "score": 68,
+            "weight": 0.2,
+            "detail": "Positioned at 67.73% of 52-week price corridor"
+          },
+          {
+            "name": "Volatility Risk",
+            "score": 80,
+            "weight": 0.15,
+            "detail": "Annualized historical volatility: 15.22%"
+          }
+        ],
+        "summary": "Quant Composite Score 47/100 [Neutral]: Momentum (30/100), Trend (25/100), Volume (50/100)"
+      },
+      "news": [
+        {
+          "title": "Berkshire Hathaway: The Cash Is Moving, The Philosophy Isn't",
+          "source": "SeekingAlpha",
+          "time": "2026-08-17T09:47:07.000Z",
+          "url": "https://finnhub.io/api/news?id=d89f4a063b60afb1f31ec9aa15190e0f5386ade46c611b777b90665b777a705d"
+        },
+        {
+          "title": "Alphabet Is Berkshire Hathaway\u2019s New Favorite Stock After Buying 48 Million Shares",
+          "source": "Yahoo",
+          "time": "2026-08-15T12:05:51.000Z",
+          "url": "https://finnhub.io/api/news?id=81845ef5df3d3b46ec8ca4dc957825263a01fb3ddc03ddc828ecae09bb7ac4d6"
+        },
+        {
+          "title": "EXCLUSIVE: Ross Gerber Says SPCX Valuation Reflects the \u2018Elon Premium,\u2019 But Remains Skeptical of Musk\u2019s Timelines: \u2018I Don\u2019t Trust\u2026\u2019",
+          "source": "Benzinga",
+          "time": "2026-08-15T10:31:23.000Z",
+          "url": "https://finnhub.io/api/news?id=d19bd2367f78d7288d46bee79787c4a1a3546080c2b3b0f46975d422ca16e458"
+        }
+      ]
+    },
+    {
+      "symbol": "TSLA",
+      "price": 339.3,
+      "change": -2.97,
+      "percent_change": -0.87,
+      "sector": "Autonomous & Robotics",
+      "analysis_summary": "Autonomous Fleet Thesis: Full Self-Driving v13 deployment and Optimus humanoid robotics scaling across gigafactories.",
+      "sparkline": [
+        339.3
+      ],
+      "pinned": false,
+      "name": "Tesla, Inc.",
+      "previousClose": 342.27,
+      "volume": 25428595,
+      "avgVolume": 25428595,
+      "high52": 345.45,
+      "low52": 337.49,
+      "last_updated": "2026-08-17T20:18:26.527Z",
+      "source": "Alpha Vantage API",
+      "quant": {
+        "rsi14": null,
+        "sma20": 339.3,
+        "sma50": 339.3,
+        "sma200": 339.3,
+        "priceVsSma20Pct": 0,
+        "priceVsSma50Pct": 0,
+        "priceVsSma200Pct": 0,
+        "volumeVsAvg20Ratio": 1,
+        "percentile52Week": 22.74,
+        "volatility": null
+      },
+      "signal": {
+        "signalScore": 51,
+        "signalLabel": "Neutral",
+        "components": [
+          {
+            "name": "Momentum",
+            "score": 68,
+            "weight": 0.25,
+            "detail": "RSI 14 at 50 with 1-day change of -0.87%"
           },
           {
             "name": "Trend",
@@ -345,9 +440,9 @@
           },
           {
             "name": "52W Range Positioning",
-            "score": 56,
+            "score": 30,
             "weight": 0.2,
-            "detail": "Positioned at 51.1% of 52-week price corridor"
+            "detail": "Positioned at 22.74% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
@@ -356,102 +451,7 @@
             "detail": "Standard volatility band"
           }
         ],
-        "summary": "Quant Composite Score 56/100 [Neutral]: Momentum (70/100), Trend (45/100), Volume (50/100)"
-      },
-      "news": [
-        {
-          "title": "Berkshire Hathaway: The Cash Is Moving, The Philosophy Isn't",
-          "source": "SeekingAlpha",
-          "time": "2026-08-17T09:47:07.000Z",
-          "url": "https://finnhub.io/api/news?id=d89f4a063b60afb1f31ec9aa15190e0f5386ade46c611b777b90665b777a705d"
-        },
-        {
-          "title": "Alphabet Is Berkshire Hathaway’s New Favorite Stock After Buying 48 Million Shares",
-          "source": "Yahoo",
-          "time": "2026-08-15T12:05:51.000Z",
-          "url": "https://finnhub.io/api/news?id=81845ef5df3d3b46ec8ca4dc957825263a01fb3ddc03ddc828ecae09bb7ac4d6"
-        },
-        {
-          "title": "EXCLUSIVE: Ross Gerber Says SPCX Valuation Reflects the ‘Elon Premium,’ But Remains Skeptical of Musk’s Timelines: ‘I Don’t Trust…’",
-          "source": "Benzinga",
-          "time": "2026-08-15T10:31:23.000Z",
-          "url": "https://finnhub.io/api/news?id=d19bd2367f78d7288d46bee79787c4a1a3546080c2b3b0f46975d422ca16e458"
-        }
-      ]
-    },
-    {
-      "symbol": "TSLA",
-      "price": 339.3,
-      "change": -2.97,
-      "percent_change": -0.87,
-      "sector": "Autonomous & Robotics",
-      "analysis_summary": "Autonomous Fleet Thesis: Full Self-Driving v13 deployment and Optimus humanoid robotics scaling across gigafactories.",
-      "sparkline": [
-        328.58,
-        330.88,
-        332.81,
-        327.51,
-        339.96,
-        342.27,
-        339.3
-      ],
-      "pinned": false,
-      "name": "Tesla, Inc.",
-      "previousClose": 342.27,
-      "volume": 25100691,
-      "avgVolume": 25100691,
-      "high52": 498.83,
-      "low52": 297.38,
-      "last_updated": "2026-08-17T20:13:52.087Z",
-      "source": "Alpha Vantage API",
-      "quant": {
-        "rsi14": 69.66,
-        "sma20": 334.47,
-        "sma50": 334.47,
-        "sma200": 334.47,
-        "priceVsSma20Pct": 1.44,
-        "priceVsSma50Pct": 1.44,
-        "priceVsSma200Pct": 1.44,
-        "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 20.81,
-        "volatility": 29.45
-      },
-      "signal": {
-        "signalScore": 69,
-        "signalLabel": "Bullish",
-        "components": [
-          {
-            "name": "Momentum",
-            "score": 98,
-            "weight": 0.25,
-            "detail": "RSI 14 at 69.66 with 1-day change of -0.87%"
-          },
-          {
-            "name": "Trend",
-            "score": 86,
-            "weight": 0.25,
-            "detail": "Trading +1.44% vs 20-day SMA"
-          },
-          {
-            "name": "Volume",
-            "score": 50,
-            "weight": 0.15,
-            "detail": "Volume ratio relative to 20-day avg: 1x"
-          },
-          {
-            "name": "52W Range Positioning",
-            "score": 30,
-            "weight": 0.2,
-            "detail": "Positioned at 20.81% of 52-week price corridor"
-          },
-          {
-            "name": "Volatility Risk",
-            "score": 65,
-            "weight": 0.15,
-            "detail": "Annualized historical volatility: 29.45%"
-          }
-        ],
-        "summary": "Quant Composite Score 69/100 [Bullish]: Momentum (98/100), Trend (86/100), Volume (50/100)"
+        "summary": "Quant Composite Score 51/100 [Neutral]: Momentum (68/100), Trend (45/100), Volume (50/100)"
       },
       "news": [
         {
@@ -461,7 +461,7 @@
           "url": "https://finnhub.io/api/news?id=31e00e0962040c9e9d7d492ae297c775be784775d38b27fadf366f6e067e881b"
         },
         {
-          "title": "Elon Musk Says Tesla Is ‘Most Made in America’ Car Brand as Trump Tariffs Shake Up Auto Industry",
+          "title": "Elon Musk Says Tesla Is \u2018Most Made in America\u2019 Car Brand as Trump Tariffs Shake Up Auto Industry",
           "source": "Benzinga",
           "time": "2026-08-16T23:59:29.000Z",
           "url": "https://finnhub.io/api/news?id=14863f489eae2eb2783b00909444820af74913fbe4a8675fd8a62d4dc9a5b6f4"
@@ -493,11 +493,11 @@
       "pinned": false,
       "name": "Palantir Technologies Inc.",
       "previousClose": 174.04,
-      "volume": 22716716,
-      "avgVolume": 22716716,
+      "volume": 24117006,
+      "avgVolume": 24117006,
       "high52": 207.52,
       "low52": 106.37,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 51.24,
@@ -556,7 +556,7 @@
           "url": "https://finnhub.io/api/news?id=538daeaf8042f7bf3dff20d57db741a924fd3c3a05a5bc6cb417e59c1c1fe6ec"
         },
         {
-          "title": "Anthropic’s Revenue Could Soar From $47 Billion to $200 Billion by 2028 as Bankers Build a Massive AI Valuation Case Ahead of Its IPO: Report",
+          "title": "Anthropic\u2019s Revenue Could Soar From $47 Billion to $200 Billion by 2028 as Bankers Build a Massive AI Valuation Case Ahead of Its IPO: Report",
           "source": "Benzinga",
           "time": "2026-08-14T22:57:20.000Z",
           "url": "https://finnhub.io/api/news?id=ae21f0e7b83fd846246f23caa957b952041e1d1b91ff3cf15229b66d180fbae5"
@@ -588,11 +588,11 @@
       "pinned": false,
       "name": "Microsoft Corporation",
       "previousClose": 495.4,
-      "volume": 23050586,
-      "avgVolume": 23050586,
+      "volume": 28250867,
+      "avgVolume": 28250867,
       "high52": 553.72,
       "low52": 349.2,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 25.86,
@@ -687,7 +687,7 @@
       "avgVolume": 3493000,
       "high52": 219.82,
       "low52": 132.66,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 77.27,
@@ -752,7 +752,7 @@
           "url": "https://finnhub.io/api/news?id=bf655e4a9590a743a1cba322e91ea8de0f1413e8f31e527ea290fd0522a3d79b"
         },
         {
-          "title": "Terrestrial Energy’s Lifetime Revenue Up 29%, Advancing in Texas A&M, DOE Fuel Program – Quarterly Update Report",
+          "title": "Terrestrial Energy\u2019s Lifetime Revenue Up 29%, Advancing in Texas A&M, DOE Fuel Program \u2013 Quarterly Update Report",
           "source": "Yahoo",
           "time": "2026-08-13T17:17:15.000Z",
           "url": "https://finnhub.io/api/news?id=a9ae7556e06f8d3e2df664eb238c61731b908fb9938e3752b179764da99a64bc"
@@ -778,11 +778,11 @@
       "pinned": false,
       "name": "AST SpaceMobile, Inc.",
       "previousClose": 70.98,
-      "volume": 9694653,
-      "avgVolume": 9694653,
+      "volume": 9813776,
+      "avgVolume": 9813776,
       "high52": 133.86,
       "low52": 36.08,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 46.73,
@@ -877,7 +877,7 @@
       "avgVolume": 11492973,
       "high52": 20.81,
       "low52": 3.87,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 65.81,
@@ -930,7 +930,7 @@
       },
       "news": [
         {
-          "title": "What’s Going On With POET Technologies Stock?",
+          "title": "What\u2019s Going On With POET Technologies Stock?",
           "source": "Benzinga",
           "time": "2026-08-13T15:14:52.000Z",
           "url": "https://finnhub.io/api/news?id=2b238250fc60191130337442f74917acf7719183115f140d7c46a72dc247a75a"
@@ -968,11 +968,11 @@
       "pinned": false,
       "name": "Applied Optoelectronics, Inc.",
       "previousClose": 150.28,
-      "volume": 12664036,
-      "avgVolume": 12664036,
+      "volume": 12727609,
+      "avgVolume": 12727609,
       "high52": 233.67,
       "low52": 18.5,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "news": [
         {
@@ -1067,7 +1067,7 @@
       "avgVolume": 6832602,
       "high52": 25.84,
       "low52": 6.18,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 34.88,
@@ -1141,9 +1141,9 @@
     },
     {
       "symbol": "XSD",
-      "price": 549.93,
-      "change": 5.65,
-      "percent_change": 1.04,
+      "price": 549.34,
+      "change": 5.05,
+      "percent_change": 0.93,
       "sector": "Market",
       "analysis_summary": "Live quantitative tracking initiated.",
       "sparkline": [
@@ -1153,7 +1153,7 @@
         540.19,
         535.08,
         544.29,
-        549.93
+        549.34
       ],
       "pinned": false,
       "name": "XSD",
@@ -1162,19 +1162,19 @@
       "avgVolume": 75512,
       "high52": 658.14,
       "low52": 267,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": 54.87,
-        "sma20": 538.52,
-        "sma50": 538.52,
-        "sma200": 538.52,
-        "priceVsSma20Pct": 2.12,
-        "priceVsSma50Pct": 2.12,
-        "priceVsSma200Pct": 2.12,
+        "rsi14": 54.37,
+        "sma20": 538.44,
+        "sma50": 538.44,
+        "sma200": 538.44,
+        "priceVsSma20Pct": 2.02,
+        "priceVsSma50Pct": 2.02,
+        "priceVsSma200Pct": 2.02,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 72.33,
-        "volatility": 33.05
+        "percentile52Week": 72.18,
+        "volatility": 32.92
       },
       "signal": {
         "signalScore": 76,
@@ -1182,15 +1182,15 @@
         "components": [
           {
             "name": "Momentum",
-            "score": 79,
+            "score": 78,
             "weight": 0.25,
-            "detail": "RSI 14 at 54.87 with 1-day change of +1.04%"
+            "detail": "RSI 14 at 54.37 with 1-day change of +0.93%"
           },
           {
             "name": "Trend",
             "score": 87,
             "weight": 0.25,
-            "detail": "Trading +2.12% vs 20-day SMA"
+            "detail": "Trading +2.02% vs 20-day SMA"
           },
           {
             "name": "Volume",
@@ -1202,16 +1202,16 @@
             "name": "52W Range Positioning",
             "score": 86,
             "weight": 0.2,
-            "detail": "Positioned at 72.33% of 52-week price corridor"
+            "detail": "Positioned at 72.18% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
             "score": 65,
             "weight": 0.15,
-            "detail": "Annualized historical volatility: 33.05%"
+            "detail": "Annualized historical volatility: 32.92%"
           }
         ],
-        "summary": "Quant Composite Score 76/100 [Bullish]: Momentum (79/100), Trend (87/100), Volume (50/100)"
+        "summary": "Quant Composite Score 76/100 [Bullish]: Momentum (78/100), Trend (87/100), Volume (50/100)"
       },
       "news": [
         {
@@ -1236,9 +1236,9 @@
     },
     {
       "symbol": "HBM",
-      "price": 27.43,
-      "change": 0.74,
-      "percent_change": 2.77,
+      "price": 27.44,
+      "change": 0.75,
+      "percent_change": 2.81,
       "sector": "Market",
       "analysis_summary": "Live quantitative tracking initiated.",
       "sparkline": [
@@ -1248,7 +1248,7 @@
         27.87,
         26.47,
         26.69,
-        27.43
+        27.44
       ],
       "pinned": false,
       "name": "HBM",
@@ -1257,19 +1257,19 @@
       "avgVolume": 2286014,
       "high52": 32.15,
       "low52": 10.72,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": 47.1,
+        "rsi14": 47.27,
         "sma20": 27.38,
         "sma50": 27.38,
         "sma200": 27.38,
-        "priceVsSma20Pct": 0.18,
-        "priceVsSma50Pct": 0.18,
-        "priceVsSma200Pct": 0.18,
+        "priceVsSma20Pct": 0.22,
+        "priceVsSma50Pct": 0.22,
+        "priceVsSma200Pct": 0.22,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 77.97,
-        "volatility": 42.61
+        "percentile52Week": 78.02,
+        "volatility": 42.73
       },
       "signal": {
         "signalScore": 70,
@@ -1279,13 +1279,13 @@
             "name": "Momentum",
             "score": 63,
             "weight": 0.25,
-            "detail": "RSI 14 at 47.1 with 1-day change of +2.77%"
+            "detail": "RSI 14 at 47.27 with 1-day change of +2.81%"
           },
           {
             "name": "Trend",
             "score": 85,
             "weight": 0.25,
-            "detail": "Trading +0.18% vs 20-day SMA"
+            "detail": "Trading +0.22% vs 20-day SMA"
           },
           {
             "name": "Volume",
@@ -1297,13 +1297,13 @@
             "name": "52W Range Positioning",
             "score": 90,
             "weight": 0.2,
-            "detail": "Positioned at 77.97% of 52-week price corridor"
+            "detail": "Positioned at 78.02% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
             "score": 50,
             "weight": 0.15,
-            "detail": "Annualized historical volatility: 42.61%"
+            "detail": "Annualized historical volatility: 42.73%"
           }
         ],
         "summary": "Quant Composite Score 70/100 [Bullish]: Momentum (63/100), Trend (85/100), Volume (50/100)"
@@ -1336,11 +1336,11 @@
       "pinned": false,
       "name": "LITE",
       "previousClose": 926.14,
-      "volume": 5182364,
-      "avgVolume": 5182364,
+      "volume": 5323859,
+      "avgVolume": 5323859,
       "high52": 1085.68,
       "low52": 111.2,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 61.71,
@@ -1435,7 +1435,7 @@
       "avgVolume": 31890805,
       "high52": 153.2,
       "low52": 60.55,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 80.38,
@@ -1509,8 +1509,8 @@
     },
     {
       "symbol": "BE",
-      "price": 232.18,
-      "change": 2.24,
+      "price": 232.16,
+      "change": 2.22,
       "percent_change": 0.97,
       "sector": "Market",
       "analysis_summary": "Live quantitative tracking initiated.",
@@ -1521,27 +1521,27 @@
         237.16,
         236.22,
         229.94,
-        232.18
+        232.16
       ],
       "pinned": false,
       "name": "BE",
       "previousClose": 229.94,
-      "volume": 9765867,
-      "avgVolume": 9765867,
+      "volume": 10580388,
+      "avgVolume": 10580388,
       "high52": 351.28,
       "low52": 40.56,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": 64.36,
+        "rsi14": 64.35,
         "sma20": 225.24,
         "sma50": 225.24,
         "sma200": 225.24,
-        "priceVsSma20Pct": 3.08,
-        "priceVsSma50Pct": 3.08,
-        "priceVsSma200Pct": 3.08,
+        "priceVsSma20Pct": 3.07,
+        "priceVsSma50Pct": 3.07,
+        "priceVsSma200Pct": 3.07,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 61.67,
+        "percentile52Week": 61.66,
         "volatility": 91.99
       },
       "signal": {
@@ -1552,13 +1552,13 @@
             "name": "Momentum",
             "score": 93,
             "weight": 0.25,
-            "detail": "RSI 14 at 64.36 with 1-day change of +0.97%"
+            "detail": "RSI 14 at 64.35 with 1-day change of +0.97%"
           },
           {
             "name": "Trend",
             "score": 88,
             "weight": 0.25,
-            "detail": "Trading +3.08% vs 20-day SMA"
+            "detail": "Trading +3.07% vs 20-day SMA"
           },
           {
             "name": "Volume",
@@ -1570,7 +1570,7 @@
             "name": "52W Range Positioning",
             "score": 64,
             "weight": 0.2,
-            "detail": "Positioned at 61.67% of 52-week price corridor"
+            "detail": "Positioned at 61.66% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
@@ -1625,7 +1625,7 @@
       "avgVolume": 17269249,
       "high52": 2354.39,
       "low52": 43.2,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 100,
@@ -1720,7 +1720,7 @@
       "avgVolume": 19158403,
       "high52": 584.73,
       "low52": 149.22,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 66.89,
@@ -1811,11 +1811,11 @@
       "pinned": false,
       "name": "GOOGL",
       "previousClose": 345.9,
-      "volume": 16217642,
-      "avgVolume": 16217642,
+      "volume": 18214810,
+      "avgVolume": 18214810,
       "high52": 408.61,
       "low52": 196.6,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 26.99,
@@ -1910,7 +1910,7 @@
       "avgVolume": 31541539,
       "high52": 1255,
       "low52": 113.46,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 90.1,
@@ -2005,7 +2005,7 @@
       "avgVolume": 10889762,
       "high52": 30.46,
       "low52": 13.13,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 40.31,
@@ -2079,9 +2079,9 @@
     },
     {
       "symbol": "BTC-USD",
-      "price": 64250.69,
-      "change": 1432.04,
-      "percent_change": 2.28,
+      "price": 64254.56,
+      "change": 1435.91,
+      "percent_change": 2.29,
       "sector": "Market",
       "analysis_summary": "Live quantitative tracking initiated.",
       "sparkline": [
@@ -2091,28 +2091,28 @@
         62975.59,
         63024.32,
         62818.65,
-        64250.69
+        64254.56
       ],
       "pinned": false,
       "name": "BTC-USD",
       "previousClose": 62818.65,
-      "volume": 21454964736,
-      "avgVolume": 21454964736,
+      "volume": 21471397888,
+      "avgVolume": 21471397888,
       "high52": 126198.07,
       "low52": 57747.77,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": 65.44,
-        "sma20": 63346.53,
-        "sma50": 63346.53,
-        "sma200": 63346.53,
+        "rsi14": 65.5,
+        "sma20": 63347.09,
+        "sma50": 63347.09,
+        "sma200": 63347.09,
         "priceVsSma20Pct": 1.43,
         "priceVsSma50Pct": 1.43,
         "priceVsSma200Pct": 1.43,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 9.5,
-        "volatility": 16.81
+        "percentile52Week": 9.51,
+        "volatility": 16.85
       },
       "signal": {
         "signalScore": 72,
@@ -2122,7 +2122,7 @@
             "name": "Momentum",
             "score": 98,
             "weight": 0.25,
-            "detail": "RSI 14 at 65.44 with 1-day change of +2.28%"
+            "detail": "RSI 14 at 65.5 with 1-day change of +2.29%"
           },
           {
             "name": "Trend",
@@ -2140,13 +2140,13 @@
             "name": "52W Range Positioning",
             "score": 30,
             "weight": 0.2,
-            "detail": "Positioned at 9.5% of 52-week price corridor"
+            "detail": "Positioned at 9.51% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
             "score": 80,
             "weight": 0.15,
-            "detail": "Annualized historical volatility: 16.81%"
+            "detail": "Annualized historical volatility: 16.85%"
           }
         ],
         "summary": "Quant Composite Score 72/100 [Bullish]: Momentum (98/100), Trend (86/100), Volume (50/100)"
@@ -2191,11 +2191,11 @@
       "pinned": false,
       "name": "META",
       "previousClose": 589.85,
-      "volume": 16522896,
-      "avgVolume": 16522896,
+      "volume": 16892608,
+      "avgVolume": 16892608,
       "high52": 790.8,
       "low52": 520.26,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 33.34,
@@ -2269,50 +2269,56 @@
     },
     {
       "symbol": "TSM",
-      "price": 426.35,
-      "change": -4.14,
-      "percent_change": -0.96,
+      "price": 430.97,
+      "change": 4.62,
+      "percent_change": 1.08,
       "sector": "Market",
       "analysis_summary": "Live quantitative tracking initiated.",
       "sparkline": [
-        426.35
+        420.04,
+        418.47,
+        422.06,
+        429.15,
+        430.49,
+        426.35,
+        430.97
       ],
       "pinned": false,
       "name": "TSM",
-      "previousClose": 430.49,
-      "volume": 6324715,
-      "avgVolume": 6324715,
-      "high52": 429.27,
-      "low52": 424.1,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "previousClose": 426.35,
+      "volume": 7248242,
+      "avgVolume": 7248242,
+      "high52": 479,
+      "low52": 223.7,
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": null,
-        "sma20": 426.35,
-        "sma50": 426.35,
-        "sma200": 426.35,
-        "priceVsSma20Pct": 0,
-        "priceVsSma50Pct": 0,
-        "priceVsSma200Pct": 0,
+        "rsi14": 74.45,
+        "sma20": 425.36,
+        "sma50": 425.36,
+        "sma200": 425.36,
+        "priceVsSma20Pct": 1.32,
+        "priceVsSma50Pct": 1.32,
+        "priceVsSma200Pct": 1.32,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 43.52,
-        "volatility": null
+        "percentile52Week": 81.19,
+        "volatility": 15.5
       },
       "signal": {
-        "signalScore": 55,
-        "signalLabel": "Neutral",
+        "signalScore": 78,
+        "signalLabel": "Bullish",
         "components": [
           {
             "name": "Momentum",
-            "score": 68,
+            "score": 76,
             "weight": 0.25,
-            "detail": "RSI 14 at 50 with 1-day change of -0.96%"
+            "detail": "RSI 14 at 74.45 with 1-day change of +1.08%"
           },
           {
             "name": "Trend",
-            "score": 45,
+            "score": 86,
             "weight": 0.25,
-            "detail": "Trading +0% vs 20-day SMA"
+            "detail": "Trading +1.32% vs 20-day SMA"
           },
           {
             "name": "Volume",
@@ -2322,18 +2328,18 @@
           },
           {
             "name": "52W Range Positioning",
-            "score": 50,
+            "score": 92,
             "weight": 0.2,
-            "detail": "Positioned at 43.52% of 52-week price corridor"
+            "detail": "Positioned at 81.19% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
-            "score": 60,
+            "score": 80,
             "weight": 0.15,
-            "detail": "Standard volatility band"
+            "detail": "Annualized historical volatility: 15.5%"
           }
         ],
-        "summary": "Quant Composite Score 55/100 [Neutral]: Momentum (68/100), Trend (45/100), Volume (50/100)"
+        "summary": "Quant Composite Score 78/100 [Bullish]: Momentum (76/100), Trend (86/100), Volume (50/100)"
       },
       "news": [
         {
@@ -2358,9 +2364,9 @@
     },
     {
       "symbol": "^NYA",
-      "price": 24731.29,
-      "change": -90.39,
-      "percent_change": -0.36,
+      "price": 24719.4,
+      "change": -102.28,
+      "percent_change": -0.41,
       "sector": "Market",
       "analysis_summary": "Live quantitative tracking initiated.",
       "sparkline": [
@@ -2370,7 +2376,7 @@
         24758.62,
         24809.65,
         24821.68,
-        24731.29
+        24719.4
       ],
       "pinned": false,
       "name": "^NYA",
@@ -2379,35 +2385,35 @@
       "avgVolume": 1000000,
       "high52": 24865.81,
       "low52": 20746.94,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": 71.47,
-        "sma20": 24724.28,
-        "sma50": 24724.28,
-        "sma200": 24724.28,
-        "priceVsSma20Pct": 0.03,
-        "priceVsSma50Pct": 0.03,
-        "priceVsSma200Pct": 0.03,
+        "rsi14": 68.89,
+        "sma20": 24722.58,
+        "sma50": 24722.58,
+        "sma200": 24722.58,
+        "priceVsSma20Pct": -0.01,
+        "priceVsSma50Pct": -0.01,
+        "priceVsSma200Pct": -0.01,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 96.73,
-        "volatility": 3.93
+        "percentile52Week": 96.45,
+        "volatility": 4.21
       },
       "signal": {
-        "signalScore": 76,
+        "signalScore": 66,
         "signalLabel": "Bullish",
         "components": [
           {
             "name": "Momentum",
-            "score": 77,
+            "score": 98,
             "weight": 0.25,
-            "detail": "RSI 14 at 71.47 with 1-day change of -0.36%"
+            "detail": "RSI 14 at 68.89 with 1-day change of -0.41%"
           },
           {
             "name": "Trend",
-            "score": 85,
+            "score": 25,
             "weight": 0.25,
-            "detail": "Trading +0.03% vs 20-day SMA"
+            "detail": "Trading -0.01% vs 20-day SMA"
           },
           {
             "name": "Volume",
@@ -2419,16 +2425,16 @@
             "name": "52W Range Positioning",
             "score": 80,
             "weight": 0.2,
-            "detail": "Positioned at 96.73% of 52-week price corridor"
+            "detail": "Positioned at 96.45% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
             "score": 80,
             "weight": 0.15,
-            "detail": "Annualized historical volatility: 3.93%"
+            "detail": "Annualized historical volatility: 4.21%"
           }
         ],
-        "summary": "Quant Composite Score 76/100 [Bullish]: Momentum (77/100), Trend (85/100), Volume (50/100)"
+        "summary": "Quant Composite Score 66/100 [Bullish]: Momentum (98/100), Trend (25/100), Volume (50/100)"
       },
       "news": [
         {
@@ -2453,8 +2459,8 @@
     },
     {
       "symbol": "SPY",
-      "price": 772.66,
-      "change": -3.68,
+      "price": 772.67,
+      "change": -3.67,
       "percent_change": -0.47,
       "sector": "Market",
       "analysis_summary": "Live quantitative tracking initiated.",
@@ -2465,7 +2471,7 @@
         772.49,
         777.88,
         776.34,
-        772.66
+        772.67
       ],
       "pinned": false,
       "name": "SPY",
@@ -2474,10 +2480,10 @@
       "avgVolume": 30034004,
       "high52": 779.37,
       "low52": 629.28,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": 48.03,
+        "rsi14": 48.06,
         "sma20": 773.75,
         "sma50": 773.75,
         "sma200": 773.75,
@@ -2485,7 +2491,7 @@
         "priceVsSma50Pct": -0.14,
         "priceVsSma200Pct": -0.14,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 95.53,
+        "percentile52Week": 95.54,
         "volatility": 6.79
       },
       "signal": {
@@ -2496,7 +2502,7 @@
             "name": "Momentum",
             "score": 57,
             "weight": 0.25,
-            "detail": "RSI 14 at 48.03 with 1-day change of -0.47%"
+            "detail": "RSI 14 at 48.06 with 1-day change of -0.47%"
           },
           {
             "name": "Trend",
@@ -2514,7 +2520,7 @@
             "name": "52W Range Positioning",
             "score": 80,
             "weight": 0.2,
-            "detail": "Positioned at 95.53% of 52-week price corridor"
+            "detail": "Positioned at 95.54% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
@@ -2565,11 +2571,11 @@
       "pinned": false,
       "name": "^GSPC",
       "previousClose": 7785.76,
-      "volume": 2498302000,
-      "avgVolume": 2498302000,
+      "volume": 2499809000,
+      "avgVolume": 2499809000,
       "high52": 7816.7,
       "low52": 6316.91,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 45.92,
@@ -2664,7 +2670,7 @@
       "avgVolume": 41504334,
       "high52": 287.2,
       "low52": 196,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 17.7,
@@ -2738,8 +2744,8 @@
     },
     {
       "symbol": "NVT",
-      "price": 177.22,
-      "change": 5.83,
+      "price": 177.21,
+      "change": 5.82,
       "percent_change": 3.4,
       "sector": "Market",
       "analysis_summary": "Live quantitative tracking initiated.",
@@ -2750,7 +2756,7 @@
         171.16,
         170.01,
         171.39,
-        177.22
+        177.21
       ],
       "pinned": false,
       "name": "NVT",
@@ -2759,19 +2765,19 @@
       "avgVolume": 1415526,
       "high52": 184.64,
       "low52": 85.72,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": 82.05,
+        "rsi14": 82.04,
         "sma20": 169.14,
         "sma50": 169.14,
         "sma200": 169.14,
-        "priceVsSma20Pct": 4.78,
-        "priceVsSma50Pct": 4.78,
-        "priceVsSma200Pct": 4.78,
+        "priceVsSma20Pct": 4.77,
+        "priceVsSma50Pct": 4.77,
+        "priceVsSma200Pct": 4.77,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 92.5,
-        "volatility": 31.75
+        "percentile52Week": 92.49,
+        "volatility": 31.73
       },
       "signal": {
         "signalScore": 77,
@@ -2781,13 +2787,13 @@
             "name": "Momentum",
             "score": 71,
             "weight": 0.25,
-            "detail": "RSI 14 at 82.05 with 1-day change of +3.4%"
+            "detail": "RSI 14 at 82.04 with 1-day change of +3.4%"
           },
           {
             "name": "Trend",
             "score": 90,
             "weight": 0.25,
-            "detail": "Trading +4.78% vs 20-day SMA"
+            "detail": "Trading +4.77% vs 20-day SMA"
           },
           {
             "name": "Volume",
@@ -2797,15 +2803,15 @@
           },
           {
             "name": "52W Range Positioning",
-            "score": 99,
+            "score": 98,
             "weight": 0.2,
-            "detail": "Positioned at 92.5% of 52-week price corridor"
+            "detail": "Positioned at 92.49% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
             "score": 65,
             "weight": 0.15,
-            "detail": "Annualized historical volatility: 31.75%"
+            "detail": "Annualized historical volatility: 31.73%"
           }
         ],
         "summary": "Quant Composite Score 77/100 [Bullish]: Momentum (71/100), Trend (90/100), Volume (50/100)"
@@ -2854,7 +2860,7 @@
       "avgVolume": 794567,
       "high52": 34.79,
       "low52": 19.17,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 74.06,
@@ -2933,11 +2939,11 @@
       "pinned": false,
       "name": "QQQ",
       "previousClose": 731.07,
-      "volume": 25345039,
-      "avgVolume": 25345039,
+      "volume": 25881583,
+      "avgVolume": 25881583,
       "high52": 748.65,
       "low52": 555.6,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 66.76,
@@ -3017,50 +3023,44 @@
       "sector": "Market",
       "analysis_summary": "Live quantitative tracking initiated.",
       "sparkline": [
-        29.22,
-        29.06,
-        29.69,
-        31.15,
-        30.62,
-        31.2,
         31.18
       ],
       "pinned": false,
       "name": "APLD",
       "previousClose": 31.2,
-      "volume": 12875604,
-      "avgVolume": 12875604,
-      "high52": 50.73,
-      "low52": 13.16,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "volume": 12984663,
+      "avgVolume": 12984663,
+      "high52": 31.85,
+      "low52": 30.6,
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": 78.99,
-        "sma20": 30.3,
-        "sma50": 30.3,
-        "sma200": 30.3,
-        "priceVsSma20Pct": 2.9,
-        "priceVsSma50Pct": 2.9,
-        "priceVsSma200Pct": 2.9,
+        "rsi14": null,
+        "sma20": 31.18,
+        "sma50": 31.18,
+        "sma200": 31.18,
+        "priceVsSma20Pct": 0,
+        "priceVsSma50Pct": 0,
+        "priceVsSma200Pct": 0,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 47.96,
-        "volatility": 37.74
+        "percentile52Week": 46.4,
+        "volatility": null
       },
       "signal": {
-        "signalScore": 67,
-        "signalLabel": "Bullish",
+        "signalScore": 56,
+        "signalLabel": "Neutral",
         "components": [
           {
             "name": "Momentum",
-            "score": 68,
+            "score": 70,
             "weight": 0.25,
-            "detail": "RSI 14 at 78.99 with 1-day change of -0.06%"
+            "detail": "RSI 14 at 50 with 1-day change of -0.06%"
           },
           {
             "name": "Trend",
-            "score": 88,
+            "score": 45,
             "weight": 0.25,
-            "detail": "Trading +2.9% vs 20-day SMA"
+            "detail": "Trading +0% vs 20-day SMA"
           },
           {
             "name": "Volume",
@@ -3070,22 +3070,22 @@
           },
           {
             "name": "52W Range Positioning",
-            "score": 53,
+            "score": 52,
             "weight": 0.2,
-            "detail": "Positioned at 47.96% of 52-week price corridor"
+            "detail": "Positioned at 46.4% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
-            "score": 65,
+            "score": 60,
             "weight": 0.15,
-            "detail": "Annualized historical volatility: 37.74%"
+            "detail": "Standard volatility band"
           }
         ],
-        "summary": "Quant Composite Score 67/100 [Bullish]: Momentum (68/100), Trend (88/100), Volume (50/100)"
+        "summary": "Quant Composite Score 56/100 [Neutral]: Momentum (70/100), Trend (45/100), Volume (50/100)"
       },
       "news": [
         {
-          "title": "10 Information Technology Stocks With Whale Alerts In Today’s Session",
+          "title": "10 Information Technology Stocks With Whale Alerts In Today\u2019s Session",
           "source": "Benzinga",
           "time": "2026-08-14T13:35:24.000Z",
           "url": "https://finnhub.io/api/news?id=4ce3c10265cab9c90514ca3a5d75c3c02b385b12adc19b2dedb50ca4479d5f07"
@@ -3123,11 +3123,11 @@
       "pinned": false,
       "name": "^IXIC",
       "previousClose": 26729.16,
-      "volume": 6706621000,
-      "avgVolume": 6706621000,
+      "volume": 6712643000,
+      "avgVolume": 6712643000,
       "high52": 27190.21,
       "low52": 20690.25,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 47,
@@ -3201,9 +3201,9 @@
     },
     {
       "symbol": "MOD",
-      "price": 216.79,
-      "change": 7.29,
-      "percent_change": 3.48,
+      "price": 216.75,
+      "change": 7.25,
+      "percent_change": 3.46,
       "sector": "Market",
       "analysis_summary": "Live quantitative tracking initiated.",
       "sparkline": [
@@ -3213,7 +3213,7 @@
         199.53,
         203.51,
         209.5,
-        216.79
+        216.75
       ],
       "pinned": false,
       "name": "MOD",
@@ -3222,19 +3222,19 @@
       "avgVolume": 1358463,
       "high52": 323.25,
       "low52": 111.18,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": 84.89,
-        "sma20": 202.04,
-        "sma50": 202.04,
-        "sma200": 202.04,
-        "priceVsSma20Pct": 7.3,
-        "priceVsSma50Pct": 7.3,
-        "priceVsSma200Pct": 7.3,
+        "rsi14": 84.87,
+        "sma20": 202.03,
+        "sma50": 202.03,
+        "sma200": 202.03,
+        "priceVsSma20Pct": 7.29,
+        "priceVsSma50Pct": 7.29,
+        "priceVsSma200Pct": 7.29,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 49.8,
-        "volatility": 36.8
+        "percentile52Week": 49.78,
+        "volatility": 36.76
       },
       "signal": {
         "signalScore": 68,
@@ -3244,13 +3244,13 @@
             "name": "Momentum",
             "score": 67,
             "weight": 0.25,
-            "detail": "RSI 14 at 84.89 with 1-day change of +3.48%"
+            "detail": "RSI 14 at 84.87 with 1-day change of +3.46%"
           },
           {
             "name": "Trend",
             "score": 92,
             "weight": 0.25,
-            "detail": "Trading +7.3% vs 20-day SMA"
+            "detail": "Trading +7.29% vs 20-day SMA"
           },
           {
             "name": "Volume",
@@ -3262,13 +3262,13 @@
             "name": "52W Range Positioning",
             "score": 55,
             "weight": 0.2,
-            "detail": "Positioned at 49.8% of 52-week price corridor"
+            "detail": "Positioned at 49.78% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
             "score": 65,
             "weight": 0.15,
-            "detail": "Annualized historical volatility: 36.8%"
+            "detail": "Annualized historical volatility: 36.76%"
           }
         ],
         "summary": "Quant Composite Score 68/100 [Bullish]: Momentum (67/100), Trend (92/100), Volume (50/100)"
@@ -3307,11 +3307,11 @@
       "pinned": false,
       "name": "INTC",
       "previousClose": 102.5,
-      "volume": 85601105,
-      "avgVolume": 85601105,
+      "volume": 86440747,
+      "avgVolume": 86440747,
       "high52": 142.35,
       "low52": 22.78,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 56.47,
@@ -3385,9 +3385,9 @@
     },
     {
       "symbol": "HAWK",
-      "price": 23.18,
-      "change": 0.4,
-      "percent_change": 1.76,
+      "price": 23.16,
+      "change": 0.38,
+      "percent_change": 1.67,
       "sector": "Market",
       "analysis_summary": "Live quantitative tracking initiated.",
       "sparkline": [
@@ -3397,7 +3397,7 @@
         24.73,
         24.37,
         22.78,
-        23.18
+        23.16
       ],
       "pinned": false,
       "name": "HAWK",
@@ -3406,19 +3406,19 @@
       "avgVolume": 1180991,
       "high52": 35.73,
       "low52": 17.02,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
-        "rsi14": 26.75,
-        "sma20": 24.31,
-        "sma50": 24.31,
-        "sma200": 24.31,
-        "priceVsSma20Pct": -4.65,
-        "priceVsSma50Pct": -4.65,
-        "priceVsSma200Pct": -4.65,
+        "rsi14": 26.3,
+        "sma20": 24.3,
+        "sma50": 24.3,
+        "sma200": 24.3,
+        "priceVsSma20Pct": -4.69,
+        "priceVsSma50Pct": -4.69,
+        "priceVsSma200Pct": -4.69,
         "volumeVsAvg20Ratio": 1,
-        "percentile52Week": 32.92,
-        "volatility": 49.52
+        "percentile52Week": 32.82,
+        "volatility": 49.28
       },
       "signal": {
         "signalScore": 38,
@@ -3426,15 +3426,15 @@
         "components": [
           {
             "name": "Momentum",
-            "score": 34,
+            "score": 33,
             "weight": 0.25,
-            "detail": "RSI 14 at 26.75 with 1-day change of +1.76%"
+            "detail": "RSI 14 at 26.3 with 1-day change of +1.67%"
           },
           {
             "name": "Trend",
             "score": 25,
             "weight": 0.25,
-            "detail": "Trading -4.65% vs 20-day SMA"
+            "detail": "Trading -4.69% vs 20-day SMA"
           },
           {
             "name": "Volume",
@@ -3446,16 +3446,16 @@
             "name": "52W Range Positioning",
             "score": 42,
             "weight": 0.2,
-            "detail": "Positioned at 32.92% of 52-week price corridor"
+            "detail": "Positioned at 32.82% of 52-week price corridor"
           },
           {
             "name": "Volatility Risk",
             "score": 50,
             "weight": 0.15,
-            "detail": "Annualized historical volatility: 49.52%"
+            "detail": "Annualized historical volatility: 49.28%"
           }
         ],
-        "summary": "Quant Composite Score 38/100 [Caution]: Momentum (34/100), Trend (25/100), Volume (50/100)"
+        "summary": "Quant Composite Score 38/100 [Caution]: Momentum (33/100), Trend (25/100), Volume (50/100)"
       },
       "news": [
         {
@@ -3501,7 +3501,7 @@
       "avgVolume": 7582654,
       "high52": 671.83,
       "low52": 281.15,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 64.02,
@@ -3596,7 +3596,7 @@
       "avgVolume": 5274068,
       "high52": 655.95,
       "low52": 237.1,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 67.91,
@@ -3691,7 +3691,7 @@
       "avgVolume": 489728,
       "high52": 328,
       "low52": 78.5,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 64.61,
@@ -3780,7 +3780,7 @@
       "avgVolume": 1215109,
       "high52": 1999.96,
       "low52": 716.2,
-      "last_updated": "2026-08-17T20:13:52.087Z",
+      "last_updated": "2026-08-17T20:18:26.527Z",
       "source": "Alpha Vantage API",
       "quant": {
         "rsi14": 93.12,
