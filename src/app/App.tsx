@@ -26,6 +26,7 @@ import { CommandPalette } from "../components/CommandPalette";
 import { TsunamiVolatilityTicker } from "../components/TsunamiVolatilityTicker";
 import { Footer } from "../components/Footer";
 import { UsernamePromptModal } from "../components/UsernamePromptModal";
+import { NewUserOnboardingModal } from "../components/NewUserOnboardingModal";
 
 // Helper function for resilient dynamic imports with automatic retry and error recovery
 function safeLazy<T = any>(
@@ -1564,6 +1565,7 @@ export function App() {
       {/* Firebase Authentication & Storage Modal */}
       <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
       <UsernamePromptModal />
+      <NewUserOnboardingModal onNavigateTab={handleSelectTab} />
 
       {/* Pro Subscription Modal */}
       <ProSubscriptionModal

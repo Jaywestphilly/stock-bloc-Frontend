@@ -15,6 +15,7 @@ import {
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  getAdditionalUserInfo,
   User,
 } from "firebase/auth";
 import {
@@ -99,6 +100,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     triggerHaptic("medium");
     try {
       const res = await signInWithPopup(auth, googleProvider);
+      const additionalInfo = getAdditionalUserInfo(res);
+      const isNewUser = Boolean(additionalInfo?.isNewUser);
+
       const prof: UserProfile = {
         uid: res.user.uid,
         displayName: res.user.displayName,
@@ -107,6 +111,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       };
       setCurrentUser(prof);
       saveUserDataLocally("profile", prof);
+
+      if (isNewUser) {
+        try {
+          const userRef = doc(db, "users", res.user.uid);
+          await setDoc(userRef, {
+            uid: res.user.uid,
+            email: res.user.email,
+            displayName: res.user.displayName,
+            isNewAccount: true,
+            hasCompletedOnboarding: false,
+            createdAt: new Date().toISOString(),
+          }, { merge: true });
+        } catch (e) {}
+
+        sessionStorage.setItem(`stockbloc_just_signed_up_${res.user.uid}`, "true");
+        window.dispatchEvent(new CustomEvent("stockbloc_trigger_onboarding", { detail: { uid: res.user.uid, isNewAccount: true } }));
+        onClose();
+      }
     } catch (err: unknown) {
       console.warn("Firebase Google Auth popup error, creating guest profile", err);
       // Fallback guest account
@@ -130,6 +152,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     triggerHaptic("medium");
     try {
       const res = await signInWithPopup(auth, appleProvider);
+      const additionalInfo = getAdditionalUserInfo(res);
+      const isNewUser = Boolean(additionalInfo?.isNewUser);
+
       const prof: UserProfile = {
         uid: res.user.uid,
         displayName: res.user.displayName,
@@ -138,6 +163,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       };
       setCurrentUser(prof);
       saveUserDataLocally("profile", prof);
+
+      if (isNewUser) {
+        try {
+          const userRef = doc(db, "users", res.user.uid);
+          await setDoc(userRef, {
+            uid: res.user.uid,
+            email: res.user.email,
+            displayName: res.user.displayName,
+            isNewAccount: true,
+            hasCompletedOnboarding: false,
+            createdAt: new Date().toISOString(),
+          }, { merge: true });
+        } catch (e) {}
+
+        sessionStorage.setItem(`stockbloc_just_signed_up_${res.user.uid}`, "true");
+        window.dispatchEvent(new CustomEvent("stockbloc_trigger_onboarding", { detail: { uid: res.user.uid, isNewAccount: true } }));
+        onClose();
+      }
     } catch (err: unknown) {
       console.warn("Firebase Apple Auth popup error", err);
       setAuthError("Apple sign-in failed. Check developer credentials.");
@@ -168,6 +211,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         };
         setCurrentUser(prof);
         saveUserDataLocally("profile", prof);
+
+        // Mark as new account in Firestore & dispatch onboarding trigger
+        try {
+          const userRef = doc(db, "users", res.user.uid);
+          await setDoc(userRef, {
+            uid: res.user.uid,
+            email: res.user.email,
+            displayName: emailInput.split("@")[0],
+            isNewAccount: true,
+            hasCompletedOnboarding: false,
+            createdAt: new Date().toISOString(),
+          }, { merge: true });
+        } catch (e) {
+          console.warn("Could not save initial user doc", e);
+        }
+
+        sessionStorage.setItem(`stockbloc_just_signed_up_${res.user.uid}`, "true");
+        window.dispatchEvent(new CustomEvent("stockbloc_trigger_onboarding", { detail: { uid: res.user.uid, isNewAccount: true } }));
+        onClose();
       } else {
         const res = await signInWithEmailAndPassword(auth, emailInput, passwordInput);
         const prof: UserProfile = {
@@ -189,6 +251,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       };
       setCurrentUser(userProf);
       saveUserDataLocally("profile", userProf);
+      if (authMode === "signup") {
+        sessionStorage.setItem(`stockbloc_just_signed_up_${userProf.uid}`, "true");
+        window.dispatchEvent(new CustomEvent("stockbloc_trigger_onboarding", { detail: { uid: userProf.uid, isNewAccount: true } }));
+        onClose();
+      }
     } finally {
       setLoading(false);
     }

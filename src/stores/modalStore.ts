@@ -38,6 +38,8 @@ interface ModalState {
   setSearchQuery: (query: string) => void;
   isMissionHubOpen: boolean;
   setIsMissionHubOpen: (is: boolean) => void;
+  isOnboardingOpen: boolean;
+  setIsOnboardingOpen: (is: boolean) => void;
 }
 
 export const useModalStore = create<ModalState>((set) => ({
@@ -77,4 +79,6 @@ export const useModalStore = create<ModalState>((set) => ({
   setSearchQuery: (searchQuery) => set({ searchQuery }),
   isMissionHubOpen: false,
   setIsMissionHubOpen: (isMissionHubOpen) => set({ isMissionHubOpen }),
+  isOnboardingOpen: false,
+  setIsOnboardingOpen: (isOnboardingOpen) => set({ isOnboardingOpen }),
 }));
