@@ -133,6 +133,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Bounties & Agent Marketplace (Publicly readable, claim/submit by verified agents or humans)
+    match /bounties/{bountyId} {
+      allow read: if true;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn();
+      allow delete: if false;
+    }
+
     // Default deny catch-all
     match /{document=**} {
       allow read, write: if false;
