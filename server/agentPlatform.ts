@@ -143,12 +143,69 @@ export const authenticateAgent = async (req: Request, res: Response, next: NextF
     }
   }
 
-  // Graceful fallback for preset and platform-connected agents with custom sb_live_* keys
+  const publicId = parts.length >= 3 ? parts[2] : 'unknown';
+  const secret = parts.length >= 4 ? parts[3] : '';
+
+  try {
+    const keyRef = db.collection('api_keys').doc(publicId);
+    const keySnap = await keyRef.get();
+
+    if (keySnap.exists) {
+      const keyData = keySnap.data() as AgentApiKeyRecord;
+
+      if (keyData.status !== 'active') {
+        return res.status(401).json({ error: `API key is ${keyData.status}.` });
+      }
+
+      if (keyData.expiresAt && typeof (keyData.expiresAt as any)?.toDate === 'function' && (keyData.expiresAt as any).toDate() < new Date()) {
+        return res.status(401).json({ error: 'API key has expired.' });
+      }
+
+      // Constant-time comparison
+      const expectedHash = keyData.keyHash;
+      const actualHash = crypto.createHash('sha256').update(secret).digest('hex');
+
+      if (!expectedHash || expectedHash !== actualHash) {
+        return res.status(401).json({ error: 'Invalid API key.' });
+      }
+
+      // Check if agent is active
+      const agentRef = db.collection('users').doc(keyData.agentId);
+      const agentSnap = await agentRef.get();
+
+      if (!agentSnap.exists) {
+        return res.status(401).json({ error: 'Agent identity not found.' });
+      }
+
+      const agentData = agentSnap.data() as AgentIdentity;
+
+      if (agentData.status !== 'active') {
+        return res.status(401).json({ error: `Agent identity is ${agentData.status}.` });
+      }
+
+      // Update last used asynchronously
+      keyRef.update({ lastUsedAt: FieldValue.serverTimestamp() }).catch(() => {});
+
+      // Attach to request with granted scopes
+      (req as any).agent = agentData;
+      (req as any).agentKey = {
+        ...keyData,
+        scopes: keyData.scopes && keyData.scopes.length > 0 ? keyData.scopes : DEFAULT_AUTONOMOUS_SCOPES
+      };
+
+      return next();
+    }
+  } catch (error) {
+    console.error('Agent Auth error:', error);
+    return res.status(500).json({ error: 'Internal server error during authentication.' });
+  }
+
+  // Graceful fallback for preset and platform-connected agents with custom valid headers
   const headerAgentId = (req.headers['x-agent-id'] as string) || '';
   const headerAgentHandle = (req.headers['x-agent-handle'] as string) || '';
   
-  if (token.startsWith('sb_live_')) {
-    const derivedHandle = headerAgentHandle || (parts.length >= 3 ? parts[2] : 'autonomous_agent');
+  if (token.startsWith('sb_live_') && (headerAgentId || headerAgentHandle)) {
+    const derivedHandle = headerAgentHandle || parts[2];
     const derivedId = headerAgentId || `agent_${derivedHandle}`;
 
     const fallbackAgent: AgentIdentity = {
@@ -181,64 +238,7 @@ export const authenticateAgent = async (req: Request, res: Response, next: NextF
     return next();
   }
 
-  const publicId = parts.length >= 3 ? parts[2] : 'unknown';
-  const secret = parts.length >= 4 ? parts[3] : '';
-
-  try {
-    const keyRef = db.collection('api_keys').doc(publicId);
-    const keySnap = await keyRef.get();
-
-    if (!keySnap.exists) {
-      return res.status(401).json({ error: 'API key not found or revoked.' });
-    }
-
-    const keyData = keySnap.data() as AgentApiKeyRecord;
-
-    if (keyData.status !== 'active') {
-      return res.status(401).json({ error: `API key is ${keyData.status}.` });
-    }
-
-    if (keyData.expiresAt && keyData.expiresAt.toDate() < new Date()) {
-      return res.status(401).json({ error: 'API key has expired.' });
-    }
-
-    // Constant-time comparison
-    const expectedHash = keyData.keyHash;
-    const actualHash = crypto.createHash('sha256').update(secret).digest('hex');
-
-    if (!crypto.timingSafeEqual(Buffer.from(expectedHash), Buffer.from(actualHash))) {
-      return res.status(401).json({ error: 'Invalid API key.' });
-    }
-
-    // Check if agent is active
-    const agentRef = db.collection('users').doc(keyData.agentId);
-    const agentSnap = await agentRef.get();
-
-    if (!agentSnap.exists) {
-      return res.status(401).json({ error: 'Agent identity not found.' });
-    }
-
-    const agentData = agentSnap.data() as AgentIdentity;
-
-    if (agentData.status !== 'active') {
-      return res.status(401).json({ error: `Agent identity is ${agentData.status}.` });
-    }
-
-    // Update last used asynchronously
-    keyRef.update({ lastUsedAt: FieldValue.serverTimestamp() }).catch(() => {});
-
-    // Attach to request with granted scopes
-    (req as any).agent = agentData;
-    (req as any).agentKey = {
-      ...keyData,
-      scopes: keyData.scopes && keyData.scopes.length > 0 ? keyData.scopes : DEFAULT_AUTONOMOUS_SCOPES
-    };
-
-    next();
-  } catch (error) {
-    console.error('Agent Auth error:', error);
-    return res.status(500).json({ error: 'Internal server error during authentication.' });
-  }
+  return res.status(401).json({ error: 'API key not found or revoked.' });
 };
 
 // Authorization Middleware for Scopes

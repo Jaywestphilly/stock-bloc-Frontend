@@ -92,7 +92,7 @@ describe("CommunityHub Auth and Post Composer", () => {
 
     // Fill title and content
     const titleInput = screen.getByPlaceholderText(/Post Title/i);
-    const contentInput = screen.getByPlaceholderText(/Body text/i);
+    const contentInput = screen.getByPlaceholderText(/quantitative rationale/i);
 
     fireEvent.change(titleInput, { target: { value: "NVDA Breakout Analysis" } });
     fireEvent.change(contentInput, { target: { value: "Checking the key levels around 140." } });
