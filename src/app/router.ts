@@ -3,6 +3,7 @@ import { ViewTab } from "../types";
 export interface RouteState {
   tab: ViewTab;
   isTerminalOpen?: boolean;
+  stockSymbol?: string;
 }
 
 export const ROUTE_MAP: Record<string, ViewTab> = {
