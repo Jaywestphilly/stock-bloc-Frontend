@@ -488,14 +488,22 @@ export const NewsHub: React.FC<NewsHubProps> = ({ onNavigateTab }) => {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const getChannelRank = (channelName: string): number => {
-      const c = (channelName || "").toLowerCase();
-      if (c.includes("stock bloc")) return 1;
-      if (c.includes("alexwg") || c.includes("wissner-gross")) return 2;
-      if (c.includes("all-in")) return 3;
-      if (c.includes("diamandis") || c.includes("moonshots")) return 4;
-      if (c.includes("limitless")) return 5;
-      return 6;
+    const parseFeedDate = (dateStr?: string): number => {
+      if (!dateStr) return 0;
+      const parsed = Date.parse(dateStr);
+      if (!isNaN(parsed)) return parsed;
+      // Handle custom formatted strings like "@alexwg • Aug 12, 2026"
+      const datePart = dateStr.includes("•") ? dateStr.split("•")[1].trim() : dateStr;
+      const p2 = Date.parse(datePart);
+      return !isNaN(p2) ? p2 : 0;
+    };
+
+    const sortFeedByDateDesc = (items: any[]): any[] => {
+      return [...items].sort((a, b) => {
+        const timeA = parseFeedDate(a.published_date || a.published || a.timestamp);
+        const timeB = parseFeedDate(b.published_date || b.published || b.timestamp);
+        return timeB - timeA;
+      });
     };
 
     fetch("/api/data/news")
@@ -506,11 +514,7 @@ export const NewsHub: React.FC<NewsHubProps> = ({ onNavigateTab }) => {
       .then((res) => res.json())
       .then((data) => {
         if (data.intel_feed && Array.isArray(data.intel_feed)) {
-          const sorted = [...data.intel_feed].sort((a: { channel_name?: string }, b: { channel_name?: string }) => {
-            const rankA = getChannelRank(a.channel_name || "");
-            const rankB = getChannelRank(b.channel_name || "");
-            return rankA - rankB;
-          });
+          const sorted = sortFeedByDateDesc(data.intel_feed);
           setIntelFeed(sorted);
         }
       })
@@ -520,7 +524,7 @@ export const NewsHub: React.FC<NewsHubProps> = ({ onNavigateTab }) => {
           .then((res) => res.json())
           .then((data) => {
             if (data.intel_feed && Array.isArray(data.intel_feed)) {
-              setIntelFeed(data.intel_feed);
+              setIntelFeed(sortFeedByDateDesc(data.intel_feed));
             }
           })
           .catch(console.error);
@@ -530,6 +534,23 @@ export const NewsHub: React.FC<NewsHubProps> = ({ onNavigateTab }) => {
   // Sync background feed
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    const parseFeedDate = (dateStr?: string): number => {
+      if (!dateStr) return 0;
+      const parsed = Date.parse(dateStr);
+      if (!isNaN(parsed)) return parsed;
+      const datePart = dateStr.includes("•") ? dateStr.split("•")[1].trim() : dateStr;
+      const p2 = Date.parse(datePart);
+      return !isNaN(p2) ? p2 : 0;
+    };
+
+    const sortFeedByDateDesc = (items: any[]): any[] => {
+      return [...items].sort((a, b) => {
+        const timeA = parseFeedDate(a.published_date || a.published || a.timestamp);
+        const timeB = parseFeedDate(b.published_date || b.published || b.timestamp);
+        return timeB - timeA;
+      });
+    };
 
     syncYouTubeFeeds(false).then((res) => {
       if (res.videos && res.videos.length > 0) {
@@ -623,7 +644,7 @@ export const NewsHub: React.FC<NewsHubProps> = ({ onNavigateTab }) => {
             }
           }
 
-          return updatedFeed;
+          return sortFeedByDateDesc(updatedFeed);
         });
       }
       if (res.syncedAt) {

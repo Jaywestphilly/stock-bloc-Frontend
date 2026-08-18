@@ -63,6 +63,10 @@ const STRATEGY_PRESETS = [
   "Systematic Quant Alpha & Multiples"
 ];
 
+const POPULAR_TICKER_SUGGESTIONS = [
+  "CRWV", "NVDA", "BE", "SNDK", "AMD", "CEG", "TSM", "PLTR", "SPCX", "CORZ", "BTC-USD", "MSFT", "AAPL", "TSLA"
+];
+
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   isOpen,
   onClose,
@@ -81,6 +85,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [tradingHorizon, setTradingHorizon] = useState("Swing (2 - 10 Days)");
   const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [tickerError, setTickerError] = useState<string | null>(null);
 
   // Load existing profile details
   useEffect(() => {
@@ -94,7 +99,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setBio(saved.bio || "");
       setLink(saved.link || "");
       setStrategy(saved.strategy || "AI Hyperscale Hardware & Datacenters");
-      setTickers(saved.tickers && saved.tickers.length > 0 ? saved.tickers : ["NVDA", "SPCX", "CEG", "PLTR"]);
+      setTickers(Array.isArray(saved.tickers) && saved.tickers.length > 0 ? saved.tickers : ["NVDA", "SPCX", "CEG", "PLTR"]);
       setAvatarStyle(saved.avatarStyle || "cyber_alpha");
       setTradingHorizon(saved.tradingHorizon || "Swing (2 - 10 Days)");
       return;
@@ -114,17 +119,58 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleAddTicker = () => {
-    const clean = newTickerInput.trim().replace("$", "").toUpperCase();
-    if (clean && !tickers.includes(clean) && tickers.length < 10) {
-      triggerHaptic("light");
-      setTickers([...tickers, clean]);
+  const parseTickerString = (raw: string): string[] => {
+    return raw
+      .split(/[\s,;+]+/)
+      .map(t => t.replace(/[$#]/g, "").trim().toUpperCase())
+      .filter(t => t.length > 0 && t.length <= 12);
+  };
+
+  const handleAddTicker = (tickerToAdd?: string) => {
+    setTickerError(null);
+    const rawToProcess = tickerToAdd !== undefined ? tickerToAdd : newTickerInput;
+    if (!rawToProcess || !rawToProcess.trim()) return;
+
+    const parsedList = parseTickerString(rawToProcess);
+    if (parsedList.length === 0) return;
+
+    let addedCount = 0;
+    setTickers(prev => {
+      const next = [...prev];
+      for (const item of parsedList) {
+        if (!next.includes(item)) {
+          if (next.length < 25) {
+            next.push(item);
+            addedCount++;
+          }
+        }
+      }
+      return next;
+    });
+
+    triggerHaptic("light");
+    if (tickerToAdd === undefined) {
       setNewTickerInput("");
+    }
+  };
+
+  const handleTogglePresetTicker = (preset: string) => {
+    triggerHaptic("selection");
+    setTickerError(null);
+    if (tickers.includes(preset)) {
+      setTickers(tickers.filter(t => t !== preset));
+    } else {
+      if (tickers.length < 25) {
+        setTickers([...tickers, preset]);
+      } else {
+        setTickerError("Maximum limit of 25 tickers reached.");
+      }
     }
   };
 
   const handleRemoveTicker = (tickerToRemove: string) => {
     triggerHaptic("selection");
+    setTickerError(null);
     setTickers(tickers.filter(t => t !== tickerToRemove));
   };
 
@@ -148,14 +194,23 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   });
 
   const handleSave = async (e: React.FormEvent) => {
-    if (!isAuthenticated) {
-      alert("Authentication Required: You must be logged in to update your profile.");
-      return;
-    }
-
     e.preventDefault();
     triggerHaptic("medium");
     setIsSaving(true);
+    setTickerError(null);
+
+    // Auto-flush any pending ticker text currently typed in the input box
+    let finalTickers = [...tickers];
+    if (newTickerInput.trim()) {
+      const pendingList = parseTickerString(newTickerInput);
+      for (const item of pendingList) {
+        if (!finalTickers.includes(item) && finalTickers.length < 25) {
+          finalTickers.push(item);
+        }
+      }
+      setTickers(finalTickers);
+      setNewTickerInput("");
+    }
 
     const cleanUsername = (username.trim().replace("@", "") || "trader").toLowerCase().replace(/[^a-z0-9_]/g, "_");
     const cleanDisplayName = displayName.trim() || cleanUsername;
@@ -167,7 +222,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       bio: bio.trim(),
       link: cleanLink,
       strategy,
-      tickers: tickers.length > 0 ? tickers : ["NVDA", "SPCX", "CEG"],
+      tickers: finalTickers.length > 0 ? finalTickers : ["NVDA", "SPCX", "CEG"],
       avatarStyle,
       tradingHorizon,
       winRate: "88.6%",
@@ -181,7 +236,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     };
 
     try {
-      // 1. Save locally
+      // 1. Save locally to instant storage
       saveUserDataLocally("custom_profile", payload);
       
       // Update session profile if available
@@ -191,7 +246,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         username: cleanUsername,
         displayName: cleanDisplayName,
         bio: bio.trim(),
-        link: cleanLink
+        link: cleanLink,
+        tickers: payload.tickers
       });
 
       // 2. Persist to Firestore if user is authenticated and DB is live
@@ -240,7 +296,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         setSavedSuccess(false);
         setIsSaving(false);
         onClose();
-      }, 1000);
+      }, 800);
     } catch (err) {
       console.error("Error saving profile:", err);
       setIsSaving(false);
@@ -485,55 +541,109 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
             {/* Primary Coverage Assets (Tickers) */}
             <div>
-              <label className="block text-[11px] font-alien-hud uppercase text-amber-300 mb-1.5">
-                Primary Coverage Assets (Up to 10 Tickers)
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-[11px] font-alien-hud uppercase text-amber-300">
+                  Primary Coverage Assets ({tickers.length} / 25 Tickers)
+                </label>
+                {tickers.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      triggerHaptic("selection");
+                      setTickers([]);
+                    }}
+                    className="text-[10px] font-martian text-neutral-400 hover:text-rose-400 cursor-pointer"
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
               
               {/* Ticker Badges */}
-              <div className="flex flex-wrap gap-2 mb-2.5">
-                {tickers.map((ticker) => (
-                  <div
-                    key={ticker}
-                    className="px-2.5 py-1 alien-block-cut-sm bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-martian font-bold flex items-center gap-1.5"
-                  >
-                    <span>${ticker}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveTicker(ticker)}
-                      className="hover:text-rose-400 transition-colors p-0.5 cursor-pointer"
-                      title="Remove Ticker"
+              <div className="flex flex-wrap gap-2 mb-2.5 min-h-[32px] p-2 bg-black/50 border border-cyan-500/20 alien-block-cut-sm">
+                {tickers.length === 0 ? (
+                  <span className="text-xs text-neutral-500 font-martian italic py-0.5">
+                    No tickers added yet. Type symbols below or click suggested tags.
+                  </span>
+                ) : (
+                  tickers.map((ticker) => (
+                    <div
+                      key={ticker}
+                      className="px-2.5 py-1 alien-block-cut-sm bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-martian font-bold flex items-center gap-1.5"
                     >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
+                      <span>${ticker}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTicker(ticker)}
+                        className="hover:text-rose-400 transition-colors p-0.5 cursor-pointer"
+                        title={`Remove $${ticker}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
 
               {/* Add Ticker Input */}
-              {tickers.length < 10 && (
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={newTickerInput}
-                    onChange={(e) => setNewTickerInput(e.target.value.toUpperCase())}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleAddTicker();
-                      }
-                    }}
-                    placeholder="Add Ticker (e.g. SPCX, NVDA, CEG)"
-                    maxLength={8}
-                    className="flex-1 px-3.5 py-2 alien-block-cut-sm bg-black/70 border border-cyan-500/30 text-white font-martian text-xs focus:border-cyan-400 focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddTicker}
-                    className="px-4 py-2 alien-block-cut-sm bg-cyan-950/60 border border-cyan-400 text-cyan-300 hover:bg-cyan-400 hover:text-black transition-all text-xs font-alien-hud font-bold flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add</span>
-                  </button>
+              {tickers.length < 25 && (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newTickerInput}
+                      onChange={(e) => setNewTickerInput(e.target.value.toUpperCase())}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === ",") {
+                          e.preventDefault();
+                          handleAddTicker();
+                        }
+                      }}
+                      placeholder="Add Ticker(s) (e.g. CRWV, NVDA, BE, SNDK, BTC-USD)"
+                      maxLength={30}
+                      className="flex-1 px-3.5 py-2 alien-block-cut-sm bg-black/70 border border-cyan-500/30 text-white font-martian text-xs focus:border-cyan-400 focus:outline-none placeholder:text-neutral-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleAddTicker()}
+                      disabled={!newTickerInput.trim()}
+                      className="px-4 py-2 alien-block-cut-sm bg-cyan-950/60 border border-cyan-400 text-cyan-300 hover:bg-cyan-400 hover:text-black transition-all text-xs font-alien-hud font-bold flex items-center gap-1 cursor-pointer disabled:opacity-40 disabled:hover:bg-cyan-950/60 disabled:hover:text-cyan-300"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add</span>
+                    </button>
+                  </div>
+
+                  {tickerError && (
+                    <p className="text-[11px] text-rose-400 font-martian">{tickerError}</p>
+                  )}
+
+                  {/* Popular Quick Suggestions */}
+                  <div className="pt-1">
+                    <span className="text-[10px] text-neutral-400 font-martian block mb-1.5">
+                      Quick Add Popular Watchlist Tickers:
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {POPULAR_TICKER_SUGGESTIONS.map((preset) => {
+                        const isAdded = tickers.includes(preset);
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleTogglePresetTicker(preset)}
+                            className={`px-2 py-0.5 text-[10px] font-martian font-semibold alien-block-cut-sm transition-all cursor-pointer flex items-center gap-1 border ${
+                              isAdded
+                                ? "bg-amber-500/20 text-amber-300 border-amber-400 shadow-sm"
+                                : "bg-black/60 text-neutral-400 border-cyan-500/20 hover:text-white hover:border-cyan-400"
+                            }`}
+                          >
+                            <span>{isAdded ? "✓" : "+"}</span>
+                            <span>${preset}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
