@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useMemo, type ReactNode } from "react";
 import { auth, db, getUserDataLocally } from "../lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
-interface AuthUserSession {
+export interface AuthUserSession {
   uid: string;
   displayName: string | null;
   email: string | null;
@@ -11,7 +11,7 @@ interface AuthUserSession {
   username?: string | null;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   currentUser: AuthUserSession | null;
   username: string | null;
@@ -27,7 +27,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
 });
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState<string | null>(null);
   const [localProfile, setLocalProfile] = useState<AuthUserSession | null>(() => {
@@ -78,40 +78,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const effectiveSession: AuthUserSession | null = user
-    ? {
+  const effectiveSession: AuthUserSession | null = useMemo(() => {
+    if (user) {
+      return {
         uid: user.uid,
         displayName: user.displayName || username || user.email?.split("@")[0] || "Stock Bloc Member",
         email: user.email,
         photoURL: user.photoURL,
         username: username || user.displayName || user.email?.split("@")[0] || "Stock Bloc Member",
-      }
-    : localProfile
-    ? {
+      };
+    }
+    if (localProfile) {
+      return {
         uid: localProfile.uid,
         displayName: localProfile.displayName || localProfile.username || localProfile.email?.split("@")[0] || "Stock Bloc Member",
         email: localProfile.email,
         photoURL: localProfile.photoURL,
         username: localProfile.username || localProfile.displayName || localProfile.email?.split("@")[0] || "Stock Bloc Member",
-      }
-    : null;
+      };
+    }
+    return null;
+  }, [user, username, localProfile]);
 
   const isAuthenticated = Boolean(user || localProfile);
 
+  const contextValue = useMemo<AuthContextType>(() => ({
+    user,
+    currentUser: effectiveSession,
+    username: username || effectiveSession?.username || effectiveSession?.displayName || null,
+    loading,
+    isAuthenticated,
+  }), [user, effectiveSession, username, loading, isAuthenticated]);
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        currentUser: effectiveSession,
-        username: username || effectiveSession?.username || effectiveSession?.displayName || null,
-        loading,
-        isAuthenticated,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
 export const useAuth = () => useContext(AuthContext);
 

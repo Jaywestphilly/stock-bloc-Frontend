@@ -42,6 +42,7 @@ import { CreMaturityWallRefinance } from "../realestate/CreMaturityWallRefinance
 import { DataCenterCapRateArbitrage } from "../realestate/DataCenterCapRateArbitrage";
 import { HousingAffordabilityMortgageEngine } from "../realestate/HousingAffordabilityMortgageEngine";
 import { CrossDomainArbitrageEngine } from "./CrossDomainArbitrageEngine";
+import { GlobalInfrastructureMap } from "../../components/GlobalInfrastructureMap";
 import { ResponsiveSubTabNav } from "../../components/ResponsiveSubTabNav";
 
 interface RealEstateHubProps {
@@ -62,6 +63,7 @@ export const RealEstateHub: React.FC<RealEstateHubProps> = ({
     "/real-estate",
     [
       "brownfield_substation",
+      "infrastructure_map",
       "cre_debt",
       "datacenter_arbitrage",
       "housing_mortgage",
@@ -253,6 +255,14 @@ https://stock-bloc.ai.studio/real-estate
                 description: "Interconnection queue bypass: Converting fossil plants into AI compute substations",
               },
               {
+                id: "infrastructure_map",
+                label: "Data Center & Infrastructure Map",
+                icon: <Server className="w-3.5 h-3.5 text-cyan-300" />,
+                badge: "Live Geo-Radar",
+                colorScheme: "cyan",
+                description: "Interactive global map of hyperscale data centers, MW capacities & physical constraints",
+              },
+              {
                 id: "cre_debt",
                 label: "CRE Maturity Wall ($1.8T)",
                 icon: <AlertTriangle className="w-3.5 h-3.5 text-red-300" />,
@@ -326,6 +336,10 @@ https://stock-bloc.ai.studio/real-estate
 
       {/* NEW QUANTITATIVE REAL ESTATE MODULES */}
       {activeTab === "brownfield_substation" && <CrossDomainArbitrageEngine />}
+
+      {activeTab === "infrastructure_map" && (
+        <GlobalInfrastructureMap onSelectStock={onSelectStock} initialCategory="datacenter" />
+      )}
 
       {activeTab === "cre_debt" && <CreMaturityWallRefinance />}
 

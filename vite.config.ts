@@ -10,11 +10,27 @@ export default defineConfig(() => {
       alias: {
         '@': path.resolve(__dirname, '.'),
         'src': path.resolve(__dirname, 'src'),
+        'react': path.resolve(__dirname, 'node_modules/react'),
+        'react-dom': path.resolve(__dirname, 'node_modules/react-dom'),
       },
-      dedupe: ['react', 'react-dom']
+      dedupe: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime']
     },
     optimizeDeps: {
-      entries: ['index.html', 'src/**/*.ts', 'src/**/*.tsx', '!src/**/*.test.ts', '!src/**/*.test.tsx'],
+      include: [
+        'react',
+        'react-dom',
+        'react-dom/client',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+        'motion/react',
+        'lucide-react',
+        'zustand',
+        'idb-keyval',
+        'recharts',
+        'firebase/app',
+        'firebase/auth',
+        'firebase/firestore',
+      ],
       exclude: ['@playwright/test', 'playwright', 'playwright-core'],
     },
     build: {

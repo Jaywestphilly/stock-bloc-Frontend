@@ -31,7 +31,7 @@ interface SocialShareModalProps {
   onClose: () => void;
 }
 
-type ShareTab = "sms" | "card";
+type ShareTab = "sms" | "card" | "thumbnail";
 type SmsPreset = "alert" | "thesis" | "short";
 type CardFormat = "landscape" | "vertical" | "square";
 
@@ -48,6 +48,7 @@ export const SocialShareModal: React.FC<SocialShareModalProps> = ({
   const [copiedMessage, setCopiedMessage] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [downloadMsg, setDownloadMsg] = useState(false);
+  const [copiedOgUrl, setCopiedOgUrl] = useState(false);
 
   const isPositive = stock ? stock.changePercent >= 0 : true;
   const symbol = stock ? stock.symbol : "SPCX";
@@ -64,6 +65,10 @@ export const SocialShareModal: React.FC<SocialShareModalProps> = ({
   const stockUrl = stock
     ? `${origin}/?stock=${encodeURIComponent(stock.symbol)}`
     : `${origin}/`;
+
+  const ogImageUrl = stock
+    ? `${origin}/api/og?symbol=${encodeURIComponent(stock.symbol)}&title=${encodeURIComponent(stock.name || stock.symbol)}&subtitle=${encodeURIComponent('Live Technicals, 13F Accumulation & Quant Thesis')}&price=${encodeURIComponent(priceFormatted)}&change=${encodeURIComponent(changeFormatted)}&badge=LEVEL+2+TELEMETRY&category=Stock+Analysis`
+    : `${origin}/api/og?title=${encodeURIComponent('STOCK BLOC // QUANT MATRIX')}&subtitle=${encodeURIComponent('Autonomous Agent Economy & Real-Time Market Intelligence')}&badge=LIVE+2026&category=Terminal`;
 
   const quantSignal = useMemo(() => {
     if (!stock) return { score: 75, bias: "BULLISH" };
@@ -221,34 +226,48 @@ export const SocialShareModal: React.FC<SocialShareModalProps> = ({
             </div>
 
             {/* Mode Switcher Tabs */}
-            <div className="grid grid-cols-2 gap-2 bg-[#020b16] p-1 rounded-2xl border border-cyan-900/60 relative z-10">
+            <div className="grid grid-cols-3 gap-1.5 bg-[#020b16] p-1 rounded-2xl border border-cyan-900/60 relative z-10">
               <button
                 onClick={() => {
                   triggerHaptic("selection");
                   setActiveTab("sms");
                 }}
-                className={`py-2 px-3 rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                className={`py-2 px-2 rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === "sms"
                     ? "bg-cyan-500 text-black font-black shadow-md shadow-cyan-500/30"
                     : "text-cyan-300 hover:text-white"
                 }`}
               >
-                <MessageSquare className="w-4 h-4" />
-                <span>Text Message (SMS)</span>
+                <MessageSquare className="w-3.5 h-3.5" />
+                <span className="truncate">SMS / Text</span>
               </button>
               <button
                 onClick={() => {
                   triggerHaptic("selection");
                   setActiveTab("card");
                 }}
-                className={`py-2 px-3 rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                className={`py-2 px-2 rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                   activeTab === "card"
                     ? "bg-cyan-500 text-black font-black shadow-md shadow-cyan-500/30"
                     : "text-cyan-300 hover:text-white"
                 }`}
               >
-                <Image className="w-4 h-4" />
-                <span>Visual Social Card</span>
+                <Smartphone className="w-3.5 h-3.5" />
+                <span className="truncate">Social Post</span>
+              </button>
+              <button
+                onClick={() => {
+                  triggerHaptic("selection");
+                  setActiveTab("thumbnail");
+                }}
+                className={`py-2 px-2 rounded-xl text-xs font-bold font-mono flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                  activeTab === "thumbnail"
+                    ? "bg-cyan-500 text-black font-black shadow-md shadow-cyan-500/30"
+                    : "text-cyan-300 hover:text-white"
+                }`}
+              >
+                <Image className="w-3.5 h-3.5" />
+                <span className="truncate">OG Banner</span>
               </button>
             </div>
 
@@ -646,6 +665,77 @@ export const SocialShareModal: React.FC<SocialShareModalProps> = ({
                     )}
                     <span>{copiedMessage ? "Copied!" : "Copy Post"}</span>
                   </button>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3: DYNAMIC OPEN GRAPH THUMBNAIL BANNER */}
+            {activeTab === "thumbnail" && (
+              <div className="space-y-4 relative z-10">
+                <div className="flex items-center justify-between text-xs text-cyan-300">
+                  <span className="font-bold uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                    Dynamic Open Graph Banner
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono">
+                    1200 × 630 Vector SVG
+                  </span>
+                </div>
+
+                {/* Live Preview of Generated Banner */}
+                <div className="relative rounded-2xl overflow-hidden border-2 border-cyan-500/50 shadow-2xl bg-black/90 group">
+                  <img
+                    src={ogImageUrl}
+                    alt={`${symbol} Live Open Graph Banner`}
+                    className="w-full h-auto object-cover aspect-[1200/630]"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-cyan-950/20 pointer-events-none" />
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#020b16] border border-cyan-900/60 text-[11px] text-cyan-300/80 space-y-1 font-mono">
+                  <div className="text-cyan-200 font-bold flex items-center justify-between">
+                    <span>Direct Open Graph URL:</span>
+                    <span className="text-[10px] text-emerald-400">Indexed & Crawler-Ready</span>
+                  </div>
+                  <p className="text-cyan-400/60 break-all text-[10px]">
+                    {ogImageUrl}
+                  </p>
+                </div>
+
+                {/* Banner Actions */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    onClick={() => {
+                      triggerHaptic("success");
+                      navigator.clipboard.writeText(ogImageUrl);
+                      setCopiedOgUrl(true);
+                      setTimeout(() => setCopiedOgUrl(false), 2500);
+                    }}
+                    className="py-2.5 px-3 rounded-2xl bg-cyan-950/80 hover:bg-cyan-900/80 border border-cyan-500/50 text-xs font-bold flex items-center justify-center gap-1.5 text-cyan-300 active:scale-95 transition-all cursor-pointer"
+                  >
+                    {copiedOgUrl ? (
+                      <>
+                        <Check className="w-4 h-4 text-emerald-400" />
+                        <span className="text-emerald-300">Banner URL Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 text-cyan-400" />
+                        <span>Copy Image URL</span>
+                      </>
+                    )}
+                  </button>
+
+                  <a
+                    href={ogImageUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="py-2.5 px-3 rounded-2xl bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-black flex items-center justify-center gap-1.5 active:scale-95 transition-all shadow-lg shadow-cyan-500/20 cursor-pointer"
+                  >
+                    <ExternalLink className="w-4 h-4 text-black" />
+                    <span>Open High-Res Banner</span>
+                  </a>
                 </div>
               </div>
             )}

@@ -5337,6 +5337,270 @@ app.get(['/intel_news_feed.json', '/api/intel-news'], (req, res) => {
   return res.status(404).json({ status: "error", message: "intel_news_feed.json not found" });
 });
 
+// Helper for escaping XML in SVG generator
+function escapeXml(unsafe: string): string {
+  return String(unsafe || '').replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '\'': return '&apos;';
+      case '"': return '&quot;';
+      default: return c;
+    }
+  });
+}
+
+// -------------------------------------------------------------
+// DYNAMIC OPEN GRAPH SOCIAL THUMBNAIL GENERATOR (/api/og)
+// -------------------------------------------------------------
+app.get(['/api/og', '/api/thumbnail', '/api/v1/og'], (req, res) => {
+  const title = (req.query.title as string) || "QUANT WEALTH TERMINAL";
+  const subtitle = (req.query.subtitle as string) || "Real-Time Market Momentum & Machine Intelligence Matrix";
+  const badge = (req.query.badge as string) || "LIVE 2026 // LEVEL 2";
+  const symbol = (req.query.symbol as string) || "";
+  const price = (req.query.price as string) || "";
+  const change = (req.query.change as string) || "";
+  const category = (req.query.category as string) || "SYSTEM";
+  const score = (req.query.score as string) || "SB 88";
+
+  const isPos = change.startsWith('+') || (!change.startsWith('-') && change !== '');
+  const changeColor = isPos ? "#10b981" : "#f43f5e";
+
+  const svg = `<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020813" />
+      <stop offset="50%" stop-color="#041220" />
+      <stop offset="100%" stop-color="#01040a" />
+    </linearGradient>
+    <linearGradient id="cyanGlow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00f2ff" />
+      <stop offset="100%" stop-color="#0088ff" />
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0, 242, 255, 0.08)" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <rect width="1200" height="630" fill="url(#grid)" />
+
+  <!-- Outer Neon HUD Frame -->
+  <rect x="24" y="24" width="1152" height="582" rx="16" fill="none" stroke="rgba(0, 242, 255, 0.4)" stroke-width="2" />
+  
+  <!-- Chamfered HUD Corner Brackets -->
+  <path d="M 24 64 L 24 24 L 64 24" fill="none" stroke="#00f2ff" stroke-width="5" />
+  <path d="M 1176 64 L 1176 24 L 1136 24" fill="none" stroke="#00f2ff" stroke-width="5" />
+  <path d="M 24 566 L 24 606 L 64 606" fill="none" stroke="#00f2ff" stroke-width="5" />
+  <path d="M 1176 566 L 1176 606 L 1136 606" fill="none" stroke="#00f2ff" stroke-width="5" />
+
+  <!-- Top Brand Navigation Bar -->
+  <g transform="translate(60, 75)">
+    <rect x="0" y="0" width="32" height="32" rx="8" fill="rgba(0, 242, 255, 0.2)" stroke="#00f2ff" stroke-width="1.5" />
+    <path d="M 10 16 L 22 16 M 16 10 L 16 22" stroke="#00f2ff" stroke-width="2" stroke-linecap="round" />
+    
+    <text x="44" y="22" font-family="'Orbitron', 'SF Pro Display', -apple-system, sans-serif" font-size="20" font-weight="900" fill="#ffffff" letter-spacing="2">STOCK BLOC</text>
+    <text x="210" y="22" font-family="'SF Mono', 'Courier New', monospace" font-size="13" font-weight="700" fill="#00f2ff" letter-spacing="1.5">// QUANT INTELLIGENCE WORKSTATION</text>
+    
+    <!-- Top Right Badge -->
+    <rect x="860" y="-4" width="180" height="36" rx="8" fill="rgba(0, 242, 255, 0.15)" stroke="rgba(0, 242, 255, 0.6)" stroke-width="1.2" />
+    <circle cx="876" cy="14" r="4" fill="#10b981" />
+    <text x="890" y="19" font-family="'SF Mono', monospace" font-size="12" font-weight="800" fill="#00f2ff">${escapeXml(badge)}</text>
+  </g>
+
+  <!-- Horizontal Glow Divider -->
+  <line x1="60" y1="125" x2="1140" y2="125" stroke="rgba(0, 242, 255, 0.3)" stroke-width="1.5" />
+
+  <!-- Main Content Body -->
+  <g transform="translate(60, 190)">
+    <!-- Symbol / Ticker / Primary Title -->
+    ${symbol ? `
+      <rect x="0" y="-30" width="160" height="42" rx="8" fill="rgba(0, 242, 255, 0.2)" stroke="#00f2ff" stroke-width="1.5" />
+      <text x="14" y="-2" font-family="'Orbitron', monospace" font-size="24" font-weight="900" fill="#00f2ff" letter-spacing="1">$${escapeXml(symbol)}</text>
+      
+      <text x="0" y="55" font-family="'SF Pro Display', -apple-system, sans-serif" font-size="42" font-weight="900" fill="#ffffff" letter-spacing="-0.5">${escapeXml(title)}</text>
+    ` : `
+      <text x="0" y="30" font-family="'Orbitron', 'SF Pro Display', -apple-system, sans-serif" font-size="42" font-weight="900" fill="#ffffff" letter-spacing="-0.5">${escapeXml(title)}</text>
+    `}
+
+    <!-- Subtitle / Description -->
+    <text x="0" y="${symbol ? '100' : '85'}" font-family="'SF Pro Text', -apple-system, sans-serif" font-size="20" font-weight="400" fill="#94a3b8">
+      ${escapeXml(subtitle.length > 95 ? subtitle.slice(0, 92) + '...' : subtitle)}
+    </text>
+
+    <!-- Metrics Bento Box Grid -->
+    <g transform="translate(0, ${symbol ? '150' : '135'})">
+      ${price ? `
+        <!-- Price Block -->
+        <rect x="0" y="0" width="220" height="96" rx="12" fill="rgba(0, 0, 0, 0.6)" stroke="rgba(0, 242, 255, 0.3)" stroke-width="1.5" />
+        <text x="20" y="28" font-family="'SF Mono', monospace" font-size="12" font-weight="700" fill="#64748b" letter-spacing="1">LIVE PRICE</text>
+        <text x="20" y="68" font-family="'Orbitron', monospace" font-size="28" font-weight="900" fill="#ffffff">${escapeXml(price)}</text>
+
+        <!-- 24h Change Block -->
+        <rect x="240" y="0" width="220" height="96" rx="12" fill="rgba(0, 0, 0, 0.6)" stroke="${changeColor}" stroke-width="1.5" />
+        <text x="260" y="28" font-family="'SF Mono', monospace" font-size="12" font-weight="700" fill="#64748b" letter-spacing="1">24H MOMENTUM</text>
+        <text x="260" y="68" font-family="'Orbitron', monospace" font-size="28" font-weight="900" fill="${changeColor}">${escapeXml(change)}</text>
+
+        <!-- Quant Score Block -->
+        <rect x="480" y="0" width="220" height="96" rx="12" fill="rgba(0, 0, 0, 0.6)" stroke="rgba(0, 242, 255, 0.3)" stroke-width="1.5" />
+        <text x="500" y="28" font-family="'SF Mono', monospace" font-size="12" font-weight="700" fill="#64748b" letter-spacing="1">QUANT RATING</text>
+        <text x="500" y="68" font-family="'Orbitron', monospace" font-size="28" font-weight="900" fill="#00f2ff">${escapeXml(score)}</text>
+      ` : `
+        <!-- Feature Block 1 -->
+        <rect x="0" y="0" width="320" height="96" rx="12" fill="rgba(0, 0, 0, 0.6)" stroke="rgba(0, 242, 255, 0.3)" stroke-width="1.5" />
+        <text x="20" y="28" font-family="'SF Mono', monospace" font-size="12" font-weight="700" fill="#64748b" letter-spacing="1">HUB / WORKSPACE</text>
+        <text x="20" y="66" font-family="'Orbitron', monospace" font-size="22" font-weight="900" fill="#00f2ff">${escapeXml(category.toUpperCase())}</text>
+
+        <!-- Feature Block 2 -->
+        <rect x="340" y="0" width="340" height="96" rx="12" fill="rgba(0, 0, 0, 0.6)" stroke="rgba(16, 185, 129, 0.4)" stroke-width="1.5" />
+        <text x="360" y="28" font-family="'SF Mono', monospace" font-size="12" font-weight="700" fill="#64748b" letter-spacing="1">TELEMETRY STATUS</text>
+        <text x="360" y="66" font-family="'Orbitron', monospace" font-size="22" font-weight="900" fill="#10b981">REAL-TIME INDEXED</text>
+      `}
+    </g>
+  </g>
+
+  <!-- Right Decorative Quant Visual -->
+  <g transform="translate(850, 180)">
+    <!-- Concentric Target Radar Circles -->
+    <circle cx="160" cy="140" r="120" fill="none" stroke="rgba(0, 242, 255, 0.12)" stroke-width="1" />
+    <circle cx="160" cy="140" r="80" fill="none" stroke="rgba(0, 242, 255, 0.2)" stroke-width="1.2" stroke-dasharray="6,6" />
+    <circle cx="160" cy="140" r="40" fill="none" stroke="rgba(0, 242, 255, 0.4)" stroke-width="1.5" />
+    <circle cx="160" cy="140" r="6" fill="#00f2ff" />
+
+    <!-- Scanning Radar Line -->
+    <line x1="160" y1="140" x2="260" y2="60" stroke="#00f2ff" stroke-width="2" />
+    <circle cx="260" cy="60" r="5" fill="#10b981" />
+    
+    <!-- Sparkline Path -->
+    <path d="M 40 220 L 80 190 L 120 205 L 160 160 L 200 170 L 240 120 L 280 100" fill="none" stroke="#10b981" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+
+  <!-- Bottom Telemetry Terminal Bar -->
+  <g transform="translate(60, 560)">
+    <text x="0" y="0" font-family="'SF Mono', monospace" font-size="12" font-weight="700" fill="#00f2ff" letter-spacing="1">SYSTEM: 100% OPERATIONAL</text>
+    <text x="320" y="0" font-family="'SF Mono', monospace" font-size="12" font-weight="600" fill="#64748b">LATENCY: 12ms</text>
+    <text x="520" y="0" font-family="'SF Mono', monospace" font-size="12" font-weight="600" fill="#64748b">ENCRYPTION: AES-256 GCM</text>
+    <text x="820" y="0" font-family="'SF Mono', monospace" font-size="12" font-weight="800" fill="#ffffff" letter-spacing="1">HTTPS://STOCKBLOC.AI</text>
+  </g>
+</svg>`;
+
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
+  return res.send(svg.trim());
+});
+
+// Helper function to resolve dynamic Open Graph meta tags for any request
+function getRouteMetadata(reqPath: string, query: Record<string, any>, host: string) {
+  const baseUrl = `https://${host}`;
+  const stockSym = (query.stock as string || '').toUpperCase();
+  const modalType = (query.modal as string || '').toLowerCase();
+  const subTab = (query.sub as string || '').toLowerCase();
+
+  // 1. Stock deep link
+  if (stockSym) {
+    return {
+      title: `Stock Bloc | $${stockSym} Quant Intelligence & Level 2 Analysis`,
+      description: `Live technical chart, 13F institutional accumulation, RSI signals, and AI quant thesis for $${stockSym}.`,
+      image: `${baseUrl}/api/og?symbol=${stockSym}&title=${encodeURIComponent(stockSym + ' Stock Analysis')}&subtitle=${encodeURIComponent('Live Quant Metrics, 13F Filings & AI Thesis')}&badge=LEVEL+2+TELEMETRY&category=Stock+Analysis`,
+      url: `${baseUrl}${reqPath}?stock=${stockSym}`
+    };
+  }
+
+  // 2. Modal popouts
+  if (modalType === 'terminal') {
+    return {
+      title: "Stock Bloc | SB Bloomberg Quant Workstation Terminal",
+      description: "Level 2 market depth, SEC filings, analyst consensus ratings, and macro metrics.",
+      image: `${baseUrl}/api/og?title=${encodeURIComponent('SB Bloomberg Quant Workstation')}&subtitle=${encodeURIComponent('Level 2 Market Depth, Order Book & Macro Matrix')}&badge=PRO+WORKSTATION&category=Quant+Terminal`,
+      url: `${baseUrl}${reqPath}?modal=terminal`
+    };
+  }
+  if (modalType === 'copilot') {
+    return {
+      title: "Stock Bloc | Gemini AI Market Copilot",
+      description: "Real-time AI quant reasoning, portfolio risk assessment, and macro research assistant.",
+      image: `${baseUrl}/api/og?title=${encodeURIComponent('Gemini AI Market Copilot')}&subtitle=${encodeURIComponent('Autonomous Neural Market Analysis & Risk Engine')}&badge=AI+COPILOT&category=AI+Research`,
+      url: `${baseUrl}${reqPath}?modal=copilot`
+    };
+  }
+
+  // 3. Tab and path routing
+  const normalizedPath = reqPath.toLowerCase().replace(/\/$/, '') || '/';
+
+  if (normalizedPath === '/real-estate' || normalizedPath === '/realestate') {
+    return {
+      title: "Stock Bloc | Real Estate Deal Analyzer & Data Center Hub",
+      description: "Rental property cash flows, cap rates, mortgage financing, and data center REIT infrastructure.",
+      image: `${baseUrl}/api/og?title=${encodeURIComponent('Real Estate Deal Analyzer')}&subtitle=${encodeURIComponent('Cap Rates, DSCR, Mortgage Financing & Data Centers')}&badge=REAL+ESTATE+WEALTH&category=Real+Estate`,
+      url: `${baseUrl}/real-estate`
+    };
+  }
+
+  if (normalizedPath === '/credit-hub' || normalizedPath === '/credit') {
+    return {
+      title: "Stock Bloc | Credit 800+ Bureau Dispute Hub",
+      description: "Master credit score optimization, FCRA bureau dispute letters, line strategy, and 800+ credit building.",
+      image: `${baseUrl}/api/og?title=${encodeURIComponent('Credit 800+ Bureau Dispute Hub')}&subtitle=${encodeURIComponent('FCRA Dispute Letters, Credit Line Strategy & 800+ Mastery')}&badge=CREDIT+MASTERY&category=Credit+Bureau`,
+      url: `${baseUrl}/credit-hub`
+    };
+  }
+
+  if (normalizedPath === '/13f-intel' || normalizedPath === '/hedge-funds') {
+    return {
+      title: "Stock Bloc | 13F Hedge Fund Intelligence Matrix",
+      description: "Track institutional quarterly 13F filings, smart money accumulation, and top fund positions.",
+      image: `${baseUrl}/api/og?title=${encodeURIComponent('13F Hedge Fund Intelligence')}&subtitle=${encodeURIComponent('Smart Money Accumulation, Whale Portfolios & SEC Filings')}&badge=13F+FILINGS&category=Hedge+Funds`,
+      url: `${baseUrl}/13f-intel`
+    };
+  }
+
+  if (normalizedPath === '/satellite-map' || normalizedPath === '/map') {
+    return {
+      title: "Stock Bloc | Physical Infrastructure & Satellite Radar",
+      description: "Live interactive map of data center megawatts, nuclear SMR baseloads, chip fabs, and Starlink orbits.",
+      image: `${baseUrl}/api/og?title=${encodeURIComponent('Physical Infrastructure & Radar Map')}&subtitle=${encodeURIComponent('AI Data Centers, Nuclear SMRs, Fabs & Starlink Orbits')}&badge=LIVE+GEO-RADAR&category=Infrastructure`,
+      url: `${baseUrl}/satellite-map`
+    };
+  }
+
+  if (normalizedPath === '/ai-revolution' || normalizedPath === '/ai') {
+    return {
+      title: "Stock Bloc | AI Enterprise & Physical Supply Chain Hub",
+      description: "AI value chain heatmaps, semiconductor supply bottlenecks, and agentic intent execution.",
+      image: `${baseUrl}/api/og?title=${encodeURIComponent('AI Enterprise Revolution Hub')}&subtitle=${encodeURIComponent('Semiconductor Supply Chains & Compute Infrastructure')}&badge=AI+REVOLUTION&category=Enterprise+AI`,
+      url: `${baseUrl}/ai-revolution`
+    };
+  }
+
+  if (normalizedPath === '/dyson-swarm') {
+    return {
+      title: "Stock Bloc | Dyson Swarm Orbital Solar Infrastructure",
+      description: "Space solar infrastructure, Starlink orbital shells, Starship launch cadence, and telemetry.",
+      image: `${baseUrl}/api/og?title=${encodeURIComponent('Dyson Swarm Orbital Solar Hub')}&subtitle=${encodeURIComponent('Orbital Energy Megaprojects & Starship Telemetry')}&badge=ORBITAL+GRID&category=Space+Tech`,
+      url: `${baseUrl}/dyson-swarm`
+    };
+  }
+
+  if (normalizedPath.startsWith('/agents') || normalizedPath.startsWith('/developer')) {
+    return {
+      title: "Stock Bloc | Autonomous AI Agent Directory & Exchange",
+      description: "Discover, verify, and hire autonomous financial AI agents connected via the Stock Bloc Agent API.",
+      image: `${baseUrl}/api/og?title=${encodeURIComponent('Autonomous AI Agent Exchange')}&subtitle=${encodeURIComponent('Machine Intelligence Bounties, OpenAPI & Ledger')}&badge=AGENT+NETWORK&category=AI+Agents`,
+      url: `${baseUrl}/agents`
+    };
+  }
+
+  // Default Home / Watchlist
+  return {
+    title: "Stock Bloc | Live Quant Watchlist & Market Momentum",
+    description: "Quant Wealth Matrix & Terminal for real-time stock market momentum, 13F hedge fund intelligence, credit dispute strategy, and real estate cash flow analysis.",
+    image: `${baseUrl}/api/og?title=${encodeURIComponent('QUANT WEALTH TERMINAL')}&subtitle=${encodeURIComponent('Real-Time Market Momentum & Machine Intelligence Matrix')}&badge=LIVE+2026&category=Watchlist`,
+    url: `${baseUrl}/`
+  };
+}
+
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
@@ -5348,7 +5612,28 @@ async function startServer() {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        try {
+          let html = fs.readFileSync(indexPath, 'utf-8');
+          const meta = getRouteMetadata(req.path, req.query, req.get('host') || 'stockbloc.ai');
+          
+          html = html.replace(/<title>.*?<\/title>/i, `<title>${escapeXml(meta.title)}</title>`);
+          html = html.replace(/<meta property="og:title" content=".*?" \/>/i, `<meta property="og:title" content="${escapeXml(meta.title)}" />`);
+          html = html.replace(/<meta property="og:description" content=".*?" \/>/i, `<meta property="og:description" content="${escapeXml(meta.description)}" />`);
+          html = html.replace(/<meta property="og:image" content=".*?" \/>/i, `<meta property="og:image" content="${escapeXml(meta.image)}" />`);
+          html = html.replace(/<meta property="og:url" content=".*?" \/>/i, `<meta property="og:url" content="${escapeXml(meta.url)}" />`);
+          html = html.replace(/<meta name="twitter:title" content=".*?" \/>/i, `<meta name="twitter:title" content="${escapeXml(meta.title)}" />`);
+          html = html.replace(/<meta name="twitter:description" content=".*?" \/>/i, `<meta name="twitter:description" content="${escapeXml(meta.description)}" />`);
+          html = html.replace(/<meta name="twitter:image" content=".*?" \/>/i, `<meta name="twitter:image" content="${escapeXml(meta.image)}" />`);
+          
+          res.setHeader('Content-Type', 'text/html; charset=utf-8');
+          return res.send(html);
+        } catch (e) {
+          return res.sendFile(indexPath);
+        }
+      }
+      res.sendFile(indexPath);
     });
   }
 
