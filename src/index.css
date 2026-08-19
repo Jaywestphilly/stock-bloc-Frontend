@@ -134,7 +134,7 @@
   }
 }
 
-/* Live Price Market Flash Border Animations */
+/* Live Price Market Flash Border & Background Animations */
 @keyframes flash-border-green-anim {
   0% {
     border-color: #00ff88;
@@ -177,12 +177,50 @@
   }
 }
 
+@keyframes flash-bg-green-anim {
+  0% {
+    opacity: 0.55;
+    background-color: rgba(16, 185, 129, 0.35);
+  }
+  30% {
+    opacity: 0.7;
+    background-color: rgba(0, 255, 136, 0.28);
+  }
+  100% {
+    opacity: 0;
+    background-color: rgba(16, 185, 129, 0);
+  }
+}
+
+@keyframes flash-bg-red-anim {
+  0% {
+    opacity: 0.55;
+    background-color: rgba(239, 68, 68, 0.35);
+  }
+  30% {
+    opacity: 0.7;
+    background-color: rgba(255, 0, 85, 0.28);
+  }
+  100% {
+    opacity: 0;
+    background-color: rgba(239, 68, 68, 0);
+  }
+}
+
 .price-flash-up {
-  animation: flash-border-green-anim 1s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  animation: flash-border-green-anim 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
 }
 
 .price-flash-down {
-  animation: flash-border-red-anim 1s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  animation: flash-border-red-anim 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+}
+
+.price-flash-bg-green {
+  animation: flash-bg-green-anim 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.price-flash-bg-red {
+  animation: flash-bg-red-anim 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 html.theme-daylight .price-flash-up {

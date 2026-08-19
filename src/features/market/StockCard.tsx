@@ -543,18 +543,18 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     };
   }, [stock]);
 
-  // Trigger green/red border flash animation and subtle shake on live price updates
+  // Trigger subtle green/red background flash animation and haptic/shake on live price updates during sync
   useEffect(() => {
     if (prevPriceRef.current !== stock.price) {
       const isUp = stock.price > prevPriceRef.current;
       const priceDiffPercent =
-        Math.abs((stock.price - prevPriceRef.current) / prevPriceRef.current) *
+        Math.abs((stock.price - prevPriceRef.current) / (prevPriceRef.current || 1)) *
         100;
 
       setPriceFlashState(isUp ? "up" : "down");
       const flashTimer = setTimeout(() => {
         setPriceFlashState(null);
-      }, 1000);
+      }, 1200);
 
       if (priceDiffPercent >= 3 || isHighVolatility) {
         setIsShaking(true);
@@ -1008,6 +1008,24 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
           boxShadow: cardTheme.boxShadow,
         }}
       >
+        {/* Subtle Live Price Update Background Flash Animation Overlay */}
+        <AnimatePresence>
+          {priceFlashState && (
+            <motion.div
+              key={`price-flash-bg-${priceFlashState}-${stock.price}`}
+              initial={{ opacity: 0.9 }}
+              animate={{ opacity: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              className={`absolute inset-0 pointer-events-none z-0 rounded-[inherit] ${
+                priceFlashState === "up"
+                  ? "bg-gradient-to-r from-emerald-500/35 via-emerald-400/25 to-teal-500/35 price-flash-bg-green"
+                  : "bg-gradient-to-r from-rose-500/35 via-red-400/25 to-rose-600/35 price-flash-bg-red"
+              }`}
+            />
+          )}
+        </AnimatePresence>
+
         {/* Corner HUD Ticks */}
         <div className="hud-corner-tl" />
         <div className="hud-corner-tr" />

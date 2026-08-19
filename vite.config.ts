@@ -1,7 +1,7 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import { defineConfig } from 'vitest/config';
+import { defineConfig } from 'vite';
 
 export default defineConfig(() => {
   return {
@@ -17,13 +17,14 @@ export default defineConfig(() => {
       entries: ['index.html', 'src/**/*.ts', 'src/**/*.tsx', '!src/**/*.test.ts', '!src/**/*.test.tsx'],
       exclude: ['@playwright/test', 'playwright', 'playwright-core'],
     },
+    build: {
+      outDir: 'dist',
+      emptyOutDir: false,
+      sourcemap: true,
+    },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },
-    test: {
-      environment: 'jsdom',
-      setupFiles: ['./vitest.setup.ts'],
-    }
   };
 });

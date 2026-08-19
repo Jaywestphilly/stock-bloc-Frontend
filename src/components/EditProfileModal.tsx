@@ -64,7 +64,14 @@ const STRATEGY_PRESETS = [
 ];
 
 const POPULAR_TICKER_SUGGESTIONS = [
-  "CRWV", "NVDA", "BE", "SNDK", "AMD", "CEG", "TSM", "PLTR", "SPCX", "CORZ", "BTC-USD", "MSFT", "AAPL", "TSLA"
+  "NVDA", "MSFT", "GOOGL", "AMZN", "META", "ORCL", "BABA", "TCEHY", "CRWV", "AAPL", "TSLA", "SPCX",
+  "CEG", "VST", "TLN", "BE", "SMR", "OKLO", "NEE",
+  "ETN", "GEV", "PWR", "EME", "FIX", "HUBB", "POWL", "CAT", "CMI",
+  "VRT", "MOD", "NVT", "SMCI",
+  "ANET", "AVGO", "MRVL", "COHR", "CRDO", "IPGP", "LITE", "AAOI", "POET", "LWLG", "CSCO", "CIEN",
+  "TSM", "AMD", "ASML", "AMAT", "LRCX", "KLAC", "AEHR", "DELL", "ARM", "CDNS", "SNPS", "PLTR",
+  "MU", "WDC", "SNDK", "PSTG", "STX",
+  "GLD", "GOLD", "SLV", "CPER", "FCX", "RKLB", "ASTS", "CORZ", "IREN", "APLD", "WULF", "MARA", "BTC-USD", "EQIX", "DLR"
 ];
 
 export const EditProfileModal: React.FC<EditProfileModalProps> = ({

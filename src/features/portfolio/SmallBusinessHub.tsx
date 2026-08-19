@@ -35,6 +35,8 @@ import {
 } from "lucide-react";
 import { triggerHaptic } from "../../utils/haptics";
 import { trackEvent } from "../../utils/analytics";
+import { ResponsiveSubTabNav } from "../../components/ResponsiveSubTabNav";
+import { StripeFintechSuite } from "./StripeFintechSuite";
 
 interface GrantItem {
   id: string;
@@ -246,7 +248,7 @@ const CREDIT_STEPS: CreditStep[] = [
 
 export const SmallBusinessHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState<
-    "formation" | "business_credit" | "grants_directory" | "startup_roadmap" | "valuation_calc"
+    "formation" | "stripe_stack" | "business_credit" | "grants_directory" | "startup_roadmap" | "valuation_calc"
   >("formation");
 
   useEffect(() => {
@@ -401,81 +403,60 @@ Verified at Stock Bloc Accelerator (stockbloc.app)`;
         </p>
 
         {/* Sub-Tabs Selector */}
-        <div className="flex items-center gap-2 pt-5 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("formation");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "formation"
-                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Scale className="w-3.5 h-3.5" />
-            Legal Formation & EIN
-          </button>
-
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("business_credit");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "business_credit"
-                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <CreditCard className="w-3.5 h-3.5 text-indigo-300" />
-            Tier 1-3 Credit Navigator ({completedSteps.length}/{CREDIT_STEPS.length})
-          </button>
-
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("grants_directory");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "grants_directory"
-                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Award className="w-3.5 h-3.5 text-emerald-300" />
-            Grants & Funding Directory
-          </button>
-
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("valuation_calc");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "valuation_calc"
-                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Calculator className="w-3.5 h-3.5 text-amber-300" />
-            Valuation, Burn & Runway
-          </button>
-
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("startup_roadmap");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "startup_roadmap"
-                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Rocket className="w-3.5 h-3.5 text-pink-300" />
-            Startup to IPO Roadmap
-          </button>
+        <div className="pt-3">
+          <ResponsiveSubTabNav
+            title="Small Business Hub Modules"
+            activeTab={activeTab}
+            onChange={(tabId) => setActiveTab(tabId as any)}
+            tabs={[
+              {
+                id: "formation",
+                label: "Legal Formation & EIN",
+                icon: <Scale className="w-3.5 h-3.5" />,
+                badge: "$0 Official IRS",
+                colorScheme: "cyan",
+                description: "State LLC/C-Corp filings, IRS CP575 EIN download & commercial bank setup",
+              },
+              {
+                id: "stripe_stack",
+                label: "Stripe & Agentic Payments",
+                icon: <CreditCard className="w-3.5 h-3.5 text-indigo-400" />,
+                badge: "$85B Superstructure",
+                colorScheme: "indigo",
+                description: "Stripe Atlas, Bridge Stablecoins, Agent Toolkit LLM integration & payment fee simulator",
+              },
+              {
+                id: "business_credit",
+                label: `Tier 1-3 Credit Navigator (${completedSteps.length}/${CREDIT_STEPS.length})`,
+                icon: <CreditCard className="w-3.5 h-3.5 text-indigo-300" />,
+                badge: "Paydex 80+",
+                colorScheme: "indigo",
+                description: "Net-30 vendor reporting (Uline/Grainger), fleet cards & SBA 7(a) lines",
+              },
+              {
+                id: "grants_directory",
+                label: "Grants & Funding Directory",
+                icon: <Award className="w-3.5 h-3.5 text-emerald-300" />,
+                badge: "Non-Dilutive",
+                colorScheme: "emerald",
+                description: "Verified federal SBIR, corporate & minority business grant applications",
+              },
+              {
+                id: "valuation_calc",
+                label: "Valuation, Burn & Runway",
+                icon: <Calculator className="w-3.5 h-3.5 text-amber-300" />,
+                colorScheme: "amber",
+                description: "EBITDA/SDE valuation multiples, net monthly burn & cash runway runway forecast",
+              },
+              {
+                id: "startup_roadmap",
+                label: "Startup to IPO Roadmap",
+                icon: <Rocket className="w-3.5 h-3.5 text-pink-300" />,
+                colorScheme: "cyan",
+                description: "YC SAFE notes, Delaware franchise tax, 83(b) elections & investor cap tables",
+              },
+            ]}
+          />
         </div>
       </div>
 
@@ -660,6 +641,9 @@ Verified at Stock Bloc Accelerator (stockbloc.app)`;
           </div>
         </div>
       )}
+
+      {/* TAB: STRIPE & AGENTIC PAYMENTS */}
+      {activeTab === "stripe_stack" && <StripeFintechSuite />}
 
       {/* TAB 2: TIER 1-3 CREDIT NAVIGATOR */}
       {activeTab === "business_credit" && (

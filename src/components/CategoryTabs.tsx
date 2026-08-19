@@ -12,6 +12,7 @@ import {
   Sparkles,
   Star,
   Bookmark,
+  Bot,
 } from "lucide-react";
 import { triggerHaptic } from "../utils/haptics";
 
@@ -39,6 +40,7 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
   }[] = [
     { id: "all", label: "All Watchlist", icon: Sparkles },
     { id: "my_bloc", label: "My Bloc", icon: Bookmark },
+    { id: "robotics", label: "Robotics & Self-Driving", icon: Bot },
     { id: "tsunami", label: "Super sonic Tsunami", icon: Flame },
     { id: "asymmetry", label: "Max Asymmetry", icon: Star },
     { id: "reits", label: "Real Estate REITs", icon: Building2 },
@@ -56,6 +58,8 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
         return "All Watchlist Stocks";
       case "my_bloc":
         return "My Saved Watchlist";
+      case "robotics":
+        return "Robotics, Physical AI & Self-Driving Leaders";
       case "asymmetry":
         return "Maximum Asymmetry Upside Matrix";
       case "tsunami":
@@ -134,13 +138,15 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
             className="appearance-none bg-[#030d16] hover:bg-cyan-950 text-cyan-300 font-black text-xs px-3 py-1.5 pr-7 alien-block-cut-sm border border-cyan-500/40 focus:outline-none cursor-pointer shadow-md transition-all uppercase tracking-wider"
           >
             <option value="changePercent">Price Change %</option>
-            <option value="volatility">⚡ Volatility</option>
-            <option value="volume">📊 Volume</option>
-            <option value="marketCap">🏢 Market Cap</option>
-            <option value="rsi">📈 RSI Indicator</option>
+            <option value="stack">🌊 AI Stack (L1–L8)</option>
+            <option value="name">🔤 Ticker Symbol (A-Z)</option>
+            <option value="companyName">🏢 Company Name (A-Z)</option>
             <option value="asymmetry">★ Asymmetry Rating</option>
+            <option value="marketCap">Market Cap</option>
+            <option value="volume">📊 Volume</option>
+            <option value="volatility">⚡ Volatility</option>
+            <option value="rsi">📈 RSI Indicator</option>
             <option value="price">Price $</option>
-            <option value="name">Ticker Name</option>
           </select>
           <ChevronDown className="w-3.5 h-3.5 text-cyan-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
         </div>

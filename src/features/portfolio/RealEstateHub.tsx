@@ -36,10 +36,13 @@ import {
   Server,
   AlertTriangle,
   Lock,
+  Zap,
 } from "lucide-react";
 import { CreMaturityWallRefinance } from "../realestate/CreMaturityWallRefinance";
 import { DataCenterCapRateArbitrage } from "../realestate/DataCenterCapRateArbitrage";
 import { HousingAffordabilityMortgageEngine } from "../realestate/HousingAffordabilityMortgageEngine";
+import { CrossDomainArbitrageEngine } from "./CrossDomainArbitrageEngine";
+import { ResponsiveSubTabNav } from "../../components/ResponsiveSubTabNav";
 
 interface RealEstateHubProps {
   reitStocks: StockTicker[];
@@ -58,6 +61,7 @@ export const RealEstateHub: React.FC<RealEstateHubProps> = ({
   const [activeTab, setActiveTab] = useSubTabUrl(
     "/real-estate",
     [
+      "brownfield_substation",
       "cre_debt",
       "datacenter_arbitrage",
       "housing_mortgage",
@@ -67,7 +71,7 @@ export const RealEstateHub: React.FC<RealEstateHubProps> = ({
       "strategies",
       "reits"
     ] as const,
-    "cre_debt"
+    "brownfield_substation"
   );
   
   const [macroData, setMacroData] = useState<any>(null);
@@ -224,122 +228,105 @@ https://stock-bloc.ai.studio/real-estate
         </p>
 
         {/* Sub-Tabs Selector */}
-        <div className="flex items-center gap-2 pt-2 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => setActiveTab("cre_debt")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "cre_debt"
-                ? "bg-red-500 text-black font-extrabold shadow-lg shadow-red-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <AlertTriangle className="w-3.5 h-3.5 text-red-300" />
-            CRE Maturity Wall ($1.8T)
-          </button>
-
-          <button
-            onClick={() => setActiveTab("datacenter_arbitrage")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "datacenter_arbitrage"
-                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Server className="w-3.5 h-3.5 text-cyan-300" />
-            AI Data Center vs Office Cap Rates
-          </button>
-
-          <button
-            onClick={() => setActiveTab("housing_mortgage")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "housing_mortgage"
-                ? "bg-emerald-500 text-black font-extrabold shadow-lg shadow-emerald-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Lock className="w-3.5 h-3.5 text-emerald-300" />
-            Mortgage Lock-In & Homebuilder Buydowns
-          </button>
-
-          <button
-            onClick={() => setActiveTab("live_macro")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "live_macro"
-                ? "bg-emerald-500 text-black font-extrabold shadow-lg shadow-emerald-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <LineChart className="w-3.5 h-3.5" />
-            Live Market Data
-          </button>
-
-          <button
-            onClick={() => onSelectTab ? onSelectTab("vacancy_empire") : window.open("/vacancy-empire.html", "_blank")}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 bg-[#00ff9d] text-black font-extrabold shadow-lg shadow-[#00ff9d]/30"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Vacancy Empire Game
-          </button>
-
-          <button
-            onClick={() => onSelectTab ? onSelectTab("ai_revolution") : null}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-amber-500 text-black font-extrabold shadow-lg shadow-amber-500/20 hover:brightness-110"
-          >
-            <Car className="w-3.5 h-3.5" />
-            Robotaxi vs. Housing ($1M/yr)
-          </button>
-          
-          <button
-            onClick={() => setActiveTab("calculator")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "calculator"
-                ? "bg-emerald-500 text-black font-extrabold shadow-lg shadow-emerald-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Calculator className="w-3.5 h-3.5" />
-            Cashflow Calculator
-          </button>
-
-          <button
-            onClick={() => setActiveTab("first_home")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "first_home"
-                ? "bg-emerald-500 text-black font-extrabold shadow-lg shadow-emerald-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Home className="w-3.5 h-3.5 text-cyan-300" />
-            First-Time Home Buyers
-          </button>
-
-          <button
-            onClick={() => setActiveTab("strategies")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "strategies"
-                ? "bg-emerald-500 text-black font-extrabold shadow-lg shadow-emerald-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <TrendingUp className="w-3.5 h-3.5" />
-            Investing Strategies
-          </button>
-
-          <button
-            onClick={() => setActiveTab("reits")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "reits"
-                ? "bg-emerald-500 text-black font-extrabold shadow-lg shadow-emerald-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5" />
-            REIT Watchlist
-          </button>
+        <div className="pt-2">
+          <ResponsiveSubTabNav
+            title="Real Estate Hub Modules"
+            activeTab={activeTab}
+            onChange={(tabId) => {
+              const id = tabId as string;
+              if (id === "vacancy_empire") {
+                if (onSelectTab) onSelectTab("vacancy_empire");
+                else window.open("/vacancy-empire.html", "_blank");
+              } else if (id === "robotaxi_vs_housing") {
+                if (onSelectTab) onSelectTab("ai_revolution");
+              } else {
+                setActiveTab(id as any);
+              }
+            }}
+            tabs={[
+              {
+                id: "brownfield_substation",
+                label: "Brownfield Substation & 0% Arbitrage",
+                icon: <Zap className="w-3.5 h-3.5 text-emerald-300" />,
+                badge: "Physical Physics",
+                colorScheme: "emerald",
+                description: "Interconnection queue bypass: Converting fossil plants into AI compute substations",
+              },
+              {
+                id: "cre_debt",
+                label: "CRE Maturity Wall ($1.8T)",
+                icon: <AlertTriangle className="w-3.5 h-3.5 text-red-300" />,
+                badge: "Refinancing Shock",
+                colorScheme: "red",
+                description: "Refinancing shock analyzer for regional bank debt and loan maturities",
+              },
+              {
+                id: "datacenter_arbitrage",
+                label: "AI Data Center vs Office Cap Rates",
+                icon: <Server className="w-3.5 h-3.5 text-cyan-300" />,
+                badge: "Yield Spread",
+                colorScheme: "cyan",
+                description: "Triple-net power lease arbitrage vs decaying downtown office assets",
+              },
+              {
+                id: "housing_mortgage",
+                label: "Mortgage Lock-In & Homebuilder Buydowns",
+                icon: <Lock className="w-3.5 h-3.5 text-emerald-300" />,
+                badge: "4.99% Buydown",
+                colorScheme: "emerald",
+                description: "Golden handcuff dynamics vs D.R. Horton / Lennar forward rate buydowns",
+              },
+              {
+                id: "live_macro",
+                label: "Live Market Data",
+                icon: <LineChart className="w-3.5 h-3.5" />,
+                colorScheme: "emerald",
+                description: "Real-time mortgage yields, REIT index pricing & benchmark housing data",
+              },
+              {
+                id: "vacancy_empire",
+                label: "Vacancy Empire Game",
+                icon: <Sparkles className="w-3.5 h-3.5" />,
+                badge: "Interactive",
+                colorScheme: "emerald",
+                description: "Commercial real estate distress simulator and property empire builder",
+              },
+              {
+                id: "calculator",
+                label: "Cashflow Calculator",
+                icon: <Calculator className="w-3.5 h-3.5" />,
+                colorScheme: "emerald",
+                description: "Rental property cap rate, NOI, cash-on-cash return & DSCR modeler",
+              },
+              {
+                id: "first_home",
+                label: "First-Time Home Buyers",
+                icon: <Home className="w-3.5 h-3.5 text-cyan-300" />,
+                colorScheme: "emerald",
+                description: "Federal Down Payment Assistance, FHA & state grant programs",
+              },
+              {
+                id: "strategies",
+                label: "Investing Strategies",
+                icon: <TrendingUp className="w-3.5 h-3.5" />,
+                colorScheme: "emerald",
+                description: "BRRRR method, House Hacking, syndications & 1031 like-kind exchanges",
+              },
+              {
+                id: "reits",
+                label: "REIT Watchlist",
+                icon: <Building2 className="w-3.5 h-3.5" />,
+                colorScheme: "emerald",
+                description: "Top data center, industrial logistics & residential dividend REITs",
+              },
+            ]}
+          />
         </div>
       </div>
 
       {/* NEW QUANTITATIVE REAL ESTATE MODULES */}
+      {activeTab === "brownfield_substation" && <CrossDomainArbitrageEngine />}
+
       {activeTab === "cre_debt" && <CreMaturityWallRefinance />}
 
       {activeTab === "datacenter_arbitrage" && <DataCenterCapRateArbitrage />}

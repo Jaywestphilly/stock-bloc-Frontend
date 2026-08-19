@@ -25,9 +25,11 @@ import { InvestopediaTab } from "../education/InvestopediaTab";
 import { ReportRepository } from "./ReportRepository";
 import { MacroEconomicsBriefing } from "./MacroEconomicsBriefing";
 import { WhaleConsensusMatrix } from "./WhaleConsensusMatrix";
+import { InterconnectionQueueRadar } from "./InterconnectionQueueRadar";
 import { StockTicker } from "../../types";
 
 export type IntelligenceSubTab =
+  | "interconnection_queue"
   | "report_repository"
   | "macro_briefing"
   | "whale_consensus"
@@ -49,7 +51,7 @@ interface MarketIntelligenceHubProps {
 }
 
 export const MarketIntelligenceHub: React.FC<MarketIntelligenceHubProps> = ({
-  initialSubTab = "report_repository",
+  initialSubTab = "interconnection_queue",
   onSubTabChange,
   stocks,
   activeTicker,
@@ -87,6 +89,13 @@ export const MarketIntelligenceHub: React.FC<MarketIntelligenceHubProps> = ({
     badge: string;
     color: string;
   }[] = [
+    {
+      id: "interconnection_queue",
+      label: "Power & ISO Queue Radar",
+      icon: Zap,
+      badge: "Live FERC / NRC",
+      color: "from-amber-500/20 to-orange-500/20 text-amber-300 border-amber-500/30",
+    },
     {
       id: "report_repository",
       label: "Report Repository",
@@ -246,6 +255,7 @@ export const MarketIntelligenceHub: React.FC<MarketIntelligenceHubProps> = ({
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.15 }}
         >
+          {activeSubTab === "interconnection_queue" && <InterconnectionQueueRadar />}
           {activeSubTab === "report_repository" && <ReportRepository />}
           {activeSubTab === "macro_briefing" && <MacroEconomicsBriefing />}
           {activeSubTab === "whale_consensus" && <WhaleConsensusMatrix />}

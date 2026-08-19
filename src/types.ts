@@ -3,6 +3,7 @@ export type TimeFrame = "1D" | "1W" | "1M" | "1Y" | "ALL";
 export type SectorCategory =
   | "my_bloc" // My Bloc
   | "tsunami" // Super sonic Tsunami
+  | "robotics" // Robotics & Self-Driving
   | "asymmetry" // Maximum Asymmetry
   | "reits" // Real Estate Investment Trusts
   | "credit_fin" // Credit Cards & FinTech
@@ -108,6 +109,8 @@ export type SortField =
   | "changePercent"
   | "signal"
   | "name"
+  | "companyName"
+  | "stack"
   | "marketCap"
   | "volatility"
   | "volume"

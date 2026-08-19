@@ -620,6 +620,17 @@ export function App() {
           s.asymmetryPotentialStars !== undefined ||
           s.tags.includes("High Asymmetry"),
       );
+    } else if (selectedCategory === "robotics") {
+      result = result.filter(
+        (s) =>
+          s.category === "robotics" ||
+          s.tags.some(
+            (t) =>
+              t.toLowerCase().includes("robot") ||
+              t.toLowerCase().includes("autonomous") ||
+              t.toLowerCase().includes("self-driving"),
+          ),
+      );
     } else if (selectedCategory === "tsunami" || selectedCategory === "all") {
       // Wholesale include all stocks in Super Sonic Tsunami and All Watchlist
     } else {
@@ -647,6 +658,18 @@ export function App() {
 
       const dir = sortDirection === "desc" ? 1 : -1;
 
+      if (sortField === "stack") {
+        const aLevel = (a as any).stack_level ?? 99;
+        const bLevel = (b as any).stack_level ?? 99;
+        if (aLevel !== bLevel) return aLevel - bLevel;
+        return b.changePercent - a.changePercent;
+      }
+      if (sortField === "name") {
+        return a.symbol.localeCompare(b.symbol);
+      }
+      if (sortField === "companyName") {
+        return (a.name || a.symbol).localeCompare(b.name || b.symbol);
+      }
       if (sortField === "volatility") {
         return (calculateStockVolatility(b) - calculateStockVolatility(a)) * dir;
       }
@@ -657,7 +680,6 @@ export function App() {
         return (b.changePercent - a.changePercent) * dir;
       }
       if (sortField === "price") return (b.price - a.price) * dir;
-      if (sortField === "name") return a.symbol.localeCompare(b.symbol) * dir;
       if (sortField === "marketCap")
         return (parseVolumeNumber(b.marketCap) - parseVolumeNumber(a.marketCap)) * dir;
       if (sortField === "rsi")

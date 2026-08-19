@@ -37,6 +37,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { CmbsPrivateCreditRadar } from "../credit/CmbsPrivateCreditRadar";
+import { ResponsiveSubTabNav } from "../../components/ResponsiveSubTabNav";
 
 export const CreditBuildingHub: React.FC = () => {
   const [activeTab, setActiveTab] = useSubTabUrl(
@@ -302,101 +303,72 @@ https://stock-bloc.ai.studio/credit-hub
         </div>
 
         {/* Sub-Tabs Selector */}
-        <div className="flex items-center gap-2 pt-2 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => setActiveTab("cmbs_private_credit")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "cmbs_private_credit"
-                ? "bg-purple-500 text-black font-extrabold shadow-lg shadow-purple-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <ShieldAlert className="w-3.5 h-3.5 text-purple-300" />
-            CMBS Delinquency & Private Credit (10.5%)
-          </button>
-
-          <button
-            onClick={() => setActiveTab("live_macro")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "live_macro"
-                ? "bg-indigo-500 text-black font-extrabold shadow-lg shadow-indigo-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <LineChart className="w-3.5 h-3.5" />
-            Live Market Data
-          </button>
-
-          <button
-            onClick={() => setActiveTab("simulator")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "simulator"
-                ? "bg-indigo-500 text-black font-extrabold shadow-lg shadow-indigo-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5" />
-            Score Simulator
-          </button>
-
-          <button
-            onClick={() => setActiveTab("bureaus")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "bureaus"
-                ? "bg-indigo-500 text-black font-extrabold shadow-lg shadow-indigo-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Building2 className="w-3.5 h-3.5 text-emerald-300" />
-            Credit Bureau Links
-          </button>
-
-          <button
-            onClick={() => setActiveTab("student_loans")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "student_loans"
-                ? "bg-indigo-500 text-black font-extrabold shadow-lg shadow-indigo-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <GraduationCap className="w-3.5 h-3.5 text-cyan-300" />
-            Student Loans & Relief
-          </button>
-
-          <button
-            onClick={() => setActiveTab("factors")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "factors"
-                ? "bg-indigo-500 text-black font-extrabold shadow-lg shadow-indigo-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />5 FICO Factors
-          </button>
-
-          <button
-            onClick={() => setActiveTab("cards")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "cards"
-                ? "bg-indigo-500 text-black font-extrabold shadow-lg shadow-indigo-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            Top Credit Cards
-          </button>
-
-          <button
-            onClick={() => setActiveTab("repair")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 shrink-0 flex items-center gap-1.5 cursor-pointer ${
-              activeTab === "repair"
-                ? "bg-indigo-500 text-black font-extrabold shadow-lg shadow-indigo-500/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Dispute & Repair
-          </button>
+        <div className="pt-2">
+          <ResponsiveSubTabNav
+            title="Credit Master Hub Tools"
+            activeTab={activeTab}
+            onChange={(tabId) => setActiveTab(tabId as any)}
+            tabs={[
+              {
+                id: "cmbs_private_credit",
+                label: "CMBS Delinquency & Private Credit (10.5%)",
+                icon: <ShieldAlert className="w-3.5 h-3.5 text-purple-300" />,
+                badge: "Institutional",
+                colorScheme: "purple",
+                description: "Real-time distressed CRE tranches, maturity wall & shadow banking yields",
+              },
+              {
+                id: "live_macro",
+                label: "Live Market Data",
+                icon: <LineChart className="w-3.5 h-3.5" />,
+                colorScheme: "indigo",
+                description: "Live Treasury yields, mortgage benchmark rates & credit spread telemetry",
+              },
+              {
+                id: "simulator",
+                label: "Score Simulator",
+                icon: <Zap className="w-3.5 h-3.5" />,
+                colorScheme: "indigo",
+                description: "Interactive FICO 800+ trajectory simulator and debt payoff optimizer",
+              },
+              {
+                id: "bureaus",
+                label: "Credit Bureau Links",
+                icon: <Building2 className="w-3.5 h-3.5 text-emerald-300" />,
+                badge: "FCRA § 612",
+                colorScheme: "indigo",
+                description: "Direct dispute portals for Equifax, Experian & TransUnion with free report links",
+              },
+              {
+                id: "student_loans",
+                label: "Student Loans & Relief",
+                icon: <GraduationCap className="w-3.5 h-3.5 text-cyan-300" />,
+                colorScheme: "indigo",
+                description: "SAVE plan calculator, PSLF forgiveness roadmap & federal debt discharge",
+              },
+              {
+                id: "factors",
+                label: "5 FICO Factors",
+                icon: <ShieldCheck className="w-3.5 h-3.5" />,
+                colorScheme: "indigo",
+                description: "Mathematical weighting of payment history, utilization & credit mix",
+              },
+              {
+                id: "cards",
+                label: "Top Credit Cards",
+                icon: <CreditCard className="w-3.5 h-3.5" />,
+                colorScheme: "indigo",
+                description: "Curated tier-1 premium rewards, 0% APR balance transfers & business cards",
+              },
+              {
+                id: "repair",
+                label: "Dispute & Repair",
+                icon: <Sparkles className="w-3.5 h-3.5" />,
+                colorScheme: "indigo",
+                description: "FCRA Section 609 legal dispute letter templates with 1-click clipboard copy",
+              },
+            ]}
+          />
         </div>
       </div>
 

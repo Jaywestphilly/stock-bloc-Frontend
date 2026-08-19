@@ -32,6 +32,9 @@ import {
 import { triggerHaptic } from "../../utils/haptics";
 import { AiValueChainHeatmap } from "./AiValueChainHeatmap";
 import { RobotaxiVsHousingBreakdown } from "./RobotaxiVsHousingBreakdown";
+import { PhysicalSupplyChainSimulator } from "./PhysicalSupplyChainSimulator";
+import { RoboticsAndSelfDrivingSuite } from "./RoboticsAndSelfDrivingSuite";
+import { ResponsiveSubTabNav, SubTabItem } from "../../components/ResponsiveSubTabNav";
 
 interface ToolItem {
   name: string;
@@ -49,14 +52,14 @@ interface ToolItem {
 }
 
 interface AiRevolutionHubProps {
-  initialTab?: "value_chain" | "intent_engine" | "prompting" | "tools" | "build_apps" | "prompt_generator" | "impact" | "robotaxi_vs_housing";
+  initialTab?: "robotics_autonomous" | "supply_chain_simulator" | "value_chain" | "intent_engine" | "prompting" | "tools" | "build_apps" | "prompt_generator" | "impact" | "robotaxi_vs_housing";
 }
 
 export const AiRevolutionHub: React.FC<AiRevolutionHubProps> = ({ initialTab }) => {
   const [activeTab, setActiveTab] = useSubTabUrl(
     "/research/ai-revolution",
-    ["value_chain", "intent_engine", "prompting", "tools", "build_apps", "prompt_generator", "impact", "robotaxi_vs_housing"] as const,
-    initialTab || "value_chain"
+    ["robotics_autonomous", "supply_chain_simulator", "value_chain", "intent_engine", "prompting", "tools", "build_apps", "prompt_generator", "impact", "robotaxi_vs_housing"] as const,
+    initialTab || "robotics_autonomous"
   );
 
   useEffect(() => {
@@ -405,128 +408,105 @@ Instructions:
         </p>
 
         {/* Sub-Tabs Selector */}
-        <div className="flex items-center gap-2 pt-4 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("robotaxi_vs_housing");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "robotaxi_vs_housing"
-                ? "bg-amber-400 text-black font-extrabold shadow-lg shadow-amber-400/30"
-                : "bg-amber-500/15 text-amber-300 border border-amber-500/30 hover:bg-amber-500/25"
-            }`}
-          >
-            <Car className="w-3.5 h-3.5 text-amber-300" />
-            Robotaxi vs. Housing ($1M/yr)
-          </button>
-
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("value_chain");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "value_chain"
-                ? "bg-amber-400 text-black font-extrabold shadow-lg shadow-amber-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <BarChart3 className="w-3 h-3 text-amber-300" />
-            MS AI Value Chain Heatmap
-          </button>
-
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("intent_engine");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "intent_engine"
-                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5 text-amber-300" />
-            Agentic Intent Engine
-          </button>
-
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("prompting");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "prompting"
-                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            Prompting Secrets
-          </button>
-
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("tools");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "tools"
-                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Wand2 className="w-3.5 h-3.5 text-purple-300" />
-            Top Tools Directory
-          </button>
-
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("build_apps");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "build_apps"
-                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Code2 className="w-3.5 h-3.5 text-emerald-300" />
-            Build Apps & Agents
-          </button>
-
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("prompt_generator");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "prompt_generator"
-                ? "bg-cyan-400 text-black font-extrabold shadow-lg shadow-cyan-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Sliders className="w-3.5 h-3.5 text-amber-300" />
-            Interactive Prompt Builder
-          </button>
-
-          <button
-            onClick={() => {
-              triggerHaptic("selection");
-              setActiveTab("impact");
-            }}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all active:scale-95 cursor-pointer shrink-0 flex items-center gap-1.5 ${
-              activeTab === "impact"
-                ? "bg-amber-400 text-black font-extrabold shadow-lg shadow-amber-400/30"
-                : "bg-white/10 text-neutral-300 hover:bg-white/20"
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5 text-cyan-300" />
-            Humanity & Impact
-          </button>
+        <div className="pt-3">
+          <ResponsiveSubTabNav
+            title="AI Revolution Hub Modules"
+            activeTab={activeTab}
+            onChange={(tabId) => setActiveTab(tabId as any)}
+            tabs={[
+              {
+                id: "robotics_autonomous",
+                label: "Robotics & Autonomous Mobility",
+                icon: <Bot className="w-3.5 h-3.5" />,
+                badge: "Physical AI",
+                colorScheme: "emerald",
+                description: "Robotaxi fleet economics, humanoid robotics labor arbitrage & BOM sensitivity",
+              },
+              {
+                id: "supply_chain_simulator",
+                label: "Supply Chain Cascade Simulator",
+                icon: <Zap className="w-3.5 h-3.5 text-cyan-300" />,
+                badge: "Bottlenecks",
+                colorScheme: "cyan",
+                description: "Physical constraints, HV transformer lead times & data center CapEx shocks",
+              },
+              {
+                id: "robotaxi_vs_housing",
+                label: "Robotaxi vs. Housing ($1M/yr)",
+                icon: <Car className="w-3.5 h-3.5 text-amber-300" />,
+                badge: "Arbitrage",
+                colorScheme: "amber",
+                description: "Mathematical asset comparison: Autonomous fleet vs single-family rentals",
+              },
+              {
+                id: "value_chain",
+                label: "MS AI Value Chain Heatmap",
+                icon: <BarChart3 className="w-3 h-3 text-amber-300" />,
+                badge: "Morgan Stanley",
+                colorScheme: "amber",
+                description: "Full-stack capital deployment breakdown across compute, power & software",
+              },
+              {
+                id: "intent_engine",
+                label: "Agentic Intent Engine",
+                icon: <Zap className="w-3.5 h-3.5 text-amber-300" />,
+                badge: "Multi-Agent",
+                colorScheme: "cyan",
+                description: "Autonomous trade settlement, liquidity routing & agent dispatch network",
+              },
+              {
+                id: "prompting",
+                label: "Prompting Secrets",
+                icon: <BookOpen className="w-3.5 h-3.5" />,
+                colorScheme: "cyan",
+                description: "Battle-tested prompt engineering patterns for high-reasoning LLMs",
+              },
+              {
+                id: "tools",
+                label: "Top Tools Directory",
+                icon: <Wand2 className="w-3.5 h-3.5 text-purple-300" />,
+                colorScheme: "cyan",
+                description: "Curated directory of frontier developer, LLM, and media tools",
+              },
+              {
+                id: "build_apps",
+                label: "Build Apps & Agents",
+                icon: <Code2 className="w-3.5 h-3.5 text-emerald-300" />,
+                colorScheme: "cyan",
+                description: "Full-stack code templates and agentic workflow blueprints",
+              },
+              {
+                id: "prompt_generator",
+                label: "Interactive Prompt Builder",
+                icon: <Sliders className="w-3.5 h-3.5 text-amber-300" />,
+                colorScheme: "cyan",
+                description: "Dynamic variable generator for system prompts and evaluation chains",
+              },
+              {
+                id: "impact",
+                label: "Humanity & Impact",
+                icon: <Globe className="w-3.5 h-3.5 text-cyan-300" />,
+                colorScheme: "amber",
+                description: "Macro labor shifts, energy transition & societal safety implications",
+              },
+            ]}
+          />
         </div>
       </div>
+
+      {/* TAB: ROBOTICS & AUTONOMOUS MOBILITY TERMINAL */}
+      {activeTab === "robotics_autonomous" && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <RoboticsAndSelfDrivingSuite />
+        </div>
+      )}
+
+      {/* TAB: PHYSICAL SUPPLY CHAIN CASCADE SIMULATOR */}
+      {activeTab === "supply_chain_simulator" && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          <PhysicalSupplyChainSimulator />
+        </div>
+      )}
 
       {/* TAB: ROBOTAXI VS HOUSING BREAKDOWN */}
       {activeTab === "robotaxi_vs_housing" && (

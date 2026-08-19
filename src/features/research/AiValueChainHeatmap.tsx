@@ -211,12 +211,168 @@ export const VALUE_CHAIN_DATA: CompanyEntry[] = [
   { company: "TeraWulf", ticker: "WULF", exchange: "NASDAQ", category: "Crypto / HPC", subCategory: "Bitcoin/HPC Pivot", whatTheyDo: "Bitcoin miner pivoting toward AI/HPC data center hosting." },
   { company: "MARA Holdings", ticker: "MARA", exchange: "NASDAQ", category: "Crypto / HPC", subCategory: "Bitcoin/HPC Pivot", whatTheyDo: "Large bitcoin miner exploring diversification into HPC hosting." },
   { company: "Applied Digital", ticker: "APLD", exchange: "NASDAQ", category: "Crypto / HPC", subCategory: "Bitcoin/HPC Pivot", whatTheyDo: "Former crypto miner now focused on AI/HPC data center hosting." },
+
+  // Financial Infrastructure & Agentic AI Payments
+  { company: "Coinbase Global", ticker: "COIN", exchange: "NASDAQ", category: "Owners / Operators", subCategory: "Agentic AI Payments & FinTech", whatTheyDo: "US crypto exchange leader, creator of Base Layer-2 network for autonomous agent commerce, Coinbase AgentKit SDK, and USDC co-issuer." },
+  { company: "Robinhood Markets", ticker: "HOOD", exchange: "NASDAQ", category: "Owners / Operators", subCategory: "Agentic AI Payments & FinTech", whatTheyDo: "Retail brokerage and crypto trading platform with 24hr market APIs, Robinhood Gold credit cards, and automated order execution." },
+  { company: "Stripe, Inc.", ticker: "STRIP", exchange: "Pre-IPO Index", category: "Owners / Operators", subCategory: "Agentic AI Payments & FinTech", whatTheyDo: "Global financial infrastructure & payments platform powering internet commerce, stablecoin settlement (Bridge), and Stripe Agent Toolkit for autonomous LLM agent commerce.", isPrivate: true, notes: "$85B valuation benchmark; $1T+ annual TPV" },
+  { company: "Circle Internet Financial", ticker: "CRCL", exchange: "Pre-IPO Index", category: "Owners / Operators", subCategory: "Agentic AI Payments & FinTech", whatTheyDo: "Issuer of USDC ($50B+ circulating supply), underpinning Base L2 on-chain programmable settlement and Agentic AI micro-transactions.", isPrivate: true, notes: "$12.8B valuation benchmark" },
+  { company: "PayPal Holdings", ticker: "PYPL", exchange: "NASDAQ", category: "Owners / Operators", subCategory: "Agentic AI Payments & FinTech", whatTheyDo: "Digital payments pioneer with PYUSD stablecoin and merchant checkout networks." },
+  { company: "Block, Inc.", ticker: "SQ", exchange: "NYSE", category: "Owners / Operators", subCategory: "Agentic AI Payments & FinTech", whatTheyDo: "Square merchant POS and Cash App ecosystem with decentralized bitcoin/mining infrastructure." },
+  { company: "Affirm Holdings", ticker: "AFRM", exchange: "NASDAQ", category: "Owners / Operators", subCategory: "Agentic AI Payments & FinTech", whatTheyDo: "AI-driven point-of-sale Buy Now Pay Later (BNPL) credit underwriting network integrated with Amazon, Apple, and Shopify." },
+  { company: "SoFi Technologies", ticker: "SOFI", exchange: "NASDAQ", category: "Owners / Operators", subCategory: "Agentic AI Payments & FinTech", whatTheyDo: "National digital bank charter and Galileo API payments core powering 150M+ fintech accounts." },
+];
+
+export interface StackLevelExplainer {
+  level: number;
+  title: string;
+  subtitle: string;
+  color: string;
+  borderColor: string;
+  bgGradient: string;
+  icon: string;
+  bottleneck: string;
+  marginProfile: string;
+  capexDriver: string;
+  description: string;
+  keyTickers: string[];
+}
+
+export const TSUNAMI_STACK_LEVELS: StackLevelExplainer[] = [
+  {
+    level: 1,
+    title: "Hyperscalers & Neo-Clouds",
+    subtitle: "The Capital allocators & frontier model operators",
+    color: "text-purple-400",
+    borderColor: "border-purple-500/40",
+    bgGradient: "from-purple-950/40 via-purple-900/10 to-black",
+    icon: "Building2",
+    bottleneck: "Access to 100MW–1GW continuous grid interconnects and cutting-edge GPU cluster allocations.",
+    marginProfile: "High gross margins on cloud SaaS/enterprise AI, but massive multi-billion depreciation and CapEx overhead.",
+    capexDriver: "Aggregate AI infrastructure spending exceeding $250B+ annually across Microsoft, Alphabet, Amazon, Meta, and Oracle.",
+    description: "The apex tier that finances the entire AI ecosystem. Hyperscalers build massive multi-gigawatt compute campuses to train frontier foundation models (OpenAI, Gemini, Llama) and sell AI inference APIs to global enterprise customers.",
+    keyTickers: ["MSFT", "GOOGL", "AMZN", "META", "ORCL", "BABA", "TCEHY", "CRWV", "AAPL", "TSLA", "SPCX"]
+  },
+  {
+    level: 2,
+    title: "Baseload Power, Nuclear & Fuel Cells",
+    subtitle: "24/7 Clean carbon-free electrons bypassing grid queues",
+    color: "text-amber-400",
+    borderColor: "border-amber-500/40",
+    bgGradient: "from-amber-950/40 via-amber-900/10 to-black",
+    icon: "Zap",
+    bottleneck: "Nuclear reactor licensing, NRC regulations, 4–7 year SMR development timelines, and high-voltage transmission interconnects.",
+    marginProfile: "Long-term (15–20 year) take-or-pay power purchase agreements (PPAs) with locked-in premium pricing over standard wholesale rates.",
+    capexDriver: "Direct off-take deals (e.g. Constellation/Microsoft 835MW restart, Talen/AWS 2.5GW Susquehanna campus) guaranteeing 99.999% uptime.",
+    description: "The primary physical constraint on AI growth. AI compute clusters require steady 24/7/365 baseload electricity that intermittent renewables cannot provide alone, catalyzing a historic renaissance in nuclear power, SMRs, and behind-the-meter fuel cells.",
+    keyTickers: ["CEG", "VST", "TLN", "BE", "SMR", "OKLO", "NEE"]
+  },
+  {
+    level: 3,
+    title: "Grid Infrastructure, Switchgear & EPC",
+    subtitle: "Heavy transformers, substations, and electrical contractors",
+    color: "text-orange-400",
+    borderColor: "border-orange-500/40",
+    bgGradient: "from-orange-950/40 via-orange-900/10 to-black",
+    icon: "Activity",
+    bottleneck: "High-voltage step-up transformer lead times (up to 3–4 years), grain-oriented electrical steel shortages, and skilled electrical labor.",
+    marginProfile: "Expanding industrial margins with record order backlogs stretching through 2028–2030.",
+    capexDriver: "Utility grid modernization and direct datacenter substation construction requiring heavy switchgear, PDUs, and backup megawatt generators.",
+    description: "The indispensable physical conduit linking generation to compute. Companies in this layer manufacture medium-to-high voltage switchgear, transformers, busbars, and engineered prefabricated mechanical/electrical skids.",
+    keyTickers: ["ETN", "GEV", "PWR", "EME", "FIX", "HUBB", "POWL", "CAT", "CMI"]
+  },
+  {
+    level: 4,
+    title: "Thermal Management & Liquid Cooling",
+    subtitle: "Direct-to-chip cold plates, CDUs, and modular cooling",
+    color: "text-emerald-400",
+    borderColor: "border-emerald-500/40",
+    bgGradient: "from-emerald-950/40 via-emerald-900/10 to-black",
+    icon: "Flame",
+    bottleneck: "Quick-disconnect valve precision, coolant chemical purity, and manufacturing capacity for high-density Coolant Distribution Units (CDUs).",
+    marginProfile: "High pricing power and expansion as datacenter thermal loads shift permanently from air cooling to direct liquid cooling.",
+    capexDriver: "Next-gen GPUs (NVIDIA Blackwell GB200 NVL72 consuming 120kW+ per rack) physically cannot be cooled with traditional air flow.",
+    description: "The thermal frontier of computing. Direct-to-chip liquid cooling cold plates, manifold distributions, and outdoor liquid chillers that prevent ultra-dense AI accelerators from thermal throttling.",
+    keyTickers: ["VRT", "MOD", "NVT", "SMCI"]
+  },
+  {
+    level: 5,
+    title: "Optical Networking, Switches & DSPs",
+    subtitle: "800G/1.6T transceivers, Ethernet fabrics, and photonics",
+    color: "text-cyan-400",
+    borderColor: "border-cyan-500/40",
+    bgGradient: "from-cyan-950/40 via-cyan-900/10 to-black",
+    icon: "Network",
+    bottleneck: "Indium phosphide laser availability, DSP power consumption, and optical component packaging yields.",
+    marginProfile: "High gross margins (50%–65%) driven by rapid generation turnover from 400G to 800G and 1.6T/3.2T co-packaged optics.",
+    capexDriver: "Cluster scaling: interconnecting tens of thousands of GPUs into a single unified virtual supercomputer with sub-microsecond latency.",
+    description: "The high-bandwidth nervous system of AI clusters. As GPUs scale, network communication becomes the ultimate compute bottleneck, requiring optical transceivers, active electrical cables, and ultra-high-speed Ethernet/InfiniBand switches.",
+    keyTickers: ["ANET", "AVGO", "MRVL", "COHR", "CRDO", "IPGP", "LITE", "AAOI", "POET", "LWLG", "CSCO", "CIEN"]
+  },
+  {
+    level: 6,
+    title: "Silicon Processors, Packaging & WFE",
+    subtitle: "GPUs, ASICs, Foundry CoWoS, and Lithography Tools",
+    color: "text-blue-400",
+    borderColor: "border-blue-500/40",
+    bgGradient: "from-blue-950/40 via-blue-900/10 to-black",
+    icon: "Cpu",
+    bottleneck: "TSMC CoWoS advanced packaging capacity, EUV machine build rates, and 2nm yield optimization.",
+    marginProfile: "Monopoly-level operating margins (60%–75% for Nvidia, ASML, TSMC) with deep software moats (CUDA, EDA).",
+    capexDriver: "Exponential growth in neural network parameter counts driving insatiable demand for GPU FLOPS and custom cloud ASICs.",
+    description: "The mathematical engine of the AI revolution. Encompasses dominant GPU accelerators, custom hyperscaler ASICs, leading-edge 3nm/2nm foundries, EDA synthesis software, and monopolistic semiconductor equipment makers.",
+    keyTickers: ["NVDA", "AMD", "TSM", "ASML", "AMAT", "LRCX", "KLAC", "AEHR", "ARM", "CDNS", "SNPS", "DELL", "PLTR"]
+  },
+  {
+    level: 7,
+    title: "High-Bandwidth Memory (HBM) & Mass Storage",
+    subtitle: "HBM3e/4 memory stacks and high-density nearline storage",
+    color: "text-pink-400",
+    borderColor: "border-pink-500/40",
+    bgGradient: "from-pink-950/40 via-pink-900/10 to-black",
+    icon: "Database",
+    bottleneck: "Through-Silicon Via (TSV) 3D stacking yields, thermal expansion mismatches, and HBM cleanroom allocation.",
+    marginProfile: "Premium pricing power on HBM3e/4 commanding multiples of traditional commodity memory gross margins.",
+    capexDriver: "Large language models are memory-bandwidth-bound during inference and require massive mass storage for multi-modal training sets.",
+    description: "The memory and data foundation. HBM delivers terabytes-per-second memory bandwidth directly adjacent to the GPU compute die, while all-flash enterprise storage and 30TB+ nearline HDDs feed datasets into the training loop.",
+    keyTickers: ["MU", "WDC", "SNDK", "PSTG", "STX", "HBM"]
+  },
+  {
+    level: 8,
+    title: "Physical Commodities, Space & HPC Pivots",
+    subtitle: "Copper, gold, satellite networks, and Bitcoin site conversions",
+    color: "text-yellow-400",
+    borderColor: "border-yellow-500/40",
+    bgGradient: "from-yellow-950/40 via-yellow-900/10 to-black",
+    icon: "Globe",
+    bottleneck: "Mining lead times (10–15 years for new copper mines), physical ore grades, and orbital launch manifests.",
+    marginProfile: "Operating leverage to structural supply deficits and rapid cash flow generation from monetizing energized megawatts.",
+    capexDriver: "Electrification demands hundreds of thousands of tons of copper; Bitcoin miners with locked-in gigawatt power convert sites to AI hosting.",
+    description: "The elemental raw materials and alternative power asset monetization. Physical copper and silver are indispensable for electrical transformers and connections, while orbital space networks and energized HPC power sites deliver immediate infrastructure.",
+    keyTickers: ["GLD", "GOLD", "SLV", "CPER", "FCX", "RKLB", "ASTS", "CORZ", "IREN", "APLD", "WULF", "MARA", "BTC-USD", "EQIX", "DLR"]
+  },
+  {
+    level: 9,
+    title: "Agentic Commerce & Stablecoin Settlement Rails",
+    subtitle: "USDC settlement, Base L2, AgentKit, and AI-driven fintech APIs",
+    color: "text-emerald-400",
+    borderColor: "border-emerald-500/40",
+    bgGradient: "from-emerald-950/40 via-cyan-950/20 to-black",
+    icon: "CreditCard",
+    bottleneck: "On-chain sub-second finality, gas fee micro-economics, KYC compliance for autonomous agent wallets, and fiat on/off ramps.",
+    marginProfile: "Ultra-high software margins with programmatic interchange retention and treasury yields on stablecoin reserves.",
+    capexDriver: "Autonomous AI agents making hundreds of millions of daily programmatic API micro-transactions, requiring frictionless payment rails.",
+    description: "The autonomous financial settlement layer. As AI models become economic actors, they require programmatic wallets, instant stablecoin settlement (USDC/PYUSD), Layer-2 networks (Base), and developer agent toolkits to exchange capital without human intervention.",
+    keyTickers: ["COIN", "HOOD", "STRIP", "CRCL", "PYPL", "SQ", "AFRM", "SOFI", "UPST"]
+  }
 ];
 
 export const AiValueChainHeatmap: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [selectedStackLevel, setSelectedStackLevel] = useState<number | "ALL">("ALL");
+  const [activeExplainerLevel, setActiveExplainerLevel] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [viewMode, setViewMode] = useState<"tree" | "grid" | "table">("tree");
+  const [viewMode, setViewMode] = useState<"tree" | "grid" | "table" | "stack_explainer" | "hyperscalers">("tree");
 
   const categories = useMemo(() => {
     const cats = Array.from(new Set(VALUE_CHAIN_DATA.map((d) => d.category)));
@@ -227,6 +383,27 @@ export const AiValueChainHeatmap: React.FC = () => {
     return VALUE_CHAIN_DATA.filter((item) => {
       const matchesCat =
         selectedCategory === "ALL" || item.category === selectedCategory;
+      
+      let matchesStack = true;
+      if (selectedStackLevel !== "ALL") {
+        const layer = TSUNAMI_STACK_LEVELS.find((l) => l.level === selectedStackLevel);
+        if (layer) {
+          const inLayerTickers = layer.keyTickers.some(
+            (t) => t.toUpperCase() === item.ticker.toUpperCase()
+          );
+          const inLayerKeywords =
+            selectedStackLevel === 1 ? item.category === "Owners / Operators" :
+            selectedStackLevel === 2 ? item.category === "Power & Cooling" && (item.subCategory.includes("Nuclear") || item.subCategory.includes("Renewable") || item.subCategory.includes("Fuel Cell") || item.subCategory.includes("Utility")) :
+            selectedStackLevel === 3 ? item.category === "Power & Cooling" && (item.subCategory.includes("Grid") || item.subCategory.includes("Electrical") || item.subCategory.includes("GenSets")) :
+            selectedStackLevel === 4 ? item.category === "Power & Cooling" && item.subCategory.includes("Cooling") :
+            selectedStackLevel === 5 ? item.category === "Semi Production" && (item.subCategory.includes("Optical") || item.subCategory.includes("Networking") || item.subCategory.includes("Ethernet")) :
+            selectedStackLevel === 6 ? item.category === "Semi Production" :
+            selectedStackLevel === 7 ? item.subCategory.includes("Memory") || item.subCategory.includes("Storage") :
+            selectedStackLevel === 8 ? item.category === "Crypto / HPC" || item.category === "Owners / Operators" && item.subCategory.includes("REIT") : true;
+          matchesStack = inLayerTickers || inLayerKeywords;
+        }
+      }
+
       const q = searchQuery.toLowerCase().trim();
       const matchesQuery =
         !q ||
@@ -234,9 +411,9 @@ export const AiValueChainHeatmap: React.FC = () => {
         item.ticker.toLowerCase().includes(q) ||
         item.whatTheyDo.toLowerCase().includes(q) ||
         item.subCategory.toLowerCase().includes(q);
-      return matchesCat && matchesQuery;
+      return matchesCat && matchesStack && matchesQuery;
     });
-  }, [selectedCategory, searchQuery]);
+  }, [selectedCategory, selectedStackLevel, searchQuery]);
 
   // Chart data for category counts
   const categoryChartData = useMemo(() => {
@@ -347,7 +524,7 @@ export const AiValueChainHeatmap: React.FC = () => {
         </div>
 
         {/* View Mode Switcher */}
-        <div className="flex items-center gap-1 bg-black/60 p-1 rounded-xl border border-white/10">
+        <div className="flex items-center gap-1 bg-black/60 p-1 rounded-xl border border-white/10 flex-wrap">
           <button
             onClick={() => {
               triggerHaptic("selection");
@@ -361,6 +538,34 @@ export const AiValueChainHeatmap: React.FC = () => {
           >
             <Layers className="w-3.5 h-3.5" />
             Stack Tree
+          </button>
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setViewMode("stack_explainer");
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              viewMode === "stack_explainer"
+                ? "bg-amber-400 text-black font-extrabold shadow-md"
+                : "text-amber-300/80 hover:text-amber-200"
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            8-Layer Explainer
+          </button>
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setViewMode("hyperscalers");
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              viewMode === "hyperscalers"
+                ? "bg-purple-500 text-black font-extrabold shadow-md"
+                : "text-purple-300/80 hover:text-purple-200"
+            }`}
+          >
+            <Building2 className="w-3.5 h-3.5" />
+            Hyperscalers Audit
           </button>
           <button
             onClick={() => {
@@ -390,6 +595,56 @@ export const AiValueChainHeatmap: React.FC = () => {
             <BarChart2 className="w-3.5 h-3.5" />
             Full Table
           </button>
+        </div>
+      </div>
+
+      {/* QUICK STACK LEVEL SELECTOR */}
+      <div className="p-3.5 rounded-2xl bg-[#020b16] border border-cyan-500/20 space-y-2">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-cyan-300 flex items-center gap-1.5">
+            <Layers className="w-3.5 h-3.5" />
+            Super Sonic Tsunami Stack Sorter (Levels 1 - 8)
+          </span>
+          <span className="text-[10px] font-mono text-neutral-400">
+            {selectedStackLevel === "ALL" ? "Showing All Layers" : `Filtered: Level ${selectedStackLevel}`}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          <button
+            onClick={() => {
+              triggerHaptic("selection");
+              setSelectedStackLevel("ALL");
+            }}
+            className={`px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+              selectedStackLevel === "ALL"
+                ? "bg-cyan-400 text-black font-extrabold shadow-md"
+                : "bg-neutral-900 text-neutral-400 hover:text-white border border-white/10"
+            }`}
+          >
+            All Stack Levels
+          </button>
+          {TSUNAMI_STACK_LEVELS.map((layer) => {
+            const isSelected = selectedStackLevel === layer.level;
+            return (
+              <button
+                key={layer.level}
+                onClick={() => {
+                  triggerHaptic("selection");
+                  setSelectedStackLevel(isSelected ? "ALL" : layer.level);
+                }}
+                className={`px-3 py-1 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1.5 border ${
+                  isSelected
+                    ? `${layer.bgGradient} ${layer.color} ${layer.borderColor} font-extrabold shadow-lg`
+                    : "bg-black/60 text-neutral-300 hover:text-white border-white/10"
+                }`}
+              >
+                <span className="w-4 h-4 rounded-full bg-white/10 flex items-center justify-center text-[10px] font-mono font-bold">
+                  {layer.level}
+                </span>
+                {layer.title.split("&")[0]}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -751,6 +1006,318 @@ export const AiValueChainHeatmap: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* VIEW MODE: 8-LAYER STACK EXPLAINER */}
+      {viewMode === "stack_explainer" && (
+        <div className="space-y-6">
+          <div className="p-6 rounded-3xl bg-gradient-to-br from-[#0c0a1d] via-[#100c28] to-[#04020a] border border-amber-500/30 shadow-2xl relative overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                Super Sonic Tsunami AI Revolution Stack
+              </span>
+              <span className="text-xs font-mono font-bold text-neutral-400">
+                8 Integrated Physical & Digital Layers
+              </span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-white">
+              The 8-Layer AI Revolution Hierarchy & Chokepoint Guide
+            </h3>
+            <p className="text-xs text-neutral-300 max-w-3xl leading-relaxed mt-1.5">
+              Each layer represents a critical prerequisite in the CapEx supercycle. When capital flows into AI models, it cascades down through electricity, grid transformers, cooling manifolds, photonic links, silicon foundries, and raw copper commodities.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {TSUNAMI_STACK_LEVELS.map((layer) => {
+              const isExpanded = activeExplainerLevel === layer.level;
+              return (
+                <div
+                  key={layer.level}
+                  className={`p-5 rounded-2xl bg-black/60 border transition-all shadow-xl space-y-3.5 ${
+                    isExpanded
+                      ? `${layer.borderColor} ring-1 ring-amber-400/50 bg-gradient-to-b ${layer.bgGradient}`
+                      : `${layer.borderColor} hover:border-white/30`
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center font-mono font-black text-sm text-white border border-white/20">
+                        L{layer.level}
+                      </div>
+                      <div>
+                        <h4 className={`text-base font-black ${layer.color}`}>
+                          {layer.title}
+                        </h4>
+                        <p className="text-[11px] text-neutral-400 font-medium">
+                          {layer.subtitle}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        triggerHaptic("selection");
+                        setActiveExplainerLevel(isExpanded ? null : layer.level);
+                      }}
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold font-mono bg-white/10 hover:bg-white/20 text-white transition-all cursor-pointer"
+                    >
+                      {isExpanded ? "Collapse" : "Deep Dive"}
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-neutral-200 leading-relaxed">
+                    {layer.description}
+                  </p>
+
+                  <div className="space-y-2 pt-2 border-t border-white/10 text-xs">
+                    <div className="p-2.5 rounded-xl bg-neutral-900/90 border border-white/5 space-y-1">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
+                        <ShieldAlert className="w-3 h-3 text-amber-400" />
+                        Primary Physical Bottleneck
+                      </span>
+                      <p className="text-[11px] text-neutral-300 leading-relaxed">
+                        {layer.bottleneck}
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-neutral-900/90 border border-white/5 space-y-1">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3 text-cyan-400" />
+                        Margin Dynamic & Pricing Power
+                      </span>
+                      <p className="text-[11px] text-neutral-300 leading-relaxed">
+                        {layer.marginProfile}
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-neutral-900/90 border border-white/5 space-y-1">
+                      <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-purple-400 flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-purple-400" />
+                        CapEx Catalyst
+                      </span>
+                      <p className="text-[11px] text-neutral-300 leading-relaxed">
+                        {layer.capexDriver}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-white/10 space-y-1.5">
+                    <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-wider">
+                      Key Stack Pure Plays ({layer.keyTickers.length})
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {layer.keyTickers.map((t) => (
+                        <span
+                          key={t}
+                          className="px-2 py-0.5 rounded-md text-[11px] font-mono font-bold bg-white/5 text-white border border-white/10 hover:border-cyan-400/60 hover:text-cyan-300 cursor-pointer transition-all"
+                          onClick={() => {
+                            triggerHaptic("selection");
+                            setSearchQuery(t);
+                            setViewMode("grid");
+                          }}
+                        >
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* VIEW MODE: HYPERSCALERS AUDIT & MATRIX */}
+      {viewMode === "hyperscalers" && (
+        <div className="space-y-6">
+          <div className="p-6 rounded-3xl bg-gradient-to-br from-[#120726] via-[#1a0c38] to-[#080214] border border-purple-500/40 shadow-2xl relative overflow-hidden">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
+              <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1.5">
+                <Building2 className="w-3.5 h-3.5 text-purple-300" />
+                Global Hyperscalers & Neo-Cloud Audit
+              </span>
+              <span className="text-xs font-mono font-bold text-neutral-400">
+                100% Watchlist Coverage Verified
+              </span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-white">
+              Hyperscale Cloud & Sovereign AI Frontier
+            </h3>
+            <p className="text-xs text-neutral-300 max-w-3xl leading-relaxed mt-1.5">
+              Comprehensive audit of all leading hyperscalers driving the multi-hundred-billion dollar annual AI CapEx wave, including proprietary silicon ASICs, nuclear PPAs, and cluster architectures.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              {
+                name: "Microsoft Corporation",
+                ticker: "MSFT",
+                cloud: "Azure Cloud",
+                capex: "$80B+ Annualized Run-Rate",
+                silicon: "Maia 100 AI Accelerator, Cobalt 100 CPU",
+                power: "Constellation Energy (CEG) 835MW Three Mile Island 20-yr PPA",
+                aiRole: "Exclusive cloud partner for OpenAI frontier models; Enterprise Copilot suite.",
+                status: "Present in Watchlist (Level 1)",
+                color: "border-blue-500/40"
+              },
+              {
+                name: "Alphabet Inc.",
+                ticker: "GOOGL",
+                cloud: "Google Cloud Platform (GCP)",
+                capex: "$75B+ Annualized Run-Rate",
+                silicon: "Trillium TPU v6, Axion ARM Server CPUs",
+                power: "Kairos Power SMR partnership (500MW) + Nevada geothermal PPA",
+                aiRole: "Gemini 1.5/Ultra multimodal models; search & enterprise AI inference engine.",
+                status: "Present in Watchlist (Level 1)",
+                color: "border-emerald-500/40"
+              },
+              {
+                name: "Amazon.com, Inc.",
+                ticker: "AMZN",
+                cloud: "Amazon Web Services (AWS)",
+                capex: "$90B+ Annualized Run-Rate",
+                silicon: "Trainium2, Inferentia2, Graviton4 CPUs",
+                power: "Talen Energy (TLN) 2.5GW Susquehanna Nuclear Campus + X-energy SMR deal",
+                aiRole: "AWS Bedrock foundation model hub; Anthropic primary training cloud.",
+                status: "Present in Watchlist (Level 1)",
+                color: "border-amber-500/40"
+              },
+              {
+                name: "Meta Platforms, Inc.",
+                ticker: "META",
+                cloud: "Meta AI Infrastructure",
+                capex: "$50B+ Annualized Run-Rate",
+                silicon: "MTIA v2 (Meta Training & Inference Accelerator)",
+                power: "Geothermal (Sage Geosystems) + Multi-gigawatt clean energy portfolio",
+                aiRole: "Llama 3.1/4 open-weights foundation model creator; AI recommendation feed.",
+                status: "Present in Watchlist (Level 1)",
+                color: "border-cyan-500/40"
+              },
+              {
+                name: "Oracle Corporation",
+                ticker: "ORCL",
+                cloud: "Oracle Cloud Infrastructure (OCI)",
+                capex: "$25B+ Annualized Run-Rate",
+                silicon: "Ultra-fast RoCE v2 Bare Metal Superclusters (NVIDIA Blackwell)",
+                power: "Permits secured for 3 SMR nuclear reactors to power 1GW+ AI datacenter",
+                aiRole: "Supercluster GPU training provider for OpenAI, Microsoft, and xAI Colossus.",
+                status: "Present in Watchlist (Level 1)",
+                color: "border-red-500/40"
+              },
+              {
+                name: "Alibaba Group",
+                ticker: "BABA",
+                cloud: "Alibaba Cloud (Aliyun)",
+                capex: "$15B+ Asian AI Investment",
+                silicon: "Hanguang 800 AI NPU, Yitian 710 ARM server silicon",
+                power: "Chinese green utility PPAs and high-density liquid-cooled campuses",
+                aiRole: "Tongyi Qianwen LLM family; leading enterprise cloud ecosystem in APAC.",
+                status: "Present in Watchlist (Level 1)",
+                color: "border-orange-500/40"
+              },
+              {
+                name: "Tencent Holdings",
+                ticker: "TCEHY",
+                cloud: "Tencent Cloud",
+                capex: "$12B+ Asian AI Investment",
+                silicon: "Zixiao AI acceleration chip, Canghai video transcoders",
+                power: "Massive datacenter microgrids across southern China",
+                aiRole: "Hunyuan foundation models; WeChat and gaming AI inference platform.",
+                status: "Present in Watchlist (Level 1)",
+                color: "border-purple-500/40"
+              },
+              {
+                name: "CoreWeave Inc.",
+                ticker: "CRWV",
+                cloud: "Specialized GPU Neo-Cloud",
+                capex: "$10B+ GPU Infrastructure Backlog",
+                silicon: "Pure-play NVIDIA H100 / H200 / Blackwell B200 SuperPODs",
+                power: "Multi-gigawatt contracts with Core Scientific (CORZ) & TeraWulf (WULF)",
+                aiRole: "Premier low-latency GPU infrastructure provider for Mistral, Inflection, and AI labs.",
+                status: "Present in Watchlist (Level 1)",
+                color: "border-indigo-500/40"
+              },
+              {
+                name: "SpaceX & Frontier",
+                ticker: "SPCX",
+                cloud: "Starlink Orbital Compute & Direct-to-Cell",
+                capex: "Frontier Launch & Satellite Scale",
+                silicon: "Custom space-hardened radiation-resistant ASIC arrays",
+                power: "Solar array orbital arrays & Starbase launch power infrastructure",
+                aiRole: "Global broadband constellation linking terrestrial datacenters to remote sensors.",
+                status: "Present in Watchlist (Level 1)",
+                color: "border-teal-500/40"
+              }
+            ].map((hyp) => (
+              <div
+                key={hyp.ticker}
+                className={`p-5 rounded-2xl bg-black/60 border ${hyp.color} space-y-3 shadow-xl`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="text-base font-black text-white">{hyp.name}</h4>
+                    <span className="text-[11px] font-mono text-purple-300 font-bold">
+                      {hyp.cloud}
+                    </span>
+                  </div>
+                  <span className="px-2.5 py-0.5 rounded-lg text-xs font-mono font-black bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                    {hyp.ticker}
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  <div className="p-2 rounded-xl bg-neutral-900/90 border border-white/5 space-y-0.5">
+                    <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider">
+                      CapEx Scale
+                    </span>
+                    <p className="text-neutral-200 font-medium">{hyp.capex}</p>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-neutral-900/90 border border-white/5 space-y-0.5">
+                    <span className="text-[10px] font-mono font-bold text-cyan-400 uppercase tracking-wider">
+                      Proprietary Silicon
+                    </span>
+                    <p className="text-neutral-300">{hyp.silicon}</p>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-neutral-900/90 border border-white/5 space-y-0.5">
+                    <span className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-wider">
+                      Nuclear & Power PPAs
+                    </span>
+                    <p className="text-neutral-300">{hyp.power}</p>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-neutral-900/90 border border-white/5 space-y-0.5">
+                    <span className="text-[10px] font-mono font-bold text-purple-400 uppercase tracking-wider">
+                      AI Ecosystem Role
+                    </span>
+                    <p className="text-neutral-300 leading-relaxed">{hyp.aiRole}</p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-emerald-400 flex items-center gap-1 font-bold">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    {hyp.status}
+                  </span>
+                  <button
+                    onClick={() => {
+                      triggerHaptic("selection");
+                      setSearchQuery(hyp.ticker);
+                      setViewMode("grid");
+                    }}
+                    className="text-cyan-400 hover:underline font-bold cursor-pointer"
+                  >
+                    View Chart
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
