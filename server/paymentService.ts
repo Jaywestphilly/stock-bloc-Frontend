@@ -2,14 +2,17 @@ import crypto from 'crypto';
 import { db } from './firebaseAdmin.js';
 import {
   PLATFORM_TREASURY_ACCOUNT_ID,
-  PLATFORM_ECONOMICS
+  PLATFORM_ECONOMICS,
+  paymentProviders,
+  PlatformCreditsProvider
 } from './agentExchangeApi.js';
 import { inMemoryWalletRegistry } from './agentPlatform.js';
 import type {
   AgentWalletBalance,
   LedgerEntry,
   PlatformLedgerTransaction,
-  SettlementResult
+  SettlementResult,
+  TransactionAuditReceipt
 } from '../src/types.js';
 import { PolkadotUsdcPaymentProvider } from './polkadotPaymentProvider.js';
 import { StripePaymentProvider } from './stripePaymentProvider.js';
@@ -90,8 +93,13 @@ export const HUMAN_APPROVAL_THRESHOLD_CREDITS = parseInt(
 ); // 50,000 credits = $500
 
 export class PaymentOrchestrator {
-  private polkadotProvider = new PolkadotUsdcPaymentProvider();
-  private stripeProvider = new StripePaymentProvider();
+  private polkadotProvider: PolkadotUsdcPaymentProvider;
+  private stripeProvider: StripePaymentProvider;
+
+  constructor() {
+    this.polkadotProvider = new PolkadotUsdcPaymentProvider();
+    this.stripeProvider = new StripePaymentProvider();
+  }
 
   /**
    * Evaluates spending limit policy and determines if human operator approval is mandatory.
@@ -378,11 +386,144 @@ export class PaymentOrchestrator {
     } else if (params.resolution === 'PARTIAL_REFUND') {
       const pct = (params.refundPercent || 50) / 100;
       const refundAmt = Math.round(params.grossAmount * pct);
-      const remainingForSeller = params.grossAmount - refundAmt;
       await this.releaseEscrow(params.buyerAgentId, refundAmt);
     }
 
     return record;
+  }
+
+  /**
+   * Enforces strict payment lifecycle and routes settlement based on rail:
+   * payment verified -> result verified -> capture -> settlement.
+   */
+  async settleVerifiedJob(params: {
+    jobId: string;
+    buyerAgentId: string;
+    buyerHandle?: string;
+    sellerAgentId: string;
+    sellerHandle?: string;
+    grossAmount: number;
+    paymentRail: 'PLATFORM_CREDITS' | 'STRIPE' | 'POLKADOT_USDC';
+    paymentProofRef?: string;
+    extrinsicHash?: string;
+    idempotencyKey?: string;
+    description?: string;
+  }): Promise<SettlementResult> {
+    const {
+      jobId,
+      buyerAgentId,
+      buyerHandle,
+      sellerAgentId,
+      sellerHandle,
+      grossAmount,
+      paymentRail,
+      paymentProofRef,
+      extrinsicHash,
+      idempotencyKey,
+      description
+    } = params;
+
+    if (paymentRail === 'STRIPE') {
+      const stripe = this.getStripeProvider();
+      // 1. Verify Payment with Stripe
+      const verifyResult = await stripe.verifyPayment(paymentProofRef || jobId, {
+        jobId,
+        buyerAgentId,
+        sellerAgentId
+      });
+
+      if (!verifyResult.verified) {
+        throw new Error(`Stripe payment verification failed: ${verifyResult.error}`);
+      }
+
+      // 2. Capture Payment on Stripe
+      const fee = Math.max(1, Math.round((grossAmount * PLATFORM_ECONOMICS.platformFeeBps) / 10000));
+      await stripe.capturePayment(
+        paymentProofRef || jobId,
+        grossAmount,
+        fee,
+        sellerAgentId,
+        buyerAgentId,
+        jobId,
+        idempotencyKey
+      );
+
+      // 3. Settle transaction and return audit receipt
+      return await stripe.settlePayment({
+        jobId,
+        buyerAgentId,
+        buyerHandle,
+        sellerAgentId,
+        sellerHandle,
+        grossAmount,
+        platformFeeBps: PLATFORM_ECONOMICS.platformFeeBps,
+        idempotencyKey,
+        currency: 'USD',
+        paymentRail: 'STRIPE',
+        description: description || `Stripe settlement for job ${jobId}`
+      });
+    }
+
+    if (paymentRail === 'POLKADOT_USDC') {
+      const polkadot = this.getPolkadotProvider();
+      const txHash = extrinsicHash || paymentProofRef || '';
+
+      // 1. Verify on-chain transaction against all 12 validation rules
+      const verifyResult = await polkadot.verifyPayment(paymentProofRef || jobId, {
+        extrinsicHash: txHash,
+        amount: grossAmount,
+        recipientAddress: polkadot.getConfig().treasuryAddress
+      });
+
+      if (!verifyResult.verified) {
+        throw new Error(`Polkadot on-chain verification failed: ${verifyResult.error}`);
+      }
+
+      // 2. Capture and lock on-chain funds
+      const fee = Math.max(1, Math.round((grossAmount * PLATFORM_ECONOMICS.platformFeeBps) / 10000));
+      await polkadot.capturePayment(
+        txHash,
+        grossAmount,
+        fee,
+        sellerAgentId,
+        buyerAgentId,
+        jobId,
+        idempotencyKey,
+        { extrinsicHash: txHash }
+      );
+
+      // 3. Settle and return complete audit receipt
+      return await polkadot.settlePayment({
+        jobId,
+        buyerAgentId,
+        buyerHandle,
+        sellerAgentId,
+        sellerHandle,
+        grossAmount,
+        platformFeeBps: PLATFORM_ECONOMICS.platformFeeBps,
+        idempotencyKey,
+        currency: 'USDC',
+        paymentRail: 'POLKADOT_USDC',
+        extrinsicHash: txHash,
+        description: description || `Polkadot Asset Hub USDC settlement for job ${jobId}`
+      });
+    }
+
+    // Default: PLATFORM_CREDITS
+    const creditsProvider = paymentProviders.PLATFORM_CREDITS as PlatformCreditsProvider;
+    return await creditsProvider.settlePayment({
+      jobId,
+      buyerAgentId,
+      buyerHandle,
+      sellerAgentId,
+      sellerHandle,
+      grossAmount,
+      platformFeeBps: PLATFORM_ECONOMICS.platformFeeBps,
+      idempotencyKey,
+      currency: 'CREDITS',
+      paymentRail: 'PLATFORM_CREDITS',
+      description: description || `Platform double-entry settlement for job ${jobId}`
+    });
   }
 
   getPolkadotProvider(): PolkadotUsdcPaymentProvider {

@@ -951,8 +951,19 @@ export interface PlatformLedgerTransaction {
   platformFee: number;
   providerAmount: number;
   currency: "CREDITS" | "USD" | "USDC";
-  paymentRail: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "FUTURE_RAIL";
+  paymentRail: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "POLKADOT_USDC" | "FUTURE_RAIL";
   status: TransactionStatus;
+  externalPaymentProof?: {
+    rail: "STRIPE" | "POLKADOT_USDC" | "PLATFORM_CREDITS";
+    stripePaymentIntentId?: string;
+    stripeChargeId?: string;
+    polkadotTxHash?: string;
+    polkadotBlockHash?: string;
+    polkadotBlockNumber?: number;
+    polkadotNetwork?: string;
+    polkadotAssetId?: string;
+    verifiedAt: string;
+  };
   entries?: LedgerEntry[];
   balancesAfter?: {
     buyerBalance: number;
@@ -961,6 +972,54 @@ export interface PlatformLedgerTransaction {
   };
   createdAt: any;
   completedAt?: any;
+}
+
+export interface TransactionAuditReceipt {
+  receiptId: string;
+  internalTransactionId: string;
+  jobId: string;
+  paymentRail: "PLATFORM_CREDITS" | "STRIPE" | "POLKADOT_USDC" | "X402_USDC";
+  grossAmount: number;
+  platformFee: number;
+  netSellerAmount: number;
+  currency: "CREDITS" | "USD" | "USDC";
+  status: TransactionStatus;
+  externalPaymentProof?: {
+    stripePaymentIntentId?: string;
+    stripeChargeId?: string;
+    polkadotTxHash?: string;
+    polkadotBlockHash?: string;
+    polkadotBlockNumber?: number;
+    polkadotConfirmations?: number;
+    polkadotNetwork?: string;
+    polkadotAssetId?: string;
+    polkadotSender?: string;
+    polkadotRecipient?: string;
+    verifiedAt: string;
+  };
+  buyer: {
+    agentId: string;
+    handle?: string;
+    previousBalance?: number;
+    finalBalance?: number;
+  };
+  seller: {
+    agentId: string;
+    handle?: string;
+    previousBalance?: number;
+    finalBalance?: number;
+  };
+  treasury: {
+    accountId: string;
+    feeCollected: number;
+  };
+  timeline: {
+    initiatedAt: string;
+    paymentVerifiedAt?: string;
+    resultVerifiedAt?: string;
+    settledAt: string;
+  };
+  receiptHash: string;
 }
 
 export interface SettlementAccountBalanceSummary {
@@ -986,7 +1045,18 @@ export interface SettlementResult {
   netSellerAmount: number;
   sellerNet?: number;
   currency: "CREDITS" | "USD" | "USDC";
-  paymentRail: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "FUTURE_RAIL";
+  paymentRail: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "POLKADOT_USDC" | "FUTURE_RAIL";
+  externalPaymentProof?: {
+    stripePaymentIntentId?: string;
+    stripeChargeId?: string;
+    polkadotTxHash?: string;
+    polkadotBlockHash?: string;
+    polkadotBlockNumber?: number;
+    polkadotNetwork?: string;
+    polkadotAssetId?: string;
+    verifiedAt: string;
+  };
+  auditReceipt?: TransactionAuditReceipt;
   balances: {
     buyer: SettlementAccountBalanceSummary;
     seller: SettlementAccountBalanceSummary;

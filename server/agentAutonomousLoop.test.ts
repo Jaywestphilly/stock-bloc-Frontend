@@ -150,6 +150,8 @@ describe('Autonomous Agent Marketplace & Economic Network Loop', () => {
     expect(req.paymentRef).toMatch(/^dot_req_/);
     expect(req.network).toBe('polkadot-asset-hub');
     expect(req.recipientAddress).toBeDefined();
+    expect(req.tokenDecimals).toBe(6);
+    expect(req.assetId).toBe('1337');
     expect(req.explorerTrackingUrl).toContain('subscan.io');
 
     const validHash = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
@@ -162,18 +164,103 @@ describe('Autonomous Agent Marketplace & Economic Network Loop', () => {
     expect(verifyResult.verified).toBe(true);
     expect(verifyResult.network).toBe('polkadot-asset-hub');
     expect(verifyResult.explorerUrl).toContain(validHash);
+    expect(verifyResult.transaction?.assetId).toBe('1337');
+    expect(verifyResult.transaction?.status).toBe('SUCCESS');
+
+    // Rule 10: Anti-Replay Protection Test
+    // Settle once with this hash
+    await polkadotProvider.settlePayment({
+      jobId: 'job_dot_01',
+      buyerAgentId: buyerId,
+      sellerAgentId: sellerId,
+      grossAmount: 50,
+      currency: 'USDC',
+      extrinsicHash: validHash
+    });
+
+    // Attempting to verify or settle the same hash again MUST fail due to replay detection
+    const replayVerify = await polkadotProvider.verifyPayment(req.paymentRef, {
+      extrinsicHash: validHash,
+      amount: 50
+    });
+    expect(replayVerify.verified).toBe(false);
+    expect(replayVerify.ruleFailures).toContain('RULE_10_REPLAY_ATTACK_DETECTED');
+
+    // Bad hash format rejection test
+    const badFormatVerify = await polkadotProvider.verifyPayment(req.paymentRef, {
+      extrinsicHash: 'invalid_non_hex_hash'
+    });
+    expect(badFormatVerify.verified).toBe(false);
+    expect(badFormatVerify.ruleFailures).toContain('RULE_1_INVALID_HASH_FORMAT');
+
+    // Wrong assetId rejection test
+    const wrongAssetHash = '0x9999999999abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+    const wrongAssetVerify = await polkadotProvider.verifyPayment(req.paymentRef, {
+      extrinsicHash: wrongAssetHash,
+      assetId: '99999' // mismatch with 1337
+    });
+    expect(wrongAssetVerify.verified).toBe(false);
+    expect(wrongAssetVerify.ruleFailures?.some(f => f.includes('RULE_5_ASSET_ID_MISMATCH'))).toBe(true);
   });
 
-  it('Phase 11: Stripe Payment Provider converts fiat to credits and supports sandbox payment intents', async () => {
-    const stripeProvider = new StripePaymentProvider();
-    const req = await stripeProvider.createPaymentRequirement('job_stripe_01', 1000, 'USD');
+  it('Phase 11: Stripe Payment Provider converts fiat to credits, enforces verification, and executes capture', async () => {
+    const stripeProvider = new StripePaymentProvider({ secretKey: '', mode: 'sandbox', paymentModeEnv: 'sandbox' });
+    const req = await stripeProvider.createPaymentRequirement('job_stripe_01', 1000, 'USD', buyerId, {
+      sellerAgentId: sellerId,
+      transactionIntentId: 'intent_stripe_test_01'
+    });
 
     expect(req.amountCredits).toBe(1000);
     expect(req.amountCents).toBe(1000); // 1000 credits = $10.00 = 1000 cents
     expect(req.clientSecret).toBeDefined();
+    expect(['requires_payment_method', 'requires_capture', 'succeeded']).toContain(req.status);
 
-    const verify = await stripeProvider.verifyPayment(req.paymentRef, {});
+    // Verify valid payment
+    const verify = await stripeProvider.verifyPayment(req.paymentRef, {
+      expectedAmountCents: 1000,
+      expectedCurrency: 'usd',
+      jobId: 'job_stripe_01'
+    });
     expect(verify.verified).toBe(true);
+    expect(verify.amountCents).toBe(1000);
+
+    // Verify amount mismatch rejection
+    const mismatchVerify = await stripeProvider.verifyPayment(req.paymentRef, {
+      expectedAmountCents: 5000 // mismatch
+    });
+    expect(mismatchVerify.verified).toBe(false);
+
+    // Capture payment
+    const capture = await stripeProvider.capturePayment(
+      req.paymentRef,
+      10,
+      1,
+      sellerId,
+      buyerId,
+      'job_stripe_01'
+    );
+    if (!capture.success) {
+      console.error('TEST CAPTURE FAILURE:', capture);
+    }
+    expect(capture.success).toBe(true);
+    expect(capture.status).toBe('succeeded');
+    expect(capture.chargeId).toBeDefined();
+
+    // Settle and verify audit receipt
+    const settlement = await stripeProvider.settlePayment({
+      jobId: 'job_stripe_01',
+      buyerAgentId: buyerId,
+      sellerAgentId: sellerId,
+      grossAmount: 10,
+      currency: 'USD'
+    });
+
+    expect(settlement.success).toBe(true);
+    expect(settlement.paymentRail).toBe('STRIPE');
+    expect(settlement.auditReceipt).toBeDefined();
+    expect(settlement.auditReceipt?.receiptHash).toBeDefined();
+    expect(settlement.auditReceipt?.internalTransactionId).toMatch(/^tx_stripe_/);
+    expect(settlement.auditReceipt?.externalPaymentProof?.stripePaymentIntentId).toBeDefined();
   });
 
   it('Phase 17 & 18: Spending Limit Policy & Human Operator Approval for high-value transactions', () => {

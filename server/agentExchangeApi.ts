@@ -70,13 +70,15 @@ export interface SettlePaymentParams {
   sellerHandle?: string;
   description?: string;
   currency?: "CREDITS" | "USD" | "USDC";
-  paymentRail?: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "FUTURE_RAIL";
+  paymentRail?: "PLATFORM_CREDITS" | "X402_USDC" | "POLKADOT_USDC" | "STRIPE" | "FUTURE_RAIL";
+  paymentProofRef?: string;
+  extrinsicHash?: string;
 }
 
 export interface PaymentProvider {
-  rail: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "FUTURE_RAIL";
-  createPaymentRequirement(jobId: string, amount: number, currency: string, buyerAgentId: string): Promise<any>;
-  verifyPayment(paymentRef: string): Promise<boolean>;
+  rail: "PLATFORM_CREDITS" | "X402_USDC" | "POLKADOT_USDC" | "STRIPE" | "FUTURE_RAIL";
+  createPaymentRequirement(jobId: string, amount: number, currency: string, buyerAgentId?: string, extra?: any): Promise<any>;
+  verifyPayment(paymentRef: string, context?: any): Promise<any>;
   settlePayment(params: SettlePaymentParams): Promise<SettlementResult>;
   payoutBountyReward(params: {
     bountyId: string;
@@ -86,7 +88,7 @@ export interface PaymentProvider {
     title?: string;
     idempotencyKey?: string;
   }): Promise<any>;
-  capturePayment(paymentRef: string, grossAmount: number, platformFee: number, sellerAgentId: string, buyerAgentId?: string, jobId?: string, idempotencyKey?: string): Promise<boolean | SettlementResult>;
+  capturePayment(paymentRef: string, grossAmount: number, platformFee: number, sellerAgentId: string, buyerAgentId?: string, jobId?: string, idempotencyKey?: string, extra?: any): Promise<any>;
   refundPayment(paymentRef: string, reason: string, params?: { jobId: string; buyerAgentId: string; sellerAgentId: string; grossAmount: number }): Promise<boolean>;
   getProviderBalance(agentId: string): Promise<AgentWalletBalance>;
   getTreasuryBalance(): Promise<any>;
@@ -1945,15 +1947,19 @@ agentExchangeRouter.get('/exchange/ledger/:agentId', async (req, res) => {
   }
 });
 
-// POST /api/v1/exchange/settle (Direct double-entry settlement with custom idempotency key)
+// POST /api/v1/exchange/settle (Direct double-entry settlement with multi-rail verification)
 agentExchangeRouter.post('/exchange/settle', authenticateAgent, requireScope('payments:transact'), async (req, res) => {
   try {
     const {
       jobId,
       buyerAgentId,
+      buyerHandle,
       sellerAgentId,
+      sellerHandle,
       grossAmount,
-      platformFeeBps,
+      paymentRail = 'PLATFORM_CREDITS',
+      paymentProofRef,
+      extrinsicHash,
       idempotencyKey,
       description
     } = req.body;
@@ -1964,13 +1970,16 @@ agentExchangeRouter.post('/exchange/settle', authenticateAgent, requireScope('pa
       });
     }
 
-    const provider = paymentProviders.PLATFORM_CREDITS as PlatformCreditsProvider;
-    const result = await provider.settlePayment({
+    const result = await paymentOrchestrator.settleVerifiedJob({
       jobId,
       buyerAgentId,
+      buyerHandle,
       sellerAgentId,
+      sellerHandle,
       grossAmount,
-      platformFeeBps,
+      paymentRail,
+      paymentProofRef,
+      extrinsicHash,
       idempotencyKey: idempotencyKey || `settle_${jobId}_${grossAmount}`,
       description: description || `Settlement for jobId ${jobId}`
     });
@@ -3119,10 +3128,19 @@ agentExchangeRouter.get(['/system/readiness', '/readiness', '/health/readiness']
 
     const polkadotProvider = paymentProviders.POLKADOT_USDC as unknown as PolkadotUsdcPaymentProvider;
     const polkadotConfig = polkadotProvider.getConfig();
+    const isPolkadotProdReady = polkadotProvider.isProductionReady();
+
+    const stripeProvider = paymentProviders.STRIPE as unknown as StripePaymentProvider;
+    const stripeConfig = stripeProvider.getConfig();
+    const isStripeProdReady = stripeProvider.isProductionReady();
+
+    const isProductionEnv = AGENT_ENV === 'production' || process.env.PAYMENT_MODE === 'production';
+    const isSystemFullyReady = !isProductionEnv || (isPolkadotProdReady && isStripeProdReady);
 
     const readiness = {
-      status: 'READY',
+      status: isSystemFullyReady ? 'READY' : 'CONFIGURATION_REQUIRED',
       environment: AGENT_ENV,
+      paymentMode: process.env.PAYMENT_MODE || 'sandbox',
       timestamp: new Date().toISOString(),
       version: '1.0.0',
       components: {
@@ -3145,16 +3163,25 @@ agentExchangeRouter.get(['/system/readiness', '/readiness', '/health/readiness']
             takeRate: `${PLATFORM_ECONOMICS.platformFeeBps / 100}%`
           },
           POLKADOT_USDC: {
-            status: 'HEALTHY',
+            status: isPolkadotProdReady ? 'PRODUCTION_READY' : 'CONFIGURED_SANDBOX',
             network: polkadotConfig.network,
             assetId: polkadotConfig.assetId,
+            tokenSymbol: polkadotConfig.tokenSymbol,
+            tokenDecimals: polkadotConfig.tokenDecimals,
             treasuryAddress: polkadotConfig.treasuryAddress,
             confirmationsRequired: polkadotConfig.confirmationsRequired,
-            explorer: polkadotConfig.explorerBaseUrl
+            explorer: polkadotConfig.explorerBaseUrl,
+            productionReady: isPolkadotProdReady
           },
           STRIPE: {
-            status: process.env.STRIPE_SECRET_KEY ? 'CONFIGURED' : 'SANDBOX_SIMULATION',
-            creditsPerUsd: 100
+            status: isStripeProdReady
+              ? 'PRODUCTION_READY'
+              : stripeConfig.secretKey
+              ? 'CONFIGURED_TESTNET'
+              : 'SANDBOX_VERIFIED_ENGINE',
+            mode: stripeConfig.mode,
+            creditsPerUsd: stripeConfig.creditsPerUsd,
+            productionReady: isStripeProdReady
           }
         },
         treasury: {
@@ -3545,35 +3572,102 @@ agentExchangeRouter.get('/security/audit-logs', async (req: Request, res: Respon
 // 14. STRIPE WEBHOOK HANDLER
 // ==========================================
 
-agentExchangeRouter.post('/webhooks/stripe', express.raw({ type: 'application/json' }), async (req: Request, res: Response) => {
-  try {
-    const sig = req.headers['stripe-signature'];
-    const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-    let event: any;
+agentExchangeRouter.post(
+  ['/webhooks/stripe', '/marketplace/webhooks/stripe', '/exchange/webhooks/stripe'],
+  express.raw({ type: 'application/json' }),
+  async (req: Request, res: Response) => {
+    try {
+      const sig = req.headers['stripe-signature'] as string | undefined;
+      const stripe = paymentProviders.STRIPE as unknown as StripePaymentProvider;
+      let event: any;
 
-    if (stripeWebhookSecret && sig) {
-      try {
-        const stripe = paymentProviders.STRIPE as unknown as StripePaymentProvider;
-        event = req.body;
-      } catch (err: any) {
-        return res.status(400).send(`Webhook Error: ${err.message}`);
+      if (sig) {
+        try {
+          event = stripe.constructWebhookEvent(req.body, sig);
+        } catch (err: any) {
+          console.warn('[STRIPE WEBHOOK] Signature validation error:', err.message);
+          return res.status(400).send(`Webhook Signature Verification Error: ${err.message}`);
+        }
+      } else {
+        if (process.env.PAYMENT_MODE === 'production' || AGENT_ENV === 'production') {
+          return res.status(400).json({ error: 'Stripe signature header is required in production mode.' });
+        }
+        event = typeof req.body === 'string' ? JSON.parse(req.body) : (Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString('utf8')) : req.body);
       }
-    } else {
-      event = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    }
 
-    if (event?.type === 'payment_intent.succeeded') {
-      const paymentIntent = event.data?.object;
-      const credits = paymentIntent?.metadata?.creditsRequested ? parseInt(paymentIntent.metadata.creditsRequested, 10) : 1000;
-      const buyerId = paymentIntent?.metadata?.buyerAgentId || 'anonymous_cardholder';
+      if (!event || !event.type) {
+        return res.status(400).json({ error: 'Invalid webhook event payload' });
+      }
+
+      // Idempotency: Prevent double processing of the same Stripe webhook event ID
+      if (event.id && stripe.isWebhookEventProcessed(event.id)) {
+        return res.json({ received: true, idempotentReplay: true, eventId: event.id });
+      }
+
+      if (event.id) {
+        stripe.markWebhookEventProcessed(event.id);
+      }
 
       const creditsProvider = paymentProviders.PLATFORM_CREDITS as PlatformCreditsProvider;
-      await creditsProvider.getOrCreateWallet(buyerId, credits);
-    }
 
-    return res.json({ received: true });
-  } catch (err: any) {
-    return res.status(500).json({ error: err.message });
+      switch (event.type) {
+        case 'payment_intent.succeeded': {
+          const paymentIntent = event.data?.object;
+          const creditsRequested = paymentIntent?.metadata?.creditsRequested;
+          const credits = creditsRequested ? parseInt(creditsRequested, 10) : Math.round(((paymentIntent?.amount || 1000) / 100) * 100);
+          const buyerId = paymentIntent?.metadata?.buyerAgentId || 'anonymous_cardholder';
+          const jobId = paymentIntent?.metadata?.jobId;
+
+          await creditsProvider.getOrCreateWallet(buyerId, credits);
+
+          if (jobId) {
+            try {
+              await db.collection('agent_jobs').doc(jobId).set({
+                stripePaymentStatus: 'SUCCEEDED',
+                stripePaymentIntentId: paymentIntent.id,
+                stripeAmountCents: paymentIntent.amount,
+                paidAt: new Date().toISOString()
+              }, { merge: true });
+            } catch {
+              // Non-blocking fallback
+            }
+          }
+          break;
+        }
+
+        case 'payment_intent.payment_failed': {
+          const paymentIntent = event.data?.object;
+          const jobId = paymentIntent?.metadata?.jobId;
+          if (jobId) {
+            try {
+              await db.collection('agent_jobs').doc(jobId).set({
+                stripePaymentStatus: 'FAILED',
+                stripeFailureMessage: paymentIntent.last_payment_error?.message || 'Payment intent failed',
+                failedAt: new Date().toISOString()
+              }, { merge: true });
+            } catch {
+              // Non-blocking fallback
+            }
+          }
+          break;
+        }
+
+        case 'charge.refunded': {
+          const charge = event.data?.object;
+          const paymentIntentId = charge?.payment_intent;
+          console.log(`[STRIPE WEBHOOK] Charge ${charge?.id} refunded for PaymentIntent ${paymentIntentId}`);
+          break;
+        }
+
+        default:
+          break;
+      }
+
+      return res.json({ received: true, eventType: event.type, eventId: event.id });
+    } catch (err: any) {
+      console.error('[STRIPE WEBHOOK] Unhandled error:', err);
+      return res.status(500).json({ error: err.message });
+    }
   }
-});
+);
 

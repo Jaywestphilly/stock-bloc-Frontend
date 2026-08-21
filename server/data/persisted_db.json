@@ -312,7 +312,7 @@
       "reservedBalance": 0,
       "lifetimeSpent": 100,
       "lifetimeEarnings": 0,
-      "updatedAt": "2026-08-21T02:15:59.364Z"
+      "updatedAt": "2026-08-21T13:04:45.612Z"
     },
     "agent_seller_research_test": {
       "agentId": "agent_seller_research_test",
@@ -324,7 +324,7 @@
       "lifetimeGrossEarnings": 100,
       "lifetimePlatformFeesPaid": 5,
       "lifetimeNetEarnings": 95,
-      "updatedAt": "2026-08-21T02:15:59.364Z"
+      "updatedAt": "2026-08-21T13:04:45.612Z"
     },
     "platform_treasury": {
       "agentId": "platform_treasury",
@@ -337,12 +337,12 @@
       "lifetimeGrossEarnings": 5,
       "lifetimeFeesCollected": 5,
       "totalSettledVolume": 100,
-      "updatedAt": "2026-08-21T02:15:59.364Z"
+      "updatedAt": "2026-08-21T13:04:45.612Z"
     }
   },
   "platform_transactions": {
-    "tx_1e688c53d54c4506": {
-      "transactionId": "tx_1e688c53d54c4506",
+    "tx_b20d5b0b3f2b4a33": {
+      "transactionId": "tx_b20d5b0b3f2b4a33",
       "idempotencyKey": "idem_autonomous_loop_9988",
       "jobId": "job_auto_9988",
       "buyerAgentId": "agent_buyer_quant_test",
@@ -357,8 +357,8 @@
       "status": "SETTLED",
       "entries": [
         {
-          "entryId": "ent_942c9fe4d0d8",
-          "transactionId": "tx_1e688c53d54c4506",
+          "entryId": "ent_19ef9955b70b",
+          "transactionId": "tx_b20d5b0b3f2b4a33",
           "jobId": "job_auto_9988",
           "accountId": "agent_buyer_quant_test",
           "accountType": "BUYER",
@@ -368,11 +368,11 @@
           "description": "Debit buyer for job settlement: job_auto_9988",
           "balanceBefore": 1000,
           "balanceAfter": 900,
-          "createdAt": "2026-08-21T02:15:59.364Z"
+          "createdAt": "2026-08-21T13:04:45.612Z"
         },
         {
-          "entryId": "ent_294af58f63a8",
-          "transactionId": "tx_1e688c53d54c4506",
+          "entryId": "ent_5e4865e933b1",
+          "transactionId": "tx_b20d5b0b3f2b4a33",
           "jobId": "job_auto_9988",
           "accountId": "agent_seller_research_test",
           "accountType": "SELLER",
@@ -382,11 +382,11 @@
           "description": "Credit seller net earnings (net of 5% platform fee) for job: job_auto_9988",
           "balanceBefore": 0,
           "balanceAfter": 95,
-          "createdAt": "2026-08-21T02:15:59.364Z"
+          "createdAt": "2026-08-21T13:04:45.612Z"
         },
         {
-          "entryId": "ent_07fe5387cf62",
-          "transactionId": "tx_1e688c53d54c4506",
+          "entryId": "ent_441fbe1543de",
+          "transactionId": "tx_b20d5b0b3f2b4a33",
           "jobId": "job_auto_9988",
           "accountId": "platform_treasury",
           "accountType": "PLATFORM_TREASURY",
@@ -396,7 +396,7 @@
           "description": "Platform treasury fee revenue (5%) for job: job_auto_9988",
           "balanceBefore": 0,
           "balanceAfter": 5,
-          "createdAt": "2026-08-21T02:15:59.364Z"
+          "createdAt": "2026-08-21T13:04:45.612Z"
         }
       ],
       "balancesAfter": {
@@ -404,23 +404,23 @@
         "sellerBalance": 95,
         "treasuryBalance": 5
       },
-      "createdAt": "2026-08-21T02:15:59.364Z",
-      "completedAt": "2026-08-21T02:15:59.364Z"
+      "createdAt": "2026-08-21T13:04:45.612Z",
+      "completedAt": "2026-08-21T13:04:45.612Z"
     }
   },
   "idempotency_keys": {
     "idem_autonomous_loop_9988": {
       "idempotencyKey": "idem_autonomous_loop_9988",
-      "transactionId": "tx_1e688c53d54c4506",
+      "transactionId": "tx_b20d5b0b3f2b4a33",
       "jobId": "job_auto_9988",
       "status": "SETTLED",
-      "createdAt": "2026-08-21T02:15:59.364Z"
+      "createdAt": "2026-08-21T13:04:45.612Z"
     }
   },
   "ledger_entries": {
-    "ent_942c9fe4d0d8": {
-      "entryId": "ent_942c9fe4d0d8",
-      "transactionId": "tx_1e688c53d54c4506",
+    "ent_19ef9955b70b": {
+      "entryId": "ent_19ef9955b70b",
+      "transactionId": "tx_b20d5b0b3f2b4a33",
       "jobId": "job_auto_9988",
       "accountId": "agent_buyer_quant_test",
       "accountType": "BUYER",
@@ -430,11 +430,11 @@
       "description": "Debit buyer for job settlement: job_auto_9988",
       "balanceBefore": 1000,
       "balanceAfter": 900,
-      "createdAt": "2026-08-21T02:15:59.364Z"
+      "createdAt": "2026-08-21T13:04:45.612Z"
     },
-    "ent_294af58f63a8": {
-      "entryId": "ent_294af58f63a8",
-      "transactionId": "tx_1e688c53d54c4506",
+    "ent_5e4865e933b1": {
+      "entryId": "ent_5e4865e933b1",
+      "transactionId": "tx_b20d5b0b3f2b4a33",
       "jobId": "job_auto_9988",
       "accountId": "agent_seller_research_test",
       "accountType": "SELLER",
@@ -444,11 +444,11 @@
       "description": "Credit seller net earnings (net of 5% platform fee) for job: job_auto_9988",
       "balanceBefore": 0,
       "balanceAfter": 95,
-      "createdAt": "2026-08-21T02:15:59.364Z"
+      "createdAt": "2026-08-21T13:04:45.612Z"
     },
-    "ent_07fe5387cf62": {
-      "entryId": "ent_07fe5387cf62",
-      "transactionId": "tx_1e688c53d54c4506",
+    "ent_441fbe1543de": {
+      "entryId": "ent_441fbe1543de",
+      "transactionId": "tx_b20d5b0b3f2b4a33",
       "jobId": "job_auto_9988",
       "accountId": "platform_treasury",
       "accountType": "PLATFORM_TREASURY",
@@ -458,7 +458,7 @@
       "description": "Platform treasury fee revenue (5%) for job: job_auto_9988",
       "balanceBefore": 0,
       "balanceAfter": 5,
-      "createdAt": "2026-08-21T02:15:59.364Z"
+      "createdAt": "2026-08-21T13:04:45.612Z"
     }
   },
   "bounties": {
