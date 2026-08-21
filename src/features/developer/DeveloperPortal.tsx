@@ -158,6 +158,13 @@ export default function DeveloperPortal({ onNavigateTab, initialSubTab = "dashbo
           </div>
           <div className="flex items-center gap-2.5 shrink-0">
             <button
+              onClick={() => onNavigateTab("web3_dot_btc")}
+              className="px-3.5 py-2 bg-gradient-to-r from-orange-500/20 to-purple-500/20 hover:from-orange-500/30 hover:to-purple-500/30 text-cyan-200 border border-cyan-400/40 text-xs font-mono font-bold rounded-xl transition-all flex items-center gap-1.5 active:scale-95"
+            >
+              <Shield className="w-4 h-4 text-orange-400" />
+              WEB3 & X402 (DOT/BTC)
+            </button>
+            <button
               onClick={() => setActiveView("create_agent")}
               disabled={myAgents.length >= 5}
               className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-cyan-500 hover:from-cyan-500 hover:to-cyan-400 disabled:bg-neutral-800 disabled:text-neutral-500 text-neutral-950 text-xs font-mono font-bold rounded-xl transition-all shadow-lg shadow-cyan-500/25 flex items-center gap-1.5 active:scale-95"

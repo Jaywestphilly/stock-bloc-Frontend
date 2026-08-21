@@ -494,10 +494,49 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     stock.symbol.toUpperCase() === "DOT-USD" ||
     (typeof stock.name === "string" && stock.name.toLowerCase().includes("polkadot"));
 
-  // Determine vibrant, high-contrast Metallic / Purple / Green / Red card styling
+  const isOrange =
+    stock.theme === "orange" ||
+    stock.theme === "bitcoin" ||
+    stock.cardColor === "orange" ||
+    stock.cardColor === "bitcoin" ||
+    stock.color === "orange" ||
+    stock.color === "bitcoin" ||
+    stock.symbol.toUpperCase() === "BTC" ||
+    stock.symbol.toUpperCase() === "BTC-USD" ||
+    stock.symbol.toUpperCase() === "WBTC" ||
+    stock.symbol.toUpperCase() === "IBIT" ||
+    (typeof stock.name === "string" && (stock.name.toLowerCase().includes("bitcoin") || stock.name.toLowerCase().includes("btc")));
+
+  // Determine vibrant, high-contrast Metallic / Purple / Orange (Bitcoin) / Green / Red card styling
   const cardTheme = useMemo(() => {
     const isLiveUpFlash = priceFlashState === "up";
     const isLiveDownFlash = priceFlashState === "down";
+
+    if (isOrange) {
+      // CUSTOM BITCOIN ORANGE CARD THEME (e.g. Bitcoin BTC-USD)
+      const baseRgb = "247, 147, 26"; // iconic bitcoin orange (#f7931a)
+      const glowRgb = "255, 170, 51"; // amber-orange (#ffaa33)
+      const deepRgb = "154, 52, 18"; // orange-900 (#9a3412)
+      const darkOrangeRgb = "194, 65, 12"; // orange-700 (#c2410c)
+
+      const effectiveOpacity = isLiveUpFlash || isLiveDownFlash ? 0.48 : 0.35;
+
+      return {
+        isPositive: isPositive,
+        isCustom: true,
+        background: `radial-gradient(ellipse at 35% 50%, rgba(${baseRgb}, ${effectiveOpacity * 1.5}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.8}) 60%, rgba(26, 12, 2, 0.95) 100%)`,
+        borderColor: isLiveUpFlash || isLiveDownFlash
+          ? "rgba(255, 170, 51, 0.98)"
+          : stock.isPinned
+            ? "rgba(255, 170, 51, 0.92)"
+            : "rgba(247, 147, 26, 0.75)",
+        boxShadow: stock.isPinned
+          ? `0 0 28px rgba(${glowRgb}, 0.50), inset 0 0 20px rgba(${darkOrangeRgb}, 0.30)`
+          : isLiveUpFlash || isLiveDownFlash
+            ? `0 0 36px rgba(${glowRgb}, 0.70), inset 0 0 24px rgba(${glowRgb}, 0.40)`
+            : `0 0 24px rgba(${baseRgb}, 0.35), inset 0 0 16px rgba(${baseRgb}, 0.18)`,
+      };
+    }
 
     if (isGold) {
       // CUSTOM GOLD / GOLDEN CARD THEME (e.g. SPDR Gold Shares GLD)
@@ -654,7 +693,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
             : `0 0 20px rgba(${baseRgb}, 0.15), inset 0 0 15px rgba(${baseRgb}, 0.08)`,
       };
     }
-  }, [isPositive, isGold, isSilver, isCopper, isPurple, stock.changePercent, stock.isPinned, priceFlashState]);
+  }, [isPositive, isGold, isSilver, isCopper, isPurple, isOrange, stock.changePercent, stock.isPinned, priceFlashState]);
 
   // Volatility calculation for the 7D variance badge
   const volatilityOverlay = useMemo(() => {
@@ -738,17 +777,19 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     const minVal = Math.min(...rawData);
     const maxVal = Math.max(...rawData);
     const range = maxVal - minVal || 1;
-    const lineColor = isGold
-      ? "#fbbf24"
-      : isSilver
-        ? "#e2e8f0"
-        : isCopper
-          ? "#fb923c"
-          : isPurple
-            ? "#d946ef"
-            : trendIsPositive
-              ? "#00ff88"
-              : "#ff3b3b";
+    const lineColor = isOrange
+      ? "#f7931a"
+      : isGold
+        ? "#fbbf24"
+        : isSilver
+          ? "#e2e8f0"
+          : isCopper
+            ? "#fb923c"
+            : isPurple
+              ? "#d946ef"
+              : trendIsPositive
+                ? "#00ff88"
+                : "#ff3b3b";
 
     // HEIKIN-ASHI JAPANESE CANDLESTICK MODE (Selectable Option)
     if (watchlistChartStyle === "candlestick") {
@@ -1019,8 +1060,11 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     }
   };
 
-  // Determine performance category for dynamic holographic border glow (gold, silver, copper, purple, surge, bullish, bearish)
+  // Determine performance category for dynamic holographic border glow (gold, silver, copper, purple, orange/bitcoin, surge, bullish, bearish)
   const getPerformanceHoloClass = (changePct: number, category?: string) => {
+    if (isOrange) {
+      return "holo-card-orange";
+    }
     if (isGold) {
       return "holo-card-gold";
     }
@@ -1062,17 +1106,19 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
       {/* Sleek Data Stream Edge Accent Beam */}
       <div
         className={`absolute left-0 top-0 bottom-0 w-[2px] transition-opacity duration-300 pointer-events-none z-20 ${
-          isGold
-            ? "bg-gradient-to-b from-amber-300 via-yellow-400 to-amber-600/0 opacity-90 group-hover/card-wrapper:opacity-100"
-            : isSilver
-              ? "bg-gradient-to-b from-slate-200 via-white to-slate-400/0 opacity-90 group-hover/card-wrapper:opacity-100"
-              : isCopper
-                ? "bg-gradient-to-b from-orange-400 via-amber-500 to-orange-700/0 opacity-90 group-hover/card-wrapper:opacity-100"
-                : isPurple
-                  ? "bg-gradient-to-b from-purple-400 via-fuchsia-400 to-purple-600/0 opacity-80 group-hover/card-wrapper:opacity-100"
-                  : isPositive
-                    ? "bg-gradient-to-b from-emerald-400 via-teal-300 to-emerald-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
-                    : "bg-gradient-to-b from-rose-500 via-red-400 to-rose-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
+          isOrange
+            ? "bg-gradient-to-b from-orange-400 via-amber-400 to-orange-600/0 opacity-95 group-hover/card-wrapper:opacity-100"
+            : isGold
+              ? "bg-gradient-to-b from-amber-300 via-yellow-400 to-amber-600/0 opacity-90 group-hover/card-wrapper:opacity-100"
+              : isSilver
+                ? "bg-gradient-to-b from-slate-200 via-white to-slate-400/0 opacity-90 group-hover/card-wrapper:opacity-100"
+                : isCopper
+                  ? "bg-gradient-to-b from-orange-400 via-amber-500 to-orange-700/0 opacity-90 group-hover/card-wrapper:opacity-100"
+                  : isPurple
+                    ? "bg-gradient-to-b from-purple-400 via-fuchsia-400 to-purple-600/0 opacity-80 group-hover/card-wrapper:opacity-100"
+                    : isPositive
+                      ? "bg-gradient-to-b from-emerald-400 via-teal-300 to-emerald-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
+                      : "bg-gradient-to-b from-rose-500 via-red-400 to-rose-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
         }`}
       />
 
@@ -1192,17 +1238,19 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
               exit={{ opacity: 0 }}
               transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
               className={`absolute inset-0 pointer-events-none z-0 rounded-[inherit] ${
-                isGold
-                  ? "bg-gradient-to-r from-amber-500/40 via-yellow-400/30 to-amber-600/40"
-                  : isSilver
-                    ? "bg-gradient-to-r from-slate-300/40 via-white/30 to-slate-400/40"
-                    : isCopper
-                      ? "bg-gradient-to-r from-orange-500/40 via-amber-400/30 to-orange-600/40"
-                      : isPurple
-                        ? "bg-gradient-to-r from-purple-500/40 via-fuchsia-400/30 to-purple-600/40"
-                        : priceFlashState === "up"
-                          ? "bg-gradient-to-r from-emerald-500/35 via-emerald-400/25 to-teal-500/35 price-flash-bg-green"
-                          : "bg-gradient-to-r from-rose-500/35 via-red-400/25 to-rose-600/35 price-flash-bg-red"
+                isOrange
+                  ? "bg-gradient-to-r from-orange-500/45 via-amber-400/35 to-orange-600/45"
+                  : isGold
+                    ? "bg-gradient-to-r from-amber-500/40 via-yellow-400/30 to-amber-600/40"
+                    : isSilver
+                      ? "bg-gradient-to-r from-slate-300/40 via-white/30 to-slate-400/40"
+                      : isCopper
+                        ? "bg-gradient-to-r from-orange-500/40 via-amber-400/30 to-orange-600/40"
+                        : isPurple
+                          ? "bg-gradient-to-r from-purple-500/40 via-fuchsia-400/30 to-purple-600/40"
+                          : priceFlashState === "up"
+                            ? "bg-gradient-to-r from-emerald-500/35 via-emerald-400/25 to-teal-500/35 price-flash-bg-green"
+                            : "bg-gradient-to-r from-rose-500/35 via-red-400/25 to-rose-600/35 price-flash-bg-red"
               }`}
             />
           )}
@@ -1245,43 +1293,49 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                 className={`font-zen text-sm sm:text-base tracking-wider ${
                   isSyncing
                     ? "glitch-text-refresh text-cyan-300"
-                    : isGold
-                      ? "text-amber-100"
-                      : isSilver
-                        ? "text-slate-100"
-                        : isCopper
-                          ? "text-orange-100"
-                          : isPurple
-                            ? "text-fuchsia-100"
-                            : "text-cyan-100"
+                    : isOrange
+                      ? "text-orange-100 drop-shadow-[0_0_8px_rgba(247,147,26,0.5)]"
+                      : isGold
+                        ? "text-amber-100"
+                        : isSilver
+                          ? "text-slate-100"
+                          : isCopper
+                            ? "text-orange-100"
+                            : isPurple
+                              ? "text-fuchsia-100"
+                              : "text-cyan-100"
                 }`}
               >
                 ${stock.symbol}
               </span>
               <div
                 className={`inline-flex items-center gap-1.5 px-2 py-0.5 border alien-block-cut-sm transition-all bg-[#020b16] ${
-                  isGold
-                    ? "border-amber-500/50"
-                    : isSilver
-                      ? "border-slate-400/50"
-                      : isCopper
-                        ? "border-orange-500/50"
-                        : isPurple
-                          ? "border-purple-500/50"
-                          : "border-cyan-500/40"
+                  isOrange
+                    ? "border-orange-500/60 shadow-[0_0_8px_rgba(247,147,26,0.3)]"
+                    : isGold
+                      ? "border-amber-500/50"
+                      : isSilver
+                        ? "border-slate-400/50"
+                        : isCopper
+                          ? "border-orange-500/50"
+                          : isPurple
+                            ? "border-purple-500/50"
+                            : "border-cyan-500/40"
                 }`}
                 title={`SB Rating: ${computeDeterministicSignal(stock).score}/100`}
               >
                 <span className={`text-[10px] font-martian font-black tracking-tight ${
-                  isGold
-                    ? "text-amber-300"
-                    : isSilver
-                      ? "text-slate-200"
-                      : isCopper
-                        ? "text-orange-300"
-                        : isPurple
-                          ? "text-purple-300"
-                          : "text-cyan-300"
+                  isOrange
+                    ? "text-orange-300"
+                    : isGold
+                      ? "text-amber-300"
+                      : isSilver
+                        ? "text-slate-200"
+                        : isCopper
+                          ? "text-orange-300"
+                          : isPurple
+                            ? "text-purple-300"
+                            : "text-cyan-300"
                 }`}>
                   SB {computeDeterministicSignal(stock).score}
                 </span>
@@ -1305,15 +1359,17 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
               )}
             </div>
             <span className={`text-[11px] font-medium font-sans truncate ${
-              isGold
-                ? "text-amber-300/90"
-                : isSilver
-                  ? "text-slate-300/90"
-                  : isCopper
-                    ? "text-orange-300/90"
-                    : isPurple
-                      ? "text-purple-300/90"
-                      : "text-cyan-400/80"
+              isOrange
+                ? "text-orange-300/90"
+                : isGold
+                  ? "text-amber-300/90"
+                  : isSilver
+                    ? "text-slate-300/90"
+                    : isCopper
+                      ? "text-orange-300/90"
+                      : isPurple
+                        ? "text-purple-300/90"
+                        : "text-cyan-400/80"
             }`}>
               {stock.name}
             </span>
@@ -1340,17 +1396,19 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
             </span>
             <div
               className={`min-w-[76px] text-center px-2 py-0.5 mt-1 alien-block-cut-sm font-martian font-bold text-xs tracking-wider transition-all flex items-center justify-center gap-1 ${
-                isGold
-                  ? "bg-amber-950/90 text-amber-200 border-2 border-amber-400 glow-gold shadow-[0_0_12px_rgba(245,158,11,0.45)]"
-                  : isSilver
-                    ? "bg-slate-900/90 text-slate-100 border-2 border-slate-300 glow-silver shadow-[0_0_12px_rgba(226,232,240,0.45)]"
-                    : isCopper
-                      ? "bg-orange-950/90 text-orange-200 border-2 border-orange-400 glow-copper shadow-[0_0_12px_rgba(234,88,12,0.45)]"
-                      : isPurple
-                        ? "bg-purple-950/90 text-purple-200 border-2 border-purple-400 glow-purple shadow-[0_0_12px_rgba(192,38,211,0.45)]"
-                        : isPositive
-                          ? "bg-emerald-950/90 text-emerald-300 border-2 border-emerald-400 glow-emerald"
-                          : "bg-rose-950/90 text-rose-300 border-2 border-rose-500 glow-rose"
+                isOrange
+                  ? "bg-orange-950/90 text-orange-200 border-2 border-orange-400 glow-orange shadow-[0_0_14px_rgba(247,147,26,0.5)]"
+                  : isGold
+                    ? "bg-amber-950/90 text-amber-200 border-2 border-amber-400 glow-gold shadow-[0_0_12px_rgba(245,158,11,0.45)]"
+                    : isSilver
+                      ? "bg-slate-900/90 text-slate-100 border-2 border-slate-300 glow-silver shadow-[0_0_12px_rgba(226,232,240,0.45)]"
+                      : isCopper
+                        ? "bg-orange-950/90 text-orange-200 border-2 border-orange-400 glow-copper shadow-[0_0_12px_rgba(234,88,12,0.45)]"
+                        : isPurple
+                          ? "bg-purple-950/90 text-purple-200 border-2 border-purple-400 glow-purple shadow-[0_0_12px_rgba(192,38,211,0.45)]"
+                          : isPositive
+                            ? "bg-emerald-950/90 text-emerald-300 border-2 border-emerald-400 glow-emerald"
+                            : "bg-rose-950/90 text-rose-300 border-2 border-rose-500 glow-rose"
               } ${isSyncing ? "glitch-text-refresh" : ""}`}
             >
               <span className="text-[9px] font-bold text-current/80 mr-0.5">1D</span>

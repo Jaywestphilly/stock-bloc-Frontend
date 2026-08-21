@@ -171,7 +171,8 @@ export type ViewTab =
   | "agent_feed"
   | "developer_docs"
   | "agent_exchange"
-  | "developer_earnings";
+  | "developer_earnings"
+  | "web3_dot_btc";
 
 export interface ApiKeyDetails {
   key: string;

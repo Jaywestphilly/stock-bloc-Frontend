@@ -12683,6 +12683,9 @@ export const INITIAL_STOCKS: StockTicker[] = [
     "change": 1450,
     "changePercent": 2.31,
     "category": "indexes",
+    "theme": "orange",
+    "cardColor": "orange",
+    "color": "orange",
     "sparkline": [
       60288,
       61544,

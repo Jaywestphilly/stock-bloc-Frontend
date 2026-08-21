@@ -237,6 +237,87 @@ html.theme-daylight .price-flash-down {
     inset 0 0 10px rgba(244, 63, 94, 0.2) !important;
 }
 
+/* Subtle Price Pulse Animations for Real-Time Tickers */
+@keyframes subtle-price-pulse-green {
+  0% {
+    transform: scale(1);
+    color: #34d399;
+    text-shadow: 0 0 14px rgba(52, 211, 153, 0.9);
+    background-color: rgba(16, 185, 129, 0.22);
+    border-color: rgba(52, 211, 153, 0.8);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+  }
+  40% {
+    transform: scale(1.02);
+    color: #10b981;
+    text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    background-color: rgba(16, 185, 129, 0.12);
+  }
+  100% {
+    transform: scale(1);
+    background-color: transparent;
+    border-color: inherit;
+    box-shadow: none;
+  }
+}
+
+@keyframes subtle-price-pulse-red {
+  0% {
+    transform: scale(1);
+    color: #f87171;
+    text-shadow: 0 0 14px rgba(248, 113, 113, 0.9);
+    background-color: rgba(239, 68, 68, 0.22);
+    border-color: rgba(248, 113, 113, 0.8);
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+  }
+  40% {
+    transform: scale(0.98);
+    color: #ef4444;
+    text-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+    background-color: rgba(239, 68, 68, 0.12);
+  }
+  100% {
+    transform: scale(1);
+    background-color: transparent;
+    border-color: inherit;
+    box-shadow: none;
+  }
+}
+
+@keyframes subtle-radar-glow-btc {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(247, 147, 26, 0.25), inset 0 0 10px rgba(247, 147, 26, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(247, 147, 26, 0.45), inset 0 0 15px rgba(247, 147, 26, 0.12);
+  }
+}
+
+@keyframes subtle-radar-glow-dot {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(217, 70, 239, 0.25), inset 0 0 10px rgba(217, 70, 239, 0.05);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(217, 70, 239, 0.45), inset 0 0 15px rgba(217, 70, 239, 0.12);
+  }
+}
+
+.animate-subtle-pulse-up {
+  animation: subtle-price-pulse-green 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-subtle-pulse-down {
+  animation: subtle-price-pulse-red 1.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-ticker-glow-btc {
+  animation: subtle-radar-glow-btc 3.5s ease-in-out infinite;
+}
+
+.animate-ticker-glow-dot {
+  animation: subtle-radar-glow-dot 3.5s ease-in-out infinite;
+}
+
 /* Futuristic Alien Glyph & Sci-Fi Script Font Utilities with Holographic Hover Zoom */
 .font-alien {
   font-family: "Orbitron", "Oxanium", "Chakra Petch", sans-serif !important;
@@ -1010,6 +1091,22 @@ a:hover .font-alien,
   }
 }
 
+@keyframes holo-glow-orange-anim {
+  0%,
+  100% {
+    border-color: rgba(247, 147, 26, 0.70);
+    box-shadow:
+      0 0 18px rgba(247, 147, 26, 0.45),
+      inset 0 0 12px rgba(194, 65, 12, 0.28);
+  }
+  50% {
+    border-color: rgba(255, 170, 51, 0.98);
+    box-shadow:
+      0 0 32px rgba(255, 170, 51, 0.70),
+      inset 0 0 20px rgba(247, 147, 26, 0.40);
+  }
+}
+
 .holo-card-surge {
   animation: holo-glow-surge-anim 3s ease-in-out infinite !important;
 }
@@ -1042,6 +1139,10 @@ a:hover .font-alien,
   animation: holo-glow-copper-anim 3.5s ease-in-out infinite !important;
 }
 
+.holo-card-orange {
+  animation: holo-glow-orange-anim 3.5s ease-in-out infinite !important;
+}
+
 .glow-purple {
   box-shadow: 0 0 16px rgba(192, 38, 211, 0.5), inset 0 0 10px rgba(168, 85, 247, 0.25);
 }
@@ -1056,6 +1157,10 @@ a:hover .font-alien,
 
 .glow-copper {
   box-shadow: 0 0 18px rgba(234, 88, 12, 0.55), inset 0 0 12px rgba(251, 146, 60, 0.3);
+}
+
+.glow-orange {
+  box-shadow: 0 0 18px rgba(247, 147, 26, 0.60), inset 0 0 12px rgba(255, 170, 51, 0.35);
 }
 
 /* Continuous Marquee Scrolling Animation */

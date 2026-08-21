@@ -12,6 +12,7 @@ import { agentPlatformRouter, registerAutonomousAgentHandler, inMemoryAgentRegis
 import { communityApiRouter } from './server/communityApi.js';
 import { agentIntelligenceRouter } from './server/agentIntelligenceApi.js';
 import { agentExchangeRouter, ensureSeedBountiesExist } from './server/agentExchangeApi.js';
+import { web3DotBtcRouter } from './server/web3DotBtcApi.js';
 import { db } from './server/firebaseAdmin.js';
 import { FieldValue } from 'firebase-admin/firestore';
 
@@ -39,6 +40,8 @@ app.use('/api/v1/agents', agentPlatformRouter);
 app.use('/api/v1/developers', agentPlatformRouter);
 app.use('/api/v1/community', communityApiRouter);
 app.use('/api/v1/intelligence', agentIntelligenceRouter);
+app.use('/api/v1/web3', web3DotBtcRouter);
+app.use('/api/web3', web3DotBtcRouter);
 app.use('/api/v1', agentExchangeRouter);
 app.use('/api/v1', agentIntelligenceRouter);
 app.use('/api', agentExchangeRouter);

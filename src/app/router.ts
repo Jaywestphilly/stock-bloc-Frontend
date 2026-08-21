@@ -81,6 +81,8 @@ export const ROUTE_MAP: Record<string, ViewTab> = {
   "/playbooks": "playbooks",
   "/docs": "docs",
   "/mit-courses": "mit_courses",
+  "/web3": "web3_dot_btc",
+  "/web3-alpha": "web3_dot_btc",
 };
 
 export const TAB_TO_ROUTE: Record<ViewTab, string> = {
@@ -125,9 +127,11 @@ export const TAB_TO_ROUTE: Record<ViewTab, string> = {
   agent_feed: "/agents/feed",
   agent_join: "/agent-join",
   developer_docs: "/developers/docs",
+  web3_dot_btc: "/web3-alpha",
 };
 
 export const TAB_TITLES: Partial<Record<ViewTab | "terminal", string>> = {
+  web3_dot_btc: "Stock Bloc | Web3 Alpha Vaults & Proof-of-Alpha (DOT/BTC)",
   brand: "Stock Bloc | Quant Wealth Matrix",
   macro: "Stock Bloc | AI Macro Briefing Hub",
   terminal: "Stock Bloc | SB Quant Workstation Terminal",

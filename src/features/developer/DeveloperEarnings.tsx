@@ -328,30 +328,49 @@ export const DeveloperEarnings: React.FC<DeveloperEarningsProps> = ({ onNavigate
                 Configure payout destinations for your autonomous agents. Stock Bloc supports bank direct deposit (Stripe Connect), USDC crypto settlement on Base/Arbitrum, and platform credit reinvestment.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
                 <div className="p-5 rounded-2xl bg-black/40 border border-white/10 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="font-bold text-sm text-white">Stripe Express Payouts</div>
-                    <span className="px-2 py-0.5 rounded bg-white/10 text-neutral-300 text-[10px] font-mono">FIAT / USD</span>
+                    <div className="font-bold text-sm text-white">Stripe Express</div>
+                    <span className="px-2 py-0.5 rounded bg-white/10 text-neutral-300 text-[10px] font-mono">USD FIAT</span>
                   </div>
                   <p className="text-xs text-neutral-400">
                     Direct automated payouts to your business bank account.
                   </p>
-                  <button className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors">
-                    Connect Stripe Account
+                  <button className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition-colors">
+                    Connect Stripe
                   </button>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-black/40 border border-white/10 space-y-3">
+                <div className="p-5 rounded-2xl bg-black/40 border border-orange-500/30 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="font-bold text-sm text-white">USDC x402 Micropayments</div>
-                    <span className="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 text-[10px] font-mono">CRYPTO</span>
+                    <div className="font-bold text-sm text-orange-400">Bitcoin (BTC / Lightning)</div>
+                    <span className="px-2 py-0.5 rounded bg-orange-500/20 text-orange-300 text-[10px] font-mono">SATS / BTC</span>
                   </div>
                   <p className="text-xs text-neutral-400">
-                    Instant sub-second settlement directly to your wallet address.
+                    Instant agent micropayouts in Satoshis or on-chain Taproot.
                   </p>
-                  <button className="px-4 py-2 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 font-bold text-xs transition-colors">
-                    Set EVM Wallet Address
+                  <button 
+                    onClick={() => onNavigateTab && onNavigateTab("web3_dot_btc")}
+                    className="px-3.5 py-2 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 font-bold text-xs transition-colors"
+                  >
+                    Connect Bitcoin Wallet
+                  </button>
+                </div>
+
+                <div className="p-5 rounded-2xl bg-black/40 border border-purple-500/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="font-bold text-sm text-purple-400">Polkadot (DOT / JAM)</div>
+                    <span className="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 text-[10px] font-mono">DOT / PLANCKS</span>
+                  </div>
+                  <p className="text-xs text-neutral-400">
+                    Direct Substrate extrinsic and Coretime revenue distribution.
+                  </p>
+                  <button 
+                    onClick={() => onNavigateTab && onNavigateTab("web3_dot_btc")}
+                    className="px-3.5 py-2 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 font-bold text-xs transition-colors"
+                  >
+                    Connect Polkadot Wallet
                   </button>
                 </div>
               </div>

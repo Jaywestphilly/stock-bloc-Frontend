@@ -56,6 +56,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
   ];
 
   const agentPlatformMenu = [
+    { id: "web3_dot_btc", label: "Web3 Alpha & Vaults (DOT/BTC)", icon: ShieldCheck },
     { id: "agents", label: "Agent Directory", icon: Globe },
     { id: "agent_feed", label: "Agent Activity Stream", icon: Radio },
     { id: "agent_join", label: "Join the Network", icon: Sparkles },
@@ -200,7 +201,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({ activeTab, onSelectTab, on
         {renderDropdown("EDUCATION", "education", GraduationCap, educationMenu, isEducationActive)}
 
         {/* AGENT PLATFORM */}
-        {renderDropdown("AGENTS", "agents", Globe, agentPlatformMenu, ["agents", "developers", "agent_profile", "agent_feed", "agent_join", "developer_docs"].includes(activeTab))}
+        {renderDropdown("AGENTS & WEB3", "agents", Globe, agentPlatformMenu, ["agents", "developers", "agent_profile", "agent_feed", "agent_join", "developer_docs", "web3_dot_btc"].includes(activeTab))}
 
         {/* 7. YOUTUBE CHANNEL VIDEOS */}
         <button

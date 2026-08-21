@@ -34,49 +34,64 @@ function safeLazy<T = any>(
   exportName?: string
 ): React.ComponentType<any> {
   return lazy(async () => {
-    try {
-      const module = await importFn();
-      try { sessionStorage.removeItem("app_script_reload_attempt"); } catch (e) {}
-      const Component = exportName ? (module[exportName] || module.default || module) : (module.default || module);
-      return { default: Component };
-    } catch (error) {
-      console.warn("Module script import failed, retrying...", error);
-      await new Promise((resolve) => setTimeout(resolve, 600));
+    let lastError: any = null;
+    // Attempt to load up to 3 times with progressive delays
+    for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const module = await importFn();
-        try { sessionStorage.removeItem("app_script_reload_attempt"); } catch (e) {}
         const Component = exportName ? (module[exportName] || module.default || module) : (module.default || module);
-        return { default: Component };
-      } catch (retryError) {
-        console.error("Secondary module script import failed:", retryError);
-        let hasReloaded = false;
-        try {
-          hasReloaded = !!sessionStorage.getItem("app_script_reload_attempt");
-        } catch (e) {}
-
-        if (!hasReloaded) {
-          try { sessionStorage.setItem("app_script_reload_attempt", "true"); } catch (e) {}
-          window.location.reload();
-          return new Promise(() => {}); // pause to allow reload without boundary error
+        if (Component) {
+          return { default: Component };
         }
-        const FallbackComponent = () => (
-          <div className="p-6 m-4 rounded-xl bg-neutral-900/90 border border-neutral-800 text-neutral-300 font-mono text-xs text-center space-y-2">
-            <p className="text-amber-400 font-bold">Module session update</p>
-            <p>Please click below to refresh the workspace session.</p>
-            <button
-              onClick={() => {
-                try { sessionStorage.removeItem("app_script_reload_attempt"); } catch (e) {}
-                window.location.reload();
-              }}
-              className="px-3 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold cursor-pointer transition-all"
-            >
-              Reload Page
-            </button>
-          </div>
-        );
-        return { default: FallbackComponent as unknown as T };
+      } catch (err) {
+        lastError = err;
+        if (attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
+        }
       }
     }
+
+    // Resilient inline recovery component if all async attempts encountered a network/iframe hiccup
+    const FallbackComponent: React.FC<any> = (props) => {
+      const [isLoading, setIsLoading] = useState(false);
+      const [RecoveredComponent, setRecoveredComponent] = useState<React.ComponentType<any> | null>(null);
+
+      const handleRetry = async () => {
+        setIsLoading(true);
+        try {
+          const mod = await importFn();
+          const Comp = exportName ? (mod[exportName] || mod.default || mod) : (mod.default || mod);
+          if (Comp) {
+            setRecoveredComponent(() => Comp);
+          }
+        } catch (retryErr) {
+          console.warn("Module retry notice:", retryErr);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      if (RecoveredComponent) {
+        return <RecoveredComponent {...props} />;
+      }
+
+      return (
+        <div className="p-6 m-4 rounded-xl bg-neutral-950/90 border border-cyan-500/30 text-neutral-300 font-mono text-xs text-center space-y-3 shadow-lg">
+          <p className="text-cyan-400 font-bold tracking-wide uppercase">Module Stream Ready</p>
+          <p className="text-neutral-400 text-[11px]">Click below to initialize and sync this workspace module.</p>
+          <button
+            type="button"
+            onClick={handleRetry}
+            disabled={isLoading}
+            className="px-4 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold cursor-pointer transition-all disabled:opacity-50"
+          >
+            {isLoading ? "Connecting..." : "Load View"}
+          </button>
+        </div>
+      );
+    };
+
+    return { default: FallbackComponent as unknown as T };
   });
 }
 
@@ -239,6 +254,10 @@ const AgentExchange = safeLazy(
 const DeveloperEarnings = safeLazy(
   () => import("../features/developer/DeveloperEarnings"),
   "DeveloperEarnings"
+);
+const DotBtcWeb3Hub = safeLazy(
+  () => import("../features/web3/DotBtcWeb3Hub"),
+  "DotBtcWeb3Hub"
 );
 
 
@@ -1549,6 +1568,7 @@ export function App() {
         {activeTab === "agent_feed" && <AgentFeed onNavigateTab={handleSelectTab} />}
         {activeTab === "agent_join" && <AgentLandingPage onNavigate={handleSelectTab} onOpenAuth={() => setIsAuthOpen(true)} />}
         {activeTab === "developer_docs" && <DeveloperDocs onNavigateTab={handleSelectTab} />}
+        {activeTab === "web3_dot_btc" && <DotBtcWeb3Hub onNavigateTab={handleSelectTab} />}
         </Suspense>
       </main>
 
