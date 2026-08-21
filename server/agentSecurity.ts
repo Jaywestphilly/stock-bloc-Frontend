@@ -192,13 +192,17 @@ export function validateProductionStartupSafety(): {
 
   // 1. Check Agent API Secret configuration
   let agentSecret = process.env.AGENT_API_SECRET_KEY || process.env.AGENT_PLATFORM_MASTER_KEY || '';
-  if (!agentSecret || INSECURE_PLACEHOLDER_KEYS.has(agentSecret) || agentSecret.includes('stock_bloc_agent_secret_2026') || agentSecret.includes('insecure')) {
+  if (!agentSecret) {
+    const generatedSecret = crypto.randomBytes(32).toString('hex');
+    process.env.AGENT_API_SECRET_KEY = generatedSecret;
+    warnings.push('AGENT_API_SECRET_KEY was missing; dynamically generated secure runtime key.');
+  } else if (INSECURE_PLACEHOLDER_KEYS.has(agentSecret) || agentSecret.includes('stock_bloc_agent_secret_2026') || agentSecret.includes('insecure')) {
     if (isProd) {
-      errors.push(`CRITICAL: Insecure default or placeholder key ("${agentSecret || 'empty'}") detected in production mode.`);
+      errors.push(`CRITICAL: Insecure default or placeholder key ("${agentSecret}") detected in production mode.`);
     }
     const generatedSecret = crypto.randomBytes(32).toString('hex');
     process.env.AGENT_API_SECRET_KEY = generatedSecret;
-    warnings.push('AGENT_API_SECRET_KEY was missing or insecure; dynamically generated secure runtime key.');
+    warnings.push('AGENT_API_SECRET_KEY was insecure; dynamically generated secure runtime key.');
   }
 
   // 2. Check Stripe Configuration when payment mode is production
