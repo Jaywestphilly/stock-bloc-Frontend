@@ -29,6 +29,16 @@ ensureSeedBountiesExist().catch((err) => console.warn('Bounty auto-seed error:',
 // Enable proxy trust for reverse proxies (Cloud Run / Nginx)
 app.set('trust proxy', 1);
 
+// Health check endpoint for Cloud Run / reverse proxy monitoring
+app.get(['/api/health', '/health'], (_req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    environment: process.env.NODE_ENV || 'development',
+    uptime: Math.floor(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Set payload limits for base64 image uploads and capture rawBody for webhook signature verification
 app.use(express.json({
   limit: '15mb',
