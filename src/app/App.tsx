@@ -689,7 +689,14 @@ export function App() {
       return 0;
     });
 
-    return result;
+    // Enforce 1:1 symbol uniqueness in the rendered output
+    const seenSymbols = new Set<string>();
+    return result.filter((stk) => {
+      const sym = stk.symbol?.toUpperCase();
+      if (!sym || seenSymbols.has(sym)) return false;
+      seenSymbols.add(sym);
+      return true;
+    });
   }, [stocks, selectedCategory, searchQuery, sortField, sortDirection, starredTickers]);
 
   // Export Watchlist as CSV
@@ -809,7 +816,12 @@ export function App() {
       if (!res.ok) throw new Error("Failed to fetch market watchlist");
       const json = await res.json();
       if (json && json.watchlist && Array.isArray(json.watchlist)) {
-        const mappedStocks = json.watchlist.map((backendStock: any) => {
+        const uniqueMap = new Map<string, any>();
+        json.watchlist.forEach((backendStock: any) => {
+          if (!backendStock || !backendStock.symbol) return;
+          const symKey = backendStock.symbol.toUpperCase();
+          if (uniqueMap.has(symKey)) return;
+
           const history1D = (backendStock.sparkline || []).map((price: number, i: number) => ({
             time: new Date(Date.now() - ((backendStock.sparkline || []).length - 1 - i) * 60 * 60 * 1000).toISOString(),
             price
@@ -843,7 +855,7 @@ export function App() {
 
           const lastUpdatedIso = backendStock.last_updated || json.updated_at || new Date().toISOString();
 
-          return {
+          uniqueMap.set(symKey, {
             symbol: backendStock.symbol,
             name: backendStock.name || backendStock.symbol,
             price: backendStock.price,
@@ -893,17 +905,18 @@ export function App() {
             signalLabel: backendStock.signal?.signalLabel ?? "Bullish",
             quantMetrics: backendStock.quant || null,
             lastUpdatedIso
-          };
+          });
         });
 
         // Retain any initial stocks missing from backend watchlist feed
-        const backendSymbols = new Set(mappedStocks.map((s: any) => s.symbol.toUpperCase()));
         INITIAL_STOCKS.forEach((initStock) => {
-          if (!backendSymbols.has(initStock.symbol.toUpperCase())) {
-            mappedStocks.push(initStock);
+          const symKey = initStock.symbol.toUpperCase();
+          if (!uniqueMap.has(symKey)) {
+            uniqueMap.set(symKey, initStock);
           }
         });
 
+        const mappedStocks = Array.from(uniqueMap.values());
         setStocks(mappedStocks);
 
         // Read updated_at from GitHub JSON and set fetch time
@@ -1309,7 +1322,7 @@ export function App() {
                 {filteredStocks.length > 0 ? (
                   filteredStocks.map((stock, index) => (
                     <StockCard
-                      key={`${selectedCategory}-${searchQuery}-${stock.symbol}`}
+                      key={`${selectedCategory}-${searchQuery}-${stock.symbol}-${index}`}
                       index={index}
                       stock={stock}
                       onSelect={setSelectedStock}
@@ -1590,9 +1603,9 @@ export function App() {
                     s.name.toLowerCase().includes(searchQuery.toLowerCase()),
                 )
                 .slice(0, 8)
-                .map((s) => (
+                .map((s, idx) => (
                   <div
-                    key={s.symbol}
+                    key={`${s.symbol}-${idx}`}
                     onClick={() => {
                       setSelectedStock(s);
                       setIsSearchOpen(false);

@@ -455,6 +455,37 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
 
   const isPositive = (stock.changePercent ?? 0) >= 0;
   const isHighVolatility = Math.abs(stock.changePercent ?? 0) >= 3;
+
+  const isGold =
+    stock.theme === "gold" ||
+    stock.theme === "golden" ||
+    stock.cardColor === "gold" ||
+    stock.cardColor === "golden" ||
+    stock.color === "gold" ||
+    stock.color === "golden" ||
+    stock.symbol.toUpperCase() === "GLD" ||
+    stock.symbol.toUpperCase() === "GOLD" ||
+    stock.symbol.toUpperCase() === "XAU-USD" ||
+    (typeof stock.name === "string" && stock.name.toLowerCase().includes("gold trust"));
+
+  const isSilver =
+    stock.theme === "silver" ||
+    stock.cardColor === "silver" ||
+    stock.color === "silver" ||
+    stock.symbol.toUpperCase() === "SLV" ||
+    stock.symbol.toUpperCase() === "SILVER" ||
+    stock.symbol.toUpperCase() === "XAG-USD" ||
+    (typeof stock.name === "string" && stock.name.toLowerCase().includes("silver trust"));
+
+  const isCopper =
+    stock.theme === "copper" ||
+    stock.cardColor === "copper" ||
+    stock.color === "copper" ||
+    stock.symbol.toUpperCase() === "CPER" ||
+    stock.symbol.toUpperCase() === "COPPER" ||
+    stock.symbol.toUpperCase() === "HG=F" ||
+    (typeof stock.name === "string" && stock.name.toLowerCase().includes("copper fund"));
+
   const isPurple =
     stock.theme === "purple" ||
     stock.cardColor === "purple" ||
@@ -463,10 +494,88 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     stock.symbol.toUpperCase() === "DOT-USD" ||
     (typeof stock.name === "string" && stock.name.toLowerCase().includes("polkadot"));
 
-  // Determine vibrant, high-contrast Purple / Green / Red card styling
+  // Determine vibrant, high-contrast Metallic / Purple / Green / Red card styling
   const cardTheme = useMemo(() => {
     const isLiveUpFlash = priceFlashState === "up";
     const isLiveDownFlash = priceFlashState === "down";
+
+    if (isGold) {
+      // CUSTOM GOLD / GOLDEN CARD THEME (e.g. SPDR Gold Shares GLD)
+      const baseRgb = "245, 158, 11"; // amber-500 (#f59e0b)
+      const glowRgb = "251, 191, 36"; // amber-400 (#fbbf24)
+      const deepRgb = "120, 53, 15"; // amber-900 (#78350f)
+      const darkGoldRgb = "180, 83, 9"; // amber-700
+
+      const effectiveOpacity = isLiveUpFlash || isLiveDownFlash ? 0.45 : 0.32;
+
+      return {
+        isPositive: isPositive,
+        isCustom: true,
+        background: `radial-gradient(ellipse at 35% 50%, rgba(${baseRgb}, ${effectiveOpacity * 1.5}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.8}) 60%, rgba(26, 16, 3, 0.95) 100%)`,
+        borderColor: isLiveUpFlash || isLiveDownFlash
+          ? "rgba(252, 211, 77, 0.95)"
+          : stock.isPinned
+            ? "rgba(251, 191, 36, 0.90)"
+            : "rgba(245, 158, 11, 0.70)",
+        boxShadow: stock.isPinned
+          ? `0 0 28px rgba(${glowRgb}, 0.50), inset 0 0 20px rgba(${darkGoldRgb}, 0.28)`
+          : isLiveUpFlash || isLiveDownFlash
+            ? `0 0 34px rgba(${glowRgb}, 0.65), inset 0 0 24px rgba(${glowRgb}, 0.35)`
+            : `0 0 24px rgba(${baseRgb}, 0.30), inset 0 0 16px rgba(${baseRgb}, 0.15)`,
+      };
+    }
+
+    if (isSilver) {
+      // CUSTOM SILVER / PLATINUM CARD THEME (e.g. iShares Silver Trust SLV)
+      const baseRgb = "203, 213, 225"; // slate-300 (#cbd5e1)
+      const glowRgb = "248, 250, 252"; // slate-50 (#f8fafc)
+      const deepRgb = "51, 65, 85"; // slate-700 (#334155)
+      const darkSilverRgb = "100, 116, 139"; // slate-500
+
+      const effectiveOpacity = isLiveUpFlash || isLiveDownFlash ? 0.45 : 0.32;
+
+      return {
+        isPositive: isPositive,
+        isCustom: true,
+        background: `radial-gradient(ellipse at 35% 50%, rgba(226, 232, 240, ${effectiveOpacity * 1.4}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.9}) 60%, rgba(15, 23, 42, 0.95) 100%)`,
+        borderColor: isLiveUpFlash || isLiveDownFlash
+          ? "rgba(255, 255, 255, 0.98)"
+          : stock.isPinned
+            ? "rgba(248, 250, 252, 0.90)"
+            : "rgba(203, 213, 225, 0.70)",
+        boxShadow: stock.isPinned
+          ? `0 0 26px rgba(${glowRgb}, 0.45), inset 0 0 20px rgba(${darkSilverRgb}, 0.25)`
+          : isLiveUpFlash || isLiveDownFlash
+            ? `0 0 32px rgba(${glowRgb}, 0.6), inset 0 0 22px rgba(${glowRgb}, 0.3)`
+            : `0 0 22px rgba(${baseRgb}, 0.25), inset 0 0 16px rgba(${baseRgb}, 0.12)`,
+      };
+    }
+
+    if (isCopper) {
+      // CUSTOM COPPER / BRONZE CARD THEME (e.g. United States Copper Fund CPER)
+      const baseRgb = "234, 88, 12"; // orange-600 (#ea580c)
+      const glowRgb = "251, 146, 60"; // orange-400 (#fb923c)
+      const deepRgb = "124, 45, 18"; // orange-900 (#7c2d12)
+      const darkCopperRgb = "194, 65, 12"; // orange-700
+
+      const effectiveOpacity = isLiveUpFlash || isLiveDownFlash ? 0.45 : 0.32;
+
+      return {
+        isPositive: isPositive,
+        isCustom: true,
+        background: `radial-gradient(ellipse at 35% 50%, rgba(${baseRgb}, ${effectiveOpacity * 1.5}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.8}) 60%, rgba(28, 10, 4, 0.95) 100%)`,
+        borderColor: isLiveUpFlash || isLiveDownFlash
+          ? "rgba(253, 186, 116, 0.95)"
+          : stock.isPinned
+            ? "rgba(251, 146, 60, 0.90)"
+            : "rgba(234, 88, 12, 0.70)",
+        boxShadow: stock.isPinned
+          ? `0 0 28px rgba(${glowRgb}, 0.48), inset 0 0 20px rgba(${darkCopperRgb}, 0.28)`
+          : isLiveUpFlash || isLiveDownFlash
+            ? `0 0 34px rgba(${glowRgb}, 0.65), inset 0 0 24px rgba(${glowRgb}, 0.35)`
+            : `0 0 22px rgba(${baseRgb}, 0.28), inset 0 0 16px rgba(${baseRgb}, 0.14)`,
+      };
+    }
 
     if (isPurple) {
       // CUSTOM PURPLE CARD THEME (e.g. Polkadot DOT)
@@ -479,7 +588,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
 
       return {
         isPositive: isPositive,
-        isPurple: true,
+        isCustom: true,
         background: `radial-gradient(ellipse at 35% 50%, rgba(${baseRgb}, ${effectiveOpacity * 1.5}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.8}) 60%, rgba(22, 6, 36, 0.94) 100%)`,
         borderColor: isLiveUpFlash || isLiveDownFlash
           ? "rgba(232, 121, 249, 0.95)"
@@ -506,7 +615,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
 
       return {
         isPositive: true,
-        isPurple: false,
+        isCustom: false,
         background: `radial-gradient(ellipse at 35% 50%, rgba(${baseRgb}, ${effectiveOpacity * 1.5}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.6}) 60%, rgba(3, 20, 14, 0.92) 100%)`,
         borderColor: isLiveUpFlash
           ? "rgba(52, 211, 153, 0.95)"
@@ -531,7 +640,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
 
       return {
         isPositive: false,
-        isPurple: false,
+        isCustom: false,
         background: `radial-gradient(ellipse at 35% 50%, rgba(${baseRgb}, ${effectiveOpacity * 1.5}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.6}) 60%, rgba(28, 4, 10, 0.92) 100%)`,
         borderColor: isLiveDownFlash
           ? "rgba(251, 113, 133, 0.95)"
@@ -545,7 +654,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
             : `0 0 20px rgba(${baseRgb}, 0.15), inset 0 0 15px rgba(${baseRgb}, 0.08)`,
       };
     }
-  }, [isPositive, isPurple, stock.changePercent, stock.isPinned, priceFlashState]);
+  }, [isPositive, isGold, isSilver, isCopper, isPurple, stock.changePercent, stock.isPinned, priceFlashState]);
 
   // Volatility calculation for the 7D variance badge
   const volatilityOverlay = useMemo(() => {
@@ -629,7 +738,17 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     const minVal = Math.min(...rawData);
     const maxVal = Math.max(...rawData);
     const range = maxVal - minVal || 1;
-    const lineColor = isPurple ? "#d946ef" : trendIsPositive ? "#00ff88" : "#ff3b3b";
+    const lineColor = isGold
+      ? "#fbbf24"
+      : isSilver
+        ? "#e2e8f0"
+        : isCopper
+          ? "#fb923c"
+          : isPurple
+            ? "#d946ef"
+            : trendIsPositive
+              ? "#00ff88"
+              : "#ff3b3b";
 
     // HEIKIN-ASHI JAPANESE CANDLESTICK MODE (Selectable Option)
     if (watchlistChartStyle === "candlestick") {
@@ -900,8 +1019,17 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     }
   };
 
-  // Determine performance category for dynamic holographic border glow (purple glow for purple cards, green for gainers, red for losers)
+  // Determine performance category for dynamic holographic border glow (gold, silver, copper, purple, surge, bullish, bearish)
   const getPerformanceHoloClass = (changePct: number, category?: string) => {
+    if (isGold) {
+      return "holo-card-gold";
+    }
+    if (isSilver) {
+      return "holo-card-silver";
+    }
+    if (isCopper) {
+      return "holo-card-copper";
+    }
     if (isPurple) {
       return "holo-card-purple";
     }
@@ -934,11 +1062,17 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
       {/* Sleek Data Stream Edge Accent Beam */}
       <div
         className={`absolute left-0 top-0 bottom-0 w-[2px] transition-opacity duration-300 pointer-events-none z-20 ${
-          isPurple
-            ? "bg-gradient-to-b from-purple-400 via-fuchsia-400 to-purple-600/0 opacity-80 group-hover/card-wrapper:opacity-100"
-            : isPositive
-              ? "bg-gradient-to-b from-emerald-400 via-teal-300 to-emerald-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
-              : "bg-gradient-to-b from-rose-500 via-red-400 to-rose-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
+          isGold
+            ? "bg-gradient-to-b from-amber-300 via-yellow-400 to-amber-600/0 opacity-90 group-hover/card-wrapper:opacity-100"
+            : isSilver
+              ? "bg-gradient-to-b from-slate-200 via-white to-slate-400/0 opacity-90 group-hover/card-wrapper:opacity-100"
+              : isCopper
+                ? "bg-gradient-to-b from-orange-400 via-amber-500 to-orange-700/0 opacity-90 group-hover/card-wrapper:opacity-100"
+                : isPurple
+                  ? "bg-gradient-to-b from-purple-400 via-fuchsia-400 to-purple-600/0 opacity-80 group-hover/card-wrapper:opacity-100"
+                  : isPositive
+                    ? "bg-gradient-to-b from-emerald-400 via-teal-300 to-emerald-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
+                    : "bg-gradient-to-b from-rose-500 via-red-400 to-rose-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
         }`}
       />
 
@@ -1058,11 +1192,17 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
               exit={{ opacity: 0 }}
               transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
               className={`absolute inset-0 pointer-events-none z-0 rounded-[inherit] ${
-                isPurple
-                  ? "bg-gradient-to-r from-purple-500/40 via-fuchsia-400/30 to-purple-600/40"
-                  : priceFlashState === "up"
-                    ? "bg-gradient-to-r from-emerald-500/35 via-emerald-400/25 to-teal-500/35 price-flash-bg-green"
-                    : "bg-gradient-to-r from-rose-500/35 via-red-400/25 to-rose-600/35 price-flash-bg-red"
+                isGold
+                  ? "bg-gradient-to-r from-amber-500/40 via-yellow-400/30 to-amber-600/40"
+                  : isSilver
+                    ? "bg-gradient-to-r from-slate-300/40 via-white/30 to-slate-400/40"
+                    : isCopper
+                      ? "bg-gradient-to-r from-orange-500/40 via-amber-400/30 to-orange-600/40"
+                      : isPurple
+                        ? "bg-gradient-to-r from-purple-500/40 via-fuchsia-400/30 to-purple-600/40"
+                        : priceFlashState === "up"
+                          ? "bg-gradient-to-r from-emerald-500/35 via-emerald-400/25 to-teal-500/35 price-flash-bg-green"
+                          : "bg-gradient-to-r from-rose-500/35 via-red-400/25 to-rose-600/35 price-flash-bg-red"
               }`}
             />
           )}
@@ -1102,18 +1242,46 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                 <Star className={`w-4 h-4 ${isStarred ? "fill-amber-400" : ""}`} />
               </button>
               <span
-                className={`font-zen text-sm sm:text-base tracking-wider ${isSyncing ? "glitch-text-refresh text-cyan-300" : isPurple ? "text-fuchsia-100" : "text-cyan-100"}`}
+                className={`font-zen text-sm sm:text-base tracking-wider ${
+                  isSyncing
+                    ? "glitch-text-refresh text-cyan-300"
+                    : isGold
+                      ? "text-amber-100"
+                      : isSilver
+                        ? "text-slate-100"
+                        : isCopper
+                          ? "text-orange-100"
+                          : isPurple
+                            ? "text-fuchsia-100"
+                            : "text-cyan-100"
+                }`}
               >
                 ${stock.symbol}
               </span>
               <div
                 className={`inline-flex items-center gap-1.5 px-2 py-0.5 border alien-block-cut-sm transition-all bg-[#020b16] ${
-                  isPurple ? "border-purple-500/50" : "border-cyan-500/40"
+                  isGold
+                    ? "border-amber-500/50"
+                    : isSilver
+                      ? "border-slate-400/50"
+                      : isCopper
+                        ? "border-orange-500/50"
+                        : isPurple
+                          ? "border-purple-500/50"
+                          : "border-cyan-500/40"
                 }`}
                 title={`SB Rating: ${computeDeterministicSignal(stock).score}/100`}
               >
                 <span className={`text-[10px] font-martian font-black tracking-tight ${
-                  isPurple ? "text-purple-300" : "text-cyan-300"
+                  isGold
+                    ? "text-amber-300"
+                    : isSilver
+                      ? "text-slate-200"
+                      : isCopper
+                        ? "text-orange-300"
+                        : isPurple
+                          ? "text-purple-300"
+                          : "text-cyan-300"
                 }`}>
                   SB {computeDeterministicSignal(stock).score}
                 </span>
@@ -1136,7 +1304,17 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                 </span>
               )}
             </div>
-            <span className={`text-[11px] font-medium font-sans truncate ${isPurple ? "text-purple-300/90" : "text-cyan-400/80"}`}>
+            <span className={`text-[11px] font-medium font-sans truncate ${
+              isGold
+                ? "text-amber-300/90"
+                : isSilver
+                  ? "text-slate-300/90"
+                  : isCopper
+                    ? "text-orange-300/90"
+                    : isPurple
+                      ? "text-purple-300/90"
+                      : "text-cyan-400/80"
+            }`}>
               {stock.name}
             </span>
           </div>
@@ -1162,11 +1340,17 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
             </span>
             <div
               className={`min-w-[76px] text-center px-2 py-0.5 mt-1 alien-block-cut-sm font-martian font-bold text-xs tracking-wider transition-all flex items-center justify-center gap-1 ${
-                isPurple
-                  ? "bg-purple-950/90 text-purple-200 border-2 border-purple-400 glow-purple shadow-[0_0_12px_rgba(192,38,211,0.45)]"
-                  : isPositive
-                    ? "bg-emerald-950/90 text-emerald-300 border-2 border-emerald-400 glow-emerald"
-                    : "bg-rose-950/90 text-rose-300 border-2 border-rose-500 glow-rose"
+                isGold
+                  ? "bg-amber-950/90 text-amber-200 border-2 border-amber-400 glow-gold shadow-[0_0_12px_rgba(245,158,11,0.45)]"
+                  : isSilver
+                    ? "bg-slate-900/90 text-slate-100 border-2 border-slate-300 glow-silver shadow-[0_0_12px_rgba(226,232,240,0.45)]"
+                    : isCopper
+                      ? "bg-orange-950/90 text-orange-200 border-2 border-orange-400 glow-copper shadow-[0_0_12px_rgba(234,88,12,0.45)]"
+                      : isPurple
+                        ? "bg-purple-950/90 text-purple-200 border-2 border-purple-400 glow-purple shadow-[0_0_12px_rgba(192,38,211,0.45)]"
+                        : isPositive
+                          ? "bg-emerald-950/90 text-emerald-300 border-2 border-emerald-400 glow-emerald"
+                          : "bg-rose-950/90 text-rose-300 border-2 border-rose-500 glow-rose"
               } ${isSyncing ? "glitch-text-refresh" : ""}`}
             >
               <span className="text-[9px] font-bold text-current/80 mr-0.5">1D</span>

@@ -356,7 +356,8 @@ export class MarketDataService {
     "POET", "AAOI", "QUBT", "XSD", "HBM", "LITE", "CRWV", "BE", "SNDK",
     "AMD", "GOOGL", "MU", "CORZ", "BTC-USD", "DOT-USD", "META", "TSM", "^NYA",
     "SPY", "^GSPC", "AMZN", "NVT", "AIPO", "QQQ", "APLD", "^IXIC",
-    "MOD", "INTC", "HAWK", "SMH", "SOXX", "POWL", "ASML"
+    "MOD", "INTC", "HAWK", "SMH", "SOXX", "POWL", "ASML",
+    "GLD", "SLV", "CPER"
   ];
 
   private static COMPANY_METADATA: Record<string, { name: string; sector: string; summary: string }> = {
@@ -364,6 +365,21 @@ export class MarketDataService {
       name: "Polkadot Multi-Chain Protocol",
       sector: "Major Indexes & Crypto",
       summary: "Heterogeneous Multi-Chain Protocol: Scalable multi-chain architecture, Polkadot 2.0 Agile Coretime, Elastic Scaling, and Gavin Wood JAM (Join-Accumulate Machine) protocol."
+    },
+    GLD: {
+      name: "SPDR Gold Shares (Gold Benchmark)",
+      sector: "Major Indexes & Crypto",
+      summary: "Physical Gold Bullion: Premier sovereign safe-haven store of value, monetary liquidity hedge, and central bank reserve accumulator."
+    },
+    SLV: {
+      name: "iShares Silver Trust (Silver Benchmark)",
+      sector: "Major Indexes & Crypto",
+      summary: "Physical Silver Bullion: Critical dual-use industrial precious metal driving solar PV cells, high-density AI electronics, and EV battery grids."
+    },
+    CPER: {
+      name: "United States Copper Fund (Copper Benchmark)",
+      sector: "Major Indexes & Crypto",
+      summary: "Physical Copper Benchmark: The cornerstone conductor of AI datacenter electrical grid infrastructure, global electrification, and clean power transition."
     },
     AAOI: {
       name: "Applied Optoelectronics, Inc.",

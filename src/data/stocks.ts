@@ -11057,186 +11057,6 @@ export const INITIAL_STOCKS: StockTicker[] = [
     "isPinned": false
   },
   {
-    "symbol": "GLD",
-    "name": "SPDR Gold Shares",
-    "price": 232.4,
-    "change": 1.2,
-    "changePercent": 0.52,
-    "category": "energy",
-    "sparkline": [
-      221.95,
-      226.58,
-      224.26,
-      233.51,
-      235.82,
-      230.08,
-      232.4
-    ],
-    "history": {
-      "1D": [
-        {
-          "time": "0:00",
-          "price": 221.95
-        },
-        {
-          "time": "1:00",
-          "price": 226.58
-        },
-        {
-          "time": "2:00",
-          "price": 224.26
-        },
-        {
-          "time": "3:00",
-          "price": 233.51
-        },
-        {
-          "time": "4:00",
-          "price": 235.82
-        },
-        {
-          "time": "5:00",
-          "price": 230.08
-        },
-        {
-          "time": "6:00",
-          "price": 232.4
-        }
-      ],
-      "1W": [
-        {
-          "time": "Day 1",
-          "price": 221.95
-        },
-        {
-          "time": "Day 2",
-          "price": 226.58
-        },
-        {
-          "time": "Day 3",
-          "price": 224.26
-        },
-        {
-          "time": "Day 4",
-          "price": 233.51
-        },
-        {
-          "time": "Day 5",
-          "price": 235.82
-        },
-        {
-          "time": "Day 6",
-          "price": 230.08
-        },
-        {
-          "time": "Day 7",
-          "price": 232.4
-        }
-      ],
-      "1M": [
-        {
-          "time": "Week 1",
-          "price": 221.95
-        },
-        {
-          "time": "Week 2",
-          "price": 226.58
-        },
-        {
-          "time": "Week 3",
-          "price": 224.26
-        },
-        {
-          "time": "Week 4",
-          "price": 233.51
-        },
-        {
-          "time": "Week 5",
-          "price": 235.82
-        },
-        {
-          "time": "Week 6",
-          "price": 230.08
-        },
-        {
-          "time": "Week 7",
-          "price": 232.4
-        }
-      ],
-      "1Y": [
-        {
-          "time": "Month 1",
-          "price": 221.95
-        },
-        {
-          "time": "Month 2",
-          "price": 226.58
-        },
-        {
-          "time": "Month 3",
-          "price": 224.26
-        },
-        {
-          "time": "Month 4",
-          "price": 233.51
-        },
-        {
-          "time": "Month 5",
-          "price": 235.82
-        },
-        {
-          "time": "Month 6",
-          "price": 230.08
-        },
-        {
-          "time": "Month 7",
-          "price": 232.4
-        }
-      ],
-      "ALL": [
-        {
-          "time": "Year 1",
-          "price": 221.95
-        },
-        {
-          "time": "Year 2",
-          "price": 226.58
-        },
-        {
-          "time": "Year 3",
-          "price": 224.26
-        },
-        {
-          "time": "Year 4",
-          "price": 233.51
-        },
-        {
-          "time": "Year 5",
-          "price": 235.82
-        },
-        {
-          "time": "Year 6",
-          "price": 230.08
-        },
-        {
-          "time": "Year 7",
-          "price": 232.4
-        }
-      ]
-    },
-    "marketCap": "$581.0B",
-    "high52": 290.5,
-    "low52": 167.33,
-    "volume": "8.5M",
-    "description": "Physical Gold Benchmark: Hard asset collateral hedge against global monetary expansion and sovereign debt.",
-    "tags": [
-      "Energy, Grid & Power",
-      "Physical Gold Monetary Anchor",
-      "Stack Level 8"
-    ],
-    "isPinned": false
-  },
-  {
     "symbol": "GOLD",
     "name": "Barrick Gold Corporation",
     "price": 19.8,
@@ -11412,366 +11232,6 @@ export const INITIAL_STOCKS: StockTicker[] = [
     "tags": [
       "Energy, Grid & Power",
       "Tier-One Gold & Copper Miner",
-      "Stack Level 8"
-    ],
-    "isPinned": false
-  },
-  {
-    "symbol": "SLV",
-    "name": "iShares Silver Trust",
-    "price": 28.6,
-    "change": 0.35,
-    "changePercent": 1.24,
-    "category": "energy",
-    "sparkline": [
-      27.12,
-      27.68,
-      27.4,
-      28.53,
-      28.82,
-      28.31,
-      28.6
-    ],
-    "history": {
-      "1D": [
-        {
-          "time": "0:00",
-          "price": 27.12
-        },
-        {
-          "time": "1:00",
-          "price": 27.68
-        },
-        {
-          "time": "2:00",
-          "price": 27.4
-        },
-        {
-          "time": "3:00",
-          "price": 28.53
-        },
-        {
-          "time": "4:00",
-          "price": 28.82
-        },
-        {
-          "time": "5:00",
-          "price": 28.31
-        },
-        {
-          "time": "6:00",
-          "price": 28.6
-        }
-      ],
-      "1W": [
-        {
-          "time": "Day 1",
-          "price": 27.12
-        },
-        {
-          "time": "Day 2",
-          "price": 27.68
-        },
-        {
-          "time": "Day 3",
-          "price": 27.4
-        },
-        {
-          "time": "Day 4",
-          "price": 28.53
-        },
-        {
-          "time": "Day 5",
-          "price": 28.82
-        },
-        {
-          "time": "Day 6",
-          "price": 28.31
-        },
-        {
-          "time": "Day 7",
-          "price": 28.6
-        }
-      ],
-      "1M": [
-        {
-          "time": "Week 1",
-          "price": 27.12
-        },
-        {
-          "time": "Week 2",
-          "price": 27.68
-        },
-        {
-          "time": "Week 3",
-          "price": 27.4
-        },
-        {
-          "time": "Week 4",
-          "price": 28.53
-        },
-        {
-          "time": "Week 5",
-          "price": 28.82
-        },
-        {
-          "time": "Week 6",
-          "price": 28.31
-        },
-        {
-          "time": "Week 7",
-          "price": 28.6
-        }
-      ],
-      "1Y": [
-        {
-          "time": "Month 1",
-          "price": 27.12
-        },
-        {
-          "time": "Month 2",
-          "price": 27.68
-        },
-        {
-          "time": "Month 3",
-          "price": 27.4
-        },
-        {
-          "time": "Month 4",
-          "price": 28.53
-        },
-        {
-          "time": "Month 5",
-          "price": 28.82
-        },
-        {
-          "time": "Month 6",
-          "price": 28.31
-        },
-        {
-          "time": "Month 7",
-          "price": 28.6
-        }
-      ],
-      "ALL": [
-        {
-          "time": "Year 1",
-          "price": 27.12
-        },
-        {
-          "time": "Year 2",
-          "price": 27.68
-        },
-        {
-          "time": "Year 3",
-          "price": 27.4
-        },
-        {
-          "time": "Year 4",
-          "price": 28.53
-        },
-        {
-          "time": "Year 5",
-          "price": 28.82
-        },
-        {
-          "time": "Year 6",
-          "price": 28.31
-        },
-        {
-          "time": "Year 7",
-          "price": 28.6
-        }
-      ]
-    },
-    "marketCap": "$71.5B",
-    "high52": 35.75,
-    "low52": 20.59,
-    "volume": "8.5M",
-    "description": "Physical Silver Trust: Essential industrial metal for photovoltaic solar panels and high-conductivity electronics.",
-    "tags": [
-      "Energy, Grid & Power",
-      "Dual-Demand Physical Silver",
-      "Stack Level 8"
-    ],
-    "isPinned": false
-  },
-  {
-    "symbol": "CPER",
-    "name": "United States Copper Index Fund",
-    "price": 29.4,
-    "change": 0.6,
-    "changePercent": 2.08,
-    "category": "energy",
-    "sparkline": [
-      27.65,
-      28.22,
-      27.94,
-      29.09,
-      29.38,
-      29.11,
-      29.4
-    ],
-    "history": {
-      "1D": [
-        {
-          "time": "0:00",
-          "price": 27.65
-        },
-        {
-          "time": "1:00",
-          "price": 28.22
-        },
-        {
-          "time": "2:00",
-          "price": 27.94
-        },
-        {
-          "time": "3:00",
-          "price": 29.09
-        },
-        {
-          "time": "4:00",
-          "price": 29.38
-        },
-        {
-          "time": "5:00",
-          "price": 29.11
-        },
-        {
-          "time": "6:00",
-          "price": 29.4
-        }
-      ],
-      "1W": [
-        {
-          "time": "Day 1",
-          "price": 27.65
-        },
-        {
-          "time": "Day 2",
-          "price": 28.22
-        },
-        {
-          "time": "Day 3",
-          "price": 27.94
-        },
-        {
-          "time": "Day 4",
-          "price": 29.09
-        },
-        {
-          "time": "Day 5",
-          "price": 29.38
-        },
-        {
-          "time": "Day 6",
-          "price": 29.11
-        },
-        {
-          "time": "Day 7",
-          "price": 29.4
-        }
-      ],
-      "1M": [
-        {
-          "time": "Week 1",
-          "price": 27.65
-        },
-        {
-          "time": "Week 2",
-          "price": 28.22
-        },
-        {
-          "time": "Week 3",
-          "price": 27.94
-        },
-        {
-          "time": "Week 4",
-          "price": 29.09
-        },
-        {
-          "time": "Week 5",
-          "price": 29.38
-        },
-        {
-          "time": "Week 6",
-          "price": 29.11
-        },
-        {
-          "time": "Week 7",
-          "price": 29.4
-        }
-      ],
-      "1Y": [
-        {
-          "time": "Month 1",
-          "price": 27.65
-        },
-        {
-          "time": "Month 2",
-          "price": 28.22
-        },
-        {
-          "time": "Month 3",
-          "price": 27.94
-        },
-        {
-          "time": "Month 4",
-          "price": 29.09
-        },
-        {
-          "time": "Month 5",
-          "price": 29.38
-        },
-        {
-          "time": "Month 6",
-          "price": 29.11
-        },
-        {
-          "time": "Month 7",
-          "price": 29.4
-        }
-      ],
-      "ALL": [
-        {
-          "time": "Year 1",
-          "price": 27.65
-        },
-        {
-          "time": "Year 2",
-          "price": 28.22
-        },
-        {
-          "time": "Year 3",
-          "price": 27.94
-        },
-        {
-          "time": "Year 4",
-          "price": 29.09
-        },
-        {
-          "time": "Year 5",
-          "price": 29.38
-        },
-        {
-          "time": "Year 6",
-          "price": 29.11
-        },
-        {
-          "time": "Year 7",
-          "price": 29.4
-        }
-      ]
-    },
-    "marketCap": "$73.5B",
-    "high52": 36.75,
-    "low52": 21.17,
-    "volume": "8.5M",
-    "description": "Copper Futures Benchmark: Direct exposure to copper, the irreplaceable element of transformers and grid buildouts.",
-    "tags": [
-      "Energy, Grid & Power",
-      "Copper Electrification Benchmark",
       "Stack Level 8"
     ],
     "isPinned": false
@@ -13467,6 +12927,210 @@ export const INITIAL_STOCKS: StockTicker[] = [
       "Major Indexes & Crypto",
       "Heterogeneous Multi-Chain & Shared Security",
       "Stack Level 9"
+    ],
+    "isPinned": false
+  },
+  {
+    "symbol": "GLD",
+    "name": "SPDR Gold Shares (Gold Benchmark)",
+    "price": 415.26,
+    "change": 1.42,
+    "changePercent": 0.34,
+    "category": "indexes",
+    "theme": "gold",
+    "cardColor": "gold",
+    "color": "gold",
+    "sparkline": [
+      411.20,
+      412.80,
+      410.50,
+      413.90,
+      414.60,
+      413.84,
+      415.26
+    ],
+    "history": {
+      "1D": [
+        { "time": "9:30", "price": 413.84 },
+        { "time": "11:00", "price": 414.20 },
+        { "time": "12:30", "price": 413.90 },
+        { "time": "14:00", "price": 414.80 },
+        { "time": "16:00", "price": 415.26 }
+      ],
+      "1W": [
+        { "time": "Day 1", "price": 410.50 },
+        { "time": "Day 2", "price": 412.10 },
+        { "time": "Day 3", "price": 411.80 },
+        { "time": "Day 4", "price": 413.40 },
+        { "time": "Day 5", "price": 415.26 }
+      ],
+      "1M": [
+        { "time": "Week 1", "price": 398.50 },
+        { "time": "Week 2", "price": 404.20 },
+        { "time": "Week 3", "price": 409.80 },
+        { "time": "Week 4", "price": 412.50 },
+        { "time": "Week 5", "price": 415.26 }
+      ],
+      "1Y": [
+        { "time": "Q1", "price": 310.40 },
+        { "time": "Q2", "price": 345.80 },
+        { "time": "Q3", "price": 382.10 },
+        { "time": "Q4", "price": 415.26 }
+      ],
+      "ALL": [
+        { "time": "2018", "price": 120.00 },
+        { "time": "2020", "price": 180.00 },
+        { "time": "2022", "price": 170.00 },
+        { "time": "2024", "price": 240.00 },
+        { "time": "2025", "price": 320.00 },
+        { "time": "2026", "price": 415.26 }
+      ]
+    },
+    "marketCap": "154.5B",
+    "high52": 509.70,
+    "low52": 306.43,
+    "volume": "8.7M",
+    "description": "Physical Gold Bullion Benchmark: Premier sovereign safe-haven store of value, monetary liquidity hedge, and central bank reserve accumulator.",
+    "tags": [
+      "Major Indexes & Commodities",
+      "Physical Gold Bullion",
+      "Stack Level 8"
+    ],
+    "isPinned": false
+  },
+  {
+    "symbol": "SLV",
+    "name": "iShares Silver Trust (Silver Benchmark)",
+    "price": 68.20,
+    "change": 1.15,
+    "changePercent": 1.71,
+    "category": "indexes",
+    "theme": "silver",
+    "cardColor": "silver",
+    "color": "silver",
+    "sparkline": [
+      65.40,
+      66.20,
+      65.80,
+      67.10,
+      66.90,
+      67.05,
+      68.20
+    ],
+    "history": {
+      "1D": [
+        { "time": "9:30", "price": 67.05 },
+        { "time": "11:00", "price": 67.40 },
+        { "time": "12:30", "price": 66.95 },
+        { "time": "14:00", "price": 67.80 },
+        { "time": "16:00", "price": 68.20 }
+      ],
+      "1W": [
+        { "time": "Day 1", "price": 65.40 },
+        { "time": "Day 2", "price": 66.10 },
+        { "time": "Day 3", "price": 65.90 },
+        { "time": "Day 4", "price": 67.20 },
+        { "time": "Day 5", "price": 68.20 }
+      ],
+      "1M": [
+        { "time": "Week 1", "price": 58.20 },
+        { "time": "Week 2", "price": 61.50 },
+        { "time": "Week 3", "price": 64.80 },
+        { "time": "Week 4", "price": 66.50 },
+        { "time": "Week 5", "price": 68.20 }
+      ],
+      "1Y": [
+        { "time": "Q1", "price": 35.20 },
+        { "time": "Q2", "price": 44.80 },
+        { "time": "Q3", "price": 56.40 },
+        { "time": "Q4", "price": 68.20 }
+      ],
+      "ALL": [
+        { "time": "2018", "price": 14.50 },
+        { "time": "2020", "price": 25.00 },
+        { "time": "2022", "price": 21.00 },
+        { "time": "2024", "price": 28.00 },
+        { "time": "2025", "price": 42.00 },
+        { "time": "2026", "price": 68.20 }
+      ]
+    },
+    "marketCap": "32.8B",
+    "high52": 109.83,
+    "low52": 34.20,
+    "volume": "21.3M",
+    "description": "Physical Silver Bullion Benchmark: Critical dual-use industrial precious metal driving solar PV cells, high-density AI electronics, and EV battery grids.",
+    "tags": [
+      "Major Indexes & Commodities",
+      "Physical Silver Bullion",
+      "Stack Level 8"
+    ],
+    "isPinned": false
+  },
+  {
+    "symbol": "CPER",
+    "name": "United States Copper Fund (Copper Benchmark)",
+    "price": 35.40,
+    "change": 0.78,
+    "changePercent": 2.25,
+    "category": "indexes",
+    "theme": "copper",
+    "cardColor": "copper",
+    "color": "copper",
+    "sparkline": [
+      33.80,
+      34.20,
+      33.90,
+      34.60,
+      34.90,
+      34.62,
+      35.40
+    ],
+    "history": {
+      "1D": [
+        { "time": "9:30", "price": 34.62 },
+        { "time": "11:00", "price": 34.90 },
+        { "time": "12:30", "price": 34.75 },
+        { "time": "14:00", "price": 35.15 },
+        { "time": "16:00", "price": 35.40 }
+      ],
+      "1W": [
+        { "time": "Day 1", "price": 33.80 },
+        { "time": "Day 2", "price": 34.30 },
+        { "time": "Day 3", "price": 34.10 },
+        { "time": "Day 4", "price": 34.80 },
+        { "time": "Day 5", "price": 35.40 }
+      ],
+      "1M": [
+        { "time": "Week 1", "price": 31.20 },
+        { "time": "Week 2", "price": 32.80 },
+        { "time": "Week 3", "price": 33.90 },
+        { "time": "Week 4", "price": 34.60 },
+        { "time": "Week 5", "price": 35.40 }
+      ],
+      "1Y": [
+        { "time": "Q1", "price": 27.50 },
+        { "time": "Q2", "price": 30.10 },
+        { "time": "Q3", "price": 32.80 },
+        { "time": "Q4", "price": 35.40 }
+      ],
+      "ALL": [
+        { "time": "2018", "price": 18.00 },
+        { "time": "2020", "price": 22.00 },
+        { "time": "2022", "price": 24.50 },
+        { "time": "2024", "price": 26.80 },
+        { "time": "2025", "price": 29.50 },
+        { "time": "2026", "price": 35.40 }
+      ]
+    },
+    "marketCap": "748.5M",
+    "high52": 40.97,
+    "low52": 27.37,
+    "volume": "492.8K",
+    "description": "Physical Copper Benchmark: The cornerstone conductor of AI datacenter electrical grid infrastructure, global electrification, and clean power transition.",
+    "tags": [
+      "Major Indexes & Commodities",
+      "Physical Copper Conductor",
+      "Stack Level 8"
     ],
     "isPinned": false
   },

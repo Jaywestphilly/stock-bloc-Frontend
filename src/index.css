@@ -962,6 +962,54 @@ a:hover .font-alien,
   }
 }
 
+@keyframes holo-glow-gold-anim {
+  0%,
+  100% {
+    border-color: rgba(245, 158, 11, 0.65);
+    box-shadow:
+      0 0 16px rgba(245, 158, 11, 0.35),
+      inset 0 0 12px rgba(217, 119, 6, 0.2);
+  }
+  50% {
+    border-color: rgba(251, 191, 36, 0.95);
+    box-shadow:
+      0 0 30px rgba(251, 191, 36, 0.65),
+      inset 0 0 20px rgba(245, 158, 11, 0.35);
+  }
+}
+
+@keyframes holo-glow-silver-anim {
+  0%,
+  100% {
+    border-color: rgba(203, 213, 225, 0.6);
+    box-shadow:
+      0 0 14px rgba(203, 213, 225, 0.35),
+      inset 0 0 10px rgba(148, 163, 184, 0.2);
+  }
+  50% {
+    border-color: rgba(255, 255, 255, 0.95);
+    box-shadow:
+      0 0 28px rgba(248, 250, 252, 0.6),
+      inset 0 0 18px rgba(226, 232, 240, 0.3);
+  }
+}
+
+@keyframes holo-glow-copper-anim {
+  0%,
+  100% {
+    border-color: rgba(234, 88, 12, 0.65);
+    box-shadow:
+      0 0 16px rgba(234, 88, 12, 0.4),
+      inset 0 0 12px rgba(194, 65, 12, 0.25);
+  }
+  50% {
+    border-color: rgba(251, 146, 60, 0.95);
+    box-shadow:
+      0 0 30px rgba(249, 115, 22, 0.65),
+      inset 0 0 20px rgba(234, 88, 12, 0.35);
+  }
+}
+
 .holo-card-surge {
   animation: holo-glow-surge-anim 3s ease-in-out infinite !important;
 }
@@ -982,8 +1030,32 @@ a:hover .font-alien,
   animation: holo-glow-purple-anim 3.5s ease-in-out infinite !important;
 }
 
+.holo-card-gold {
+  animation: holo-glow-gold-anim 3.5s ease-in-out infinite !important;
+}
+
+.holo-card-silver {
+  animation: holo-glow-silver-anim 3.5s ease-in-out infinite !important;
+}
+
+.holo-card-copper {
+  animation: holo-glow-copper-anim 3.5s ease-in-out infinite !important;
+}
+
 .glow-purple {
   box-shadow: 0 0 16px rgba(192, 38, 211, 0.5), inset 0 0 10px rgba(168, 85, 247, 0.25);
+}
+
+.glow-gold {
+  box-shadow: 0 0 18px rgba(245, 158, 11, 0.55), inset 0 0 12px rgba(251, 191, 36, 0.3);
+}
+
+.glow-silver {
+  box-shadow: 0 0 18px rgba(226, 232, 240, 0.5), inset 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+.glow-copper {
+  box-shadow: 0 0 18px rgba(234, 88, 12, 0.55), inset 0 0 12px rgba(251, 146, 60, 0.3);
 }
 
 /* Continuous Marquee Scrolling Animation */

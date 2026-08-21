@@ -517,7 +517,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
                     {/* Sector Tiles Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-                      {catStocks.map((stock) => {
+                      {catStocks.map((stock, idx) => {
                         const relAlpha =
                           stock.changePercent - spyBaselinePercent;
                         const relVol = getRelativeVolumeRatio(stock);
@@ -526,7 +526,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
                         return (
                           <div
-                            key={stock.symbol}
+                            key={`${stock.symbol}-${idx}`}
                             onClick={() => {
                               triggerHaptic("light");
                               onSelectStock(stock);
@@ -605,7 +605,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
                     spyBaselinePercent -
                     (a.changePercent - spyBaselinePercent),
                 )
-                .map((stock) => {
+                .map((stock, idx) => {
                   const relAlpha = stock.changePercent - spyBaselinePercent;
                   const relVol = getRelativeVolumeRatio(stock);
                   const isAlphaPositive = relAlpha >= 0;
@@ -613,7 +613,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
                   return (
                     <div
-                      key={stock.symbol}
+                      key={`${stock.symbol}-${idx}`}
                       onClick={() => {
                         triggerHaptic("light");
                         onSelectStock(stock);
@@ -683,7 +683,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
       {/* STANDARD PRICE HEATMAP GRID */}
       {activeTab === "standard" && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
-          {stocks.map((stock) => {
+          {stocks.map((stock, idx) => {
             const isPositive = stock.changePercent >= 0;
             const pct = Math.abs(stock.changePercent);
 
@@ -707,7 +707,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
             return (
               <div
-                key={stock.symbol}
+                key={`${stock.symbol}-${idx}`}
                 onClick={() => {
                   triggerHaptic("light");
                   onSelectStock(stock);
