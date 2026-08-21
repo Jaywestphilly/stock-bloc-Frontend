@@ -384,7 +384,7 @@ export const DotBtcWeb3Hub: React.FC<DotBtcWeb3HubProps> = ({
                 ? "animate-subtle-pulse-up border-emerald-400/90 shadow-[0_0_25px_rgba(16,185,129,0.35)]"
                 : btcTicker.pulse === "down"
                 ? "animate-subtle-pulse-down border-rose-500/90 shadow-[0_0_25px_rgba(244,63,94,0.35)]"
-                : "border-orange-500/40 hover:border-orange-400/70 shadow-lg shadow-orange-950/20"
+                : "border-orange-500/40 hover:border-orange-400/70 shadow-lg shadow-orange-950/20 animate-ticker-glow-btc"
             }`}
           >
             {/* Subtle background pulse aura */}
@@ -478,7 +478,7 @@ export const DotBtcWeb3Hub: React.FC<DotBtcWeb3HubProps> = ({
                 ? "animate-subtle-pulse-up border-emerald-400/90 shadow-[0_0_25px_rgba(16,185,129,0.35)]"
                 : dotTicker.pulse === "down"
                 ? "animate-subtle-pulse-down border-rose-500/90 shadow-[0_0_25px_rgba(244,63,94,0.35)]"
-                : "border-purple-500/40 hover:border-purple-400/70 shadow-lg shadow-purple-950/20"
+                : "border-purple-500/40 hover:border-purple-400/70 shadow-lg shadow-purple-950/20 animate-ticker-glow-dot"
             }`}
           >
             {/* Subtle background pulse aura */}

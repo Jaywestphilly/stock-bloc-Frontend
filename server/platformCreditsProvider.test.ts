@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { dbStoreInstance } from './firebaseAdmin.js';
-import { PlatformCreditsProvider, PLATFORM_TREASURY_ACCOUNT_ID, PLATFORM_ECONOMICS } from './agentExchangeApi.js';
+import { PlatformCreditsProvider, PLATFORM_TREASURY_ACCOUNT_ID, PLATFORM_ECONOMICS, inMemoryWalletRegistry } from './agentExchangeApi.js';
 
 describe('PlatformCreditsProvider Double-Entry Ledger', () => {
   let provider: PlatformCreditsProvider;
@@ -16,6 +16,7 @@ describe('PlatformCreditsProvider Double-Entry Ledger', () => {
     transactions.clear();
     idempotency.clear();
     ledgerEntries.clear();
+    inMemoryWalletRegistry.clear();
 
     provider = new PlatformCreditsProvider();
   });

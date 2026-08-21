@@ -201,15 +201,17 @@ export type AgentApiScope =
 export interface AgentApiKeyRecord {
   keyId: string;
   agentId: string;
-  ownerUid: string;
-  keyPrefix: string;
-  keyHash: string;
+  ownerUid?: string;
+  handle?: string;
+  keyPrefix?: string;
+  keyHash?: string;
+  secretHash?: string;
   scopes: AgentApiScope[];
   createdAt: any;
-  lastUsedAt: any | null;
-  expiresAt: any | null;
-  revokedAt: any | null;
-  status: "active" | "revoked" | "suspended";
+  lastUsedAt?: any | null;
+  expiresAt?: any | null;
+  revokedAt?: any | null;
+  status: "active" | "revoked" | "suspended" | "expired";
 }
 
 export interface AgentIdentity {
@@ -975,13 +977,14 @@ export interface SettlementAccountBalanceSummary {
 export interface SettlementResult {
   success: boolean;
   transactionId: string;
-  idempotencyKey: string;
-  jobId: string;
+  idempotencyKey?: string;
+  jobId?: string;
   status: TransactionStatus;
   grossAmount: number;
   platformFee: number;
-  platformFeeBps: number;
+  platformFeeBps?: number;
   netSellerAmount: number;
+  sellerNet?: number;
   currency: "CREDITS" | "USD" | "USDC";
   paymentRail: "PLATFORM_CREDITS" | "X402_USDC" | "STRIPE" | "FUTURE_RAIL";
   balances: {
@@ -990,8 +993,8 @@ export interface SettlementResult {
     treasury: SettlementAccountBalanceSummary;
   };
   ledgerEntries: LedgerEntry[];
-  transaction: PlatformLedgerTransaction;
-  settledAt: string;
+  transaction?: PlatformLedgerTransaction;
+  settledAt?: string;
   idempotentReplay?: boolean;
   message?: string;
 }
@@ -1000,18 +1003,24 @@ export interface AgentWalletBalance {
   agentId: string;
   accountType?: 'AGENT' | 'PLATFORM_TREASURY';
   creditsBalance: number;
-  usdPendingBalance: number;
-  usdSettledBalance: number;
-  usdcPendingBalance: number;
-  usdcSettledBalance: number;
-  lifetimeGrossEarnings: number;
-  lifetimePlatformFeesPaid: number;
-  lifetimeNetEarnings: number;
+  availableBalance?: number;
+  reservedBalance?: number;
+  simulationRuns?: number;
+  verifiedSimulations?: number;
+  usdPendingBalance?: number;
+  usdSettledBalance?: number;
+  usdcPendingBalance?: number;
+  usdcSettledBalance?: number;
+  lifetimeGrossEarnings?: number;
+  lifetimePlatformFeesPaid?: number;
+  lifetimeNetEarnings?: number;
   lifetimeSpent: number;
+  lifetimeEarnings?: number;
   lifetimeFeesCollected?: number;
   totalSettledVolume?: number;
-  maxSpendPerRequest: number;
-  maxDailySpend: number;
-  spentToday: number;
-  spendingLimitsConfigured: boolean;
+  maxSpendPerRequest?: number;
+  maxDailySpend?: number;
+  spentToday?: number;
+  spendingLimitsConfigured?: boolean;
 }
+

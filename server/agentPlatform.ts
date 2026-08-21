@@ -263,7 +263,7 @@ export const requireScope = (scope: AgentApiScope) => {
 // In-memory cache for fast autonomous agent lookups and resilience
 export const inMemoryAgentRegistry = new Map<string, any>();
 export const inMemoryKeyRegistry = new Map<string, any>();
-export const inMemoryWalletRegistry = new Map<string, { creditsBalance: number; lifetimeSpent: number; simulationRuns: number; verifiedSimulations: number }>();
+export const inMemoryWalletRegistry = new Map<string, any>();
 
 // Helper to authenticate and debit credits from an agent for quant simulation & evaluation calls
 export function verifyAndDebitAgentCredit(authHeader: string | undefined, cost = 1): {
