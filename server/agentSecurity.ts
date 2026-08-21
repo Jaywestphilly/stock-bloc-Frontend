@@ -3,7 +3,27 @@ import { Request, Response, NextFunction } from 'express';
 import { db } from './firebaseAdmin.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { AgentApiKeyRecord, AgentIdentity, AgentApiScope } from '../src/types.js';
-import { inMemoryKeyRegistry, inMemoryAgentRegistry, DEFAULT_AUTONOMOUS_SCOPES } from './agentPlatform.js';
+
+export const inMemoryKeyRegistry = new Map<string, AgentApiKeyRecord>();
+export const inMemoryAgentRegistry = new Map<string, any>();
+
+export const DEFAULT_AUTONOMOUS_SCOPES: AgentApiScope[] = [
+  // Marketplace & Exchange Scopes (Services, Jobs, Requests, Settlement)
+  'services:read',
+  'services:write',
+  'jobs:read',
+  'jobs:execute',
+  'requests:read',
+  'requests:write',
+  'payments:transact',
+  // Intelligence, Community & Arena Loop
+  'community:read',
+  'community:write',
+  'community:reply',
+  'research:publish',
+  'forecast:publish',
+  'webhooks:manage'
+];
 
 export type AgentEnvironment = 'development' | 'staging' | 'production';
 
@@ -165,12 +185,15 @@ export function validateProductionStartupSafety(): {
 } {
   const errors: string[] = [];
   const warnings: string[] = [];
-  const isProd = AGENT_ENV === 'production' || process.env.NODE_ENV === 'production' || process.env.PAYMENT_MODE === 'production';
+  const isProd = process.env.AGENT_ENV === 'production' || 
+                 process.env.NODE_ENV === 'production' || 
+                 process.env.PAYMENT_MODE === 'production' || 
+                 AGENT_ENV === 'production';
 
   // 1. Check Agent API Secret configuration
-  const agentSecret = process.env.AGENT_API_SECRET_KEY || '';
+  const agentSecret = process.env.AGENT_API_SECRET_KEY || process.env.AGENT_PLATFORM_MASTER_KEY || '';
   if (isProd) {
-    if (!agentSecret || INSECURE_PLACEHOLDER_KEYS.has(agentSecret) || agentSecret.includes('stock_bloc_agent_secret_2026')) {
+    if (!agentSecret || INSECURE_PLACEHOLDER_KEYS.has(agentSecret) || agentSecret.includes('stock_bloc_agent_secret_2026') || agentSecret.includes('insecure')) {
       errors.push('CRITICAL: Insecure or default AGENT_API_SECRET_KEY configured in production.');
     }
   }
@@ -213,11 +236,14 @@ export function validateProductionStartupSafety(): {
   }
 
   if (errors.length > 0 && isProd) {
-    console.warn('====================================================');
-    console.warn('⚠️ PRODUCTION CONFIGURATION NOTICE ⚠️');
-    errors.forEach(err => console.warn(`  - ${err}`));
-    console.warn('  Note: Features requiring unconfigured credentials will fail gracefully on request.');
-    console.warn('====================================================');
+    console.error('====================================================');
+    console.error('🛑 CRITICAL PRODUCTION STARTUP SAFETY ERROR 🛑');
+    errors.forEach(err => console.error(`  - ${err}`));
+    console.error('====================================================');
+    throw new Error(
+      `Production Startup Safety Check Failed with ${errors.length} critical issue(s):\n` +
+      errors.map(e => `  - ${e}`).join('\n')
+    );
   }
 
   return {
@@ -621,6 +647,151 @@ export function assertFinancialInvariants(params: {
   return {
     valid: violations.length === 0,
     violations
+  };
+}
+
+/**
+ * Generates structured System Readiness & Infrastructure Health model.
+ */
+export function getSystemReadinessStatus(): {
+  status: 'READY' | 'DEGRADED' | 'NOT_READY';
+  environment: string;
+  paymentMode: string;
+  database: {
+    status: 'connected' | 'in_memory' | 'unconfigured';
+    firestore: boolean;
+    provider: string;
+  };
+  auth: {
+    status: string;
+    scheme: string;
+    constantTimeHashing: boolean;
+    strictProductionEnforced: boolean;
+  };
+  stripe: {
+    status: string;
+    mode: string;
+    configured: boolean;
+    liveKey: boolean;
+    webhookConfigured: boolean;
+  };
+  polkadot: {
+    status: string;
+    network: string;
+    rpcUrl: string;
+    assetId: string | number;
+    tokenSymbol: string;
+    tokenDecimals: number;
+    treasuryAddress: string;
+    confirmationsRequired: number;
+    configured: boolean;
+    productionReady: boolean;
+  };
+  platformCredits: {
+    status: string;
+    doubleEntry: boolean;
+    defaultTrialCredits: number;
+    feeBps: number;
+  };
+  settlementEngine: {
+    status: string;
+    rails: string[];
+    humanApprovalThresholdCredits: number;
+    stateMachineVersion: string;
+  };
+  components?: {
+    authentication: any;
+    database: any;
+    paymentRails: any;
+    settlementEngine: any;
+  };
+  timestamp: string;
+} {
+  const isProd = AGENT_ENV === 'production' || process.env.NODE_ENV === 'production' || process.env.PAYMENT_MODE === 'production';
+  const hasDb = Boolean(db);
+
+  const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+  const stripeWebhook = process.env.STRIPE_WEBHOOK_SECRET || '';
+  const stripeConfigured = Boolean(stripeKey && !stripeKey.includes('placeholder'));
+  const stripeLive = stripeKey.startsWith('sk_live_');
+
+  const polkadotRpc = process.env.POLKADOT_RPC_URL || 'https://polkadot-asset-hub-rpc.polkadot.io';
+  const polkadotTreasury = process.env.POLKADOT_TREASURY_ADDRESS || '';
+  const polkadotAssetId = process.env.POLKADOT_ASSET_ID || '1337';
+  const polkadotConfigured = Boolean(polkadotRpc && (polkadotTreasury || !isProd));
+
+  let systemStatus: 'READY' | 'DEGRADED' | 'NOT_READY' = 'READY';
+  if (isProd && (!stripeLive || !polkadotTreasury)) {
+    systemStatus = 'DEGRADED';
+  }
+
+  return {
+    status: systemStatus,
+    environment: AGENT_ENV,
+    paymentMode: (process.env.PAYMENT_MODE === 'production' ? 'production' : 'sandbox'),
+    database: {
+      status: hasDb ? 'connected' : 'in_memory',
+      firestore: hasDb,
+      provider: hasDb ? 'Firestore' : 'InMemory'
+    },
+    auth: {
+      status: 'ready',
+      scheme: 'sb_live_* (SHA-256 constant-time comparison)',
+      constantTimeHashing: true,
+      strictProductionEnforced: isProd
+    },
+    stripe: {
+      status: stripeConfigured ? (stripeLive ? 'ready' : 'sandbox') : 'sandbox',
+      mode: stripeLive ? 'production' : 'sandbox',
+      configured: stripeConfigured,
+      liveKey: stripeLive,
+      webhookConfigured: Boolean(stripeWebhook && stripeWebhook.startsWith('whsec_'))
+    },
+    polkadot: {
+      status: polkadotConfigured ? (isProd ? 'ready' : 'sandbox') : 'sandbox',
+      network: process.env.POLKADOT_NETWORK || 'polkadot-asset-hub',
+      rpcUrl: polkadotRpc,
+      assetId: polkadotAssetId,
+      tokenSymbol: process.env.POLKADOT_TOKEN_SYMBOL || 'USDC',
+      tokenDecimals: parseInt(process.env.POLKADOT_TOKEN_DECIMALS || '6', 10),
+      treasuryAddress: polkadotTreasury || (isProd ? '' : '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5'),
+      confirmationsRequired: parseInt(process.env.POLKADOT_CONFIRMATIONS_REQUIRED || '2', 10),
+      configured: polkadotConfigured,
+      productionReady: Boolean(polkadotTreasury && !polkadotTreasury.includes('placeholder') && polkadotRpc.startsWith('https://'))
+    },
+    platformCredits: {
+      status: 'ready',
+      doubleEntry: true,
+      defaultTrialCredits: 100,
+      feeBps: 500
+    },
+    settlementEngine: {
+      status: 'ready',
+      rails: ['PLATFORM_CREDITS', 'STRIPE', 'POLKADOT_USDC'],
+      humanApprovalThresholdCredits: 50000,
+      stateMachineVersion: '2.0.0'
+    },
+    components: {
+      authentication: {
+        status: 'ready',
+        scheme: 'sb_live_* (SHA-256 constant-time comparison)',
+        strictProductionEnforced: isProd
+      },
+      database: {
+        status: hasDb ? 'connected' : 'in_memory',
+        provider: hasDb ? 'Firestore' : 'InMemory'
+      },
+      paymentRails: {
+        PLATFORM_CREDITS: { status: 'ready', doubleEntry: true, feeBps: 500 },
+        POLKADOT_USDC: { status: polkadotConfigured ? (isProd ? 'ready' : 'sandbox') : 'sandbox', configured: polkadotConfigured },
+        STRIPE: { status: stripeConfigured ? (stripeLive ? 'ready' : 'sandbox') : 'sandbox', configured: stripeConfigured }
+      },
+      settlementEngine: {
+        status: 'ready',
+        rails: ['PLATFORM_CREDITS', 'STRIPE', 'POLKADOT_USDC']
+      }
+    },
+    timestamp: new Date().toISOString()
   };
 }
 

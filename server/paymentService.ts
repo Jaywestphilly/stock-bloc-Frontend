@@ -300,27 +300,41 @@ export class PaymentOrchestrator {
       await db.runTransaction(async (t: any) => {
         const walletRef = db.collection('agent_wallets').doc(buyerAgentId);
         const snap = await t.get(walletRef);
-        if (!snap.exists) return;
+        const memWallet = inMemoryWalletRegistry.get(buyerAgentId);
+        if (!snap.exists && !memWallet) {
+          throw new Error('Wallet not found for escrow release');
+        }
 
-        const data = snap.data();
-        const available = data.availableBalance ?? data.creditsBalance ?? 0;
-        const reserved = data.reservedBalance ?? 0;
+        const data = (snap.exists ? snap.data() : memWallet) || {
+          agentId: buyerAgentId,
+          creditsBalance: 0,
+          availableBalance: 0,
+          reservedBalance: 0
+        };
+
+        const available = typeof data.availableBalance === 'number' ? data.availableBalance : (data.creditsBalance ?? 0);
+        const reserved = typeof data.reservedBalance === 'number' ? data.reservedBalance : 0;
         const releaseAmt = Math.min(reserved, amount);
+        const newAvailable = available + releaseAmt;
+        const newReserved = Math.max(0, reserved - releaseAmt);
 
-        t.set(walletRef, {
+        const updated = {
           ...data,
-          availableBalance: available + releaseAmt,
-          reservedBalance: Math.max(0, reserved - releaseAmt),
-          creditsBalance: available + reserved,
+          availableBalance: newAvailable,
+          reservedBalance: newReserved,
+          creditsBalance: newAvailable + newReserved,
           updatedAt: new Date().toISOString()
-        }, { merge: true });
+        };
+
+        t.set(walletRef, updated, { merge: true });
+        inMemoryWalletRegistry.set(buyerAgentId, updated);
       });
       return true;
     } catch {
       const w: any = inMemoryWalletRegistry.get(buyerAgentId);
       if (w) {
-        const available = w.availableBalance ?? w.creditsBalance ?? 0;
-        const reserved = w.reservedBalance ?? 0;
+        const available = typeof w.availableBalance === 'number' ? w.availableBalance : (w.creditsBalance ?? 0);
+        const reserved = typeof w.reservedBalance === 'number' ? w.reservedBalance : 0;
         const releaseAmt = Math.min(reserved, amount);
         w.availableBalance = available + releaseAmt;
         w.reservedBalance = Math.max(0, reserved - releaseAmt);

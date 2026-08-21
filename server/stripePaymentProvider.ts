@@ -43,10 +43,10 @@ interface SandboxPaymentIntentStore {
   charges: { data: Array<{ id: string; refunded: boolean; amount: number }> };
 }
 
-const sandboxPaymentIntents = new Map<string, SandboxPaymentIntentStore>();
-const processedWebhookEvents = new Set<string>();
-const capturedPaymentIntents = new Set<string>();
-const refundedTransactions = new Set<string>();
+export const sandboxPaymentIntents = new Map<string, SandboxPaymentIntentStore>();
+export const processedWebhookEvents = new Set<string>();
+export const capturedPaymentIntents = new Set<string>();
+export const refundedTransactions = new Set<string>();
 
 export class StripePaymentProvider implements PaymentProvider {
   rail = 'STRIPE' as const;
@@ -72,7 +72,12 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   isConfigured(): boolean {
-    return Boolean(this.config.secretKey && this.config.secretKey.length > 10 && !this.config.secretKey.includes('placeholder'));
+    return Boolean(
+      this.config.secretKey &&
+      this.config.secretKey.length > 10 &&
+      !this.config.secretKey.includes('placeholder') &&
+      this.config.paymentModeEnv === 'production'
+    );
   }
 
   isProductionReady(): boolean {

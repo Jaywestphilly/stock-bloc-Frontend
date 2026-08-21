@@ -15,7 +15,7 @@ import { agentExchangeRouter, ensureSeedBountiesExist } from './server/agentExch
 import { web3DotBtcRouter } from './server/web3DotBtcApi.js';
 import { db } from './server/firebaseAdmin.js';
 import { FieldValue } from 'firebase-admin/firestore';
-import { validateProductionStartupSafety, authenticateAgent } from './server/agentSecurity.js';
+import { validateProductionStartupSafety, authenticateAgent, getSystemReadinessStatus } from './server/agentSecurity.js';
 
 const app = express();
 const PORT = 3000;
@@ -37,6 +37,13 @@ app.get(['/api/health', '/health'], (_req, res) => {
     uptime: Math.floor(process.uptime()),
     timestamp: new Date().toISOString()
   });
+});
+
+// Production Readiness endpoint for comprehensive infrastructure audit
+app.get(['/api/v1/system/readiness', '/api/system/readiness', '/api/v1/readiness', '/api/readiness'], (_req, res) => {
+  const readiness = getSystemReadinessStatus();
+  const httpStatus = readiness.status === 'NOT_READY' ? 503 : 200;
+  res.status(httpStatus).json(readiness);
 });
 
 // Set payload limits for base64 image uploads and capture rawBody for webhook signature verification

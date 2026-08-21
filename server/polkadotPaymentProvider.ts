@@ -60,11 +60,13 @@ export interface VerifiedPolkadotTransaction {
 export const usedBlockchainTransactions = new Map<string, { settledAt: string; jobId: string; transactionId: string }>();
 export const verifiedTransactionRegistry = new Map<string, VerifiedPolkadotTransaction>();
 export const sandboxRegisteredTransactions = new Map<string, VerifiedPolkadotTransaction>();
+export const storedPolkadotRequirements = new Map<string, any>();
 
 export function clearPolkadotReplayRegistry() {
   usedBlockchainTransactions.clear();
   verifiedTransactionRegistry.clear();
   sandboxRegisteredTransactions.clear();
+  storedPolkadotRequirements.clear();
 }
 
 export class PolkadotUsdcPaymentProvider implements PaymentProvider {
@@ -170,8 +172,9 @@ export class PolkadotUsdcPaymentProvider implements PaymentProvider {
     const paymentAddress = this.config.treasuryAddress || '15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5';
     const trackingUrl = `${this.config.explorerBaseUrl}/account/${paymentAddress}`;
     const amountRaw = Math.round(amountUsd * Math.pow(10, this.config.tokenDecimals)).toString();
+    const expiresAt = new Date(Date.now() + this.config.paymentTimeoutSeconds * 1000).toISOString();
 
-    return {
+    const reqRecord = {
       paymentRef,
       paymentRail: 'POLKADOT_USDC',
       amount: amountUsd,
@@ -180,15 +183,22 @@ export class PolkadotUsdcPaymentProvider implements PaymentProvider {
       paymentAddress,
       recipientAddress: paymentAddress,
       network: this.config.network,
-      assetId: this.config.assetId,
+      assetId: String(this.config.assetId),
       tokenDecimals: this.config.tokenDecimals,
       confirmationsRequired: this.config.confirmationsRequired,
       explorerTrackingUrl: trackingUrl,
       status: 'pending',
       jobId,
       buyerAgentId,
-      expiresAt: new Date(Date.now() + this.config.paymentTimeoutSeconds * 1000).toISOString()
+      expiresAt
     };
+
+    storedPolkadotRequirements.set(paymentRef, reqRecord);
+    if (db) {
+      db.collection('payment_requirements').doc(paymentRef).set(reqRecord).catch(() => {});
+    }
+
+    return reqRecord;
   }
 
   /**
@@ -218,6 +228,7 @@ export class PolkadotUsdcPaymentProvider implements PaymentProvider {
       blockNumber?: number;
       assetId?: string | number;
       network?: string;
+      jobId?: string;
     }
   ): Promise<{
     verified: boolean;
@@ -256,6 +267,30 @@ export class PolkadotUsdcPaymentProvider implements PaymentProvider {
       };
     }
 
+    // Check against stored payment requirement for integrity
+    let storedReq = storedPolkadotRequirements.get(paymentRef);
+    if (!storedReq && db && paymentRef.startsWith('dot_req_')) {
+      try {
+        const snap = await db.collection('payment_requirements').doc(paymentRef).get();
+        if (snap.exists) {
+          storedReq = snap.data();
+        }
+      } catch {
+        // Non-blocking
+      }
+    }
+
+    // Check expiration if requirement was found
+    if (storedReq?.expiresAt && new Date(storedReq.expiresAt) < new Date()) {
+      return {
+        verified: false,
+        error: `Payment requirement ${paymentRef} has expired at ${storedReq.expiresAt}.`,
+        ruleFailures: ['RULE_0_PAYMENT_REQUIREMENT_EXPIRED'],
+        network: this.config.network,
+        confirmations: 0
+      };
+    }
+
     // Rule 10 & 11: Persistent Anti-Replay Protection (Memory & Firestore)
     if (usedBlockchainTransactions.has(txHash)) {
       const existing = usedBlockchainTransactions.get(txHash)!;
@@ -287,14 +322,14 @@ export class PolkadotUsdcPaymentProvider implements PaymentProvider {
     }
 
     // Rule 5: Recipient Address verification
-    const expectedRecipient = this.config.treasuryAddress;
+    const expectedRecipient = storedReq?.recipientAddress || this.config.treasuryAddress;
     const providedRecipient = payload?.recipientAddress || expectedRecipient;
     if (expectedRecipient && providedRecipient !== expectedRecipient) {
       ruleFailures.push(`RULE_5_RECIPIENT_MISMATCH: expected ${expectedRecipient}, received ${providedRecipient}`);
     }
 
     // Rule 6: Asset ID verification
-    const expectedAssetId = String(this.config.assetId);
+    const expectedAssetId = String(storedReq?.assetId || this.config.assetId);
     const providedAssetId = String(payload?.assetId || expectedAssetId);
     if (providedAssetId !== expectedAssetId) {
       ruleFailures.push(`RULE_5_ASSET_ID_MISMATCH: expected asset ${expectedAssetId}, received ${providedAssetId}`);
@@ -302,13 +337,16 @@ export class PolkadotUsdcPaymentProvider implements PaymentProvider {
     }
 
     // Rule 7: Amount verification
-    const expectedAmount = payload?.amount ?? 10;
+    const expectedAmount = storedReq?.amount ?? payload?.amount ?? 10;
     if (expectedAmount <= 0) {
       ruleFailures.push('RULE_7_INVALID_AMOUNT: Amount must be greater than zero');
     }
+    if (payload?.amount !== undefined && storedReq?.amount !== undefined && payload.amount !== storedReq.amount) {
+      ruleFailures.push(`RULE_7_AMOUNT_MISMATCH: expected ${storedReq.amount}, received ${payload.amount}`);
+    }
 
     // Rule 8: Network verification
-    const expectedNetwork = this.config.network;
+    const expectedNetwork = storedReq?.network || this.config.network;
     const providedNetwork = payload?.network || expectedNetwork;
     if (providedNetwork !== expectedNetwork) {
       ruleFailures.push(`RULE_8_NETWORK_MISMATCH: expected network ${expectedNetwork}, received ${providedNetwork}`);

@@ -4,7 +4,16 @@ import rateLimit from 'express-rate-limit';
 import { db, auth } from './firebaseAdmin.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { AgentApiKeyRecord, AgentIdentity, AgentApiScope } from '../src/types.js';
-import { AGENT_ENV, INSECURE_PLACEHOLDER_KEYS } from './agentSecurity.js';
+import {
+  AGENT_ENV,
+  INSECURE_PLACEHOLDER_KEYS,
+  authenticateAgent as canonicalAuthenticateAgent,
+  inMemoryKeyRegistry,
+  inMemoryAgentRegistry,
+  DEFAULT_AUTONOMOUS_SCOPES
+} from './agentSecurity.js';
+
+export { inMemoryKeyRegistry, inMemoryAgentRegistry, DEFAULT_AUTONOMOUS_SCOPES };
 
 export const agentPlatformRouter = Router();
 
@@ -54,26 +63,6 @@ export const globalApiLimiter = rateLimit({
 
 agentPlatformRouter.use(globalApiLimiter);
 
-export const DEFAULT_AUTONOMOUS_SCOPES: AgentApiScope[] = [
-  // Marketplace & Exchange Scopes (Services, Jobs, Requests, Settlement)
-  'services:read',
-  'services:write',
-  'jobs:read',
-  'jobs:execute',
-  'requests:read',
-  'requests:write',
-  'payments:transact',
-  // Intelligence, Community & Arena Loop
-  'community:read',
-  'community:write',
-  'community:reply',
-  'research:publish',
-  'forecast:publish',
-  'webhooks:manage'
-];
-
-import { authenticateAgent as canonicalAuthenticateAgent } from './agentSecurity.js';
-
 // Authentication Middleware for Agents - Canonical Production Hardened Implementation
 export const authenticateAgent = canonicalAuthenticateAgent;
 
@@ -96,9 +85,6 @@ export const requireScope = (scope: AgentApiScope) => {
   };
 };
 
-// In-memory cache for fast autonomous agent lookups and resilience
-export const inMemoryAgentRegistry = new Map<string, any>();
-export const inMemoryKeyRegistry = new Map<string, any>();
 export const inMemoryWalletRegistry = new Map<string, any>();
 
 // Helper to authenticate and debit credits from an agent for quant simulation & evaluation calls
