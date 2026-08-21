@@ -304,163 +304,10 @@
   "forecasts": {},
   "theses": {},
   "chats": {},
-  "agent_wallets": {
-    "agent_buyer_quant_test": {
-      "agentId": "agent_buyer_quant_test",
-      "creditsBalance": 900,
-      "availableBalance": 900,
-      "reservedBalance": 0,
-      "lifetimeSpent": 100,
-      "lifetimeEarnings": 0,
-      "updatedAt": "2026-08-21T13:04:45.612Z"
-    },
-    "agent_seller_research_test": {
-      "agentId": "agent_seller_research_test",
-      "creditsBalance": 95,
-      "availableBalance": 95,
-      "reservedBalance": 0,
-      "lifetimeSpent": 0,
-      "lifetimeEarnings": 0,
-      "lifetimeGrossEarnings": 100,
-      "lifetimePlatformFeesPaid": 5,
-      "lifetimeNetEarnings": 95,
-      "updatedAt": "2026-08-21T13:04:45.612Z"
-    },
-    "platform_treasury": {
-      "agentId": "platform_treasury",
-      "creditsBalance": 5,
-      "availableBalance": 5,
-      "reservedBalance": 0,
-      "lifetimeSpent": 0,
-      "lifetimeEarnings": 0,
-      "accountType": "PLATFORM_TREASURY",
-      "lifetimeGrossEarnings": 5,
-      "lifetimeFeesCollected": 5,
-      "totalSettledVolume": 100,
-      "updatedAt": "2026-08-21T13:04:45.612Z"
-    }
-  },
-  "platform_transactions": {
-    "tx_b20d5b0b3f2b4a33": {
-      "transactionId": "tx_b20d5b0b3f2b4a33",
-      "idempotencyKey": "idem_autonomous_loop_9988",
-      "jobId": "job_auto_9988",
-      "buyerAgentId": "agent_buyer_quant_test",
-      "sellerAgentId": "agent_seller_research_test",
-      "treasuryAccountId": "platform_treasury",
-      "grossAmount": 100,
-      "platformFeeBps": 500,
-      "platformFee": 5,
-      "providerAmount": 95,
-      "currency": "CREDITS",
-      "paymentRail": "PLATFORM_CREDITS",
-      "status": "SETTLED",
-      "entries": [
-        {
-          "entryId": "ent_19ef9955b70b",
-          "transactionId": "tx_b20d5b0b3f2b4a33",
-          "jobId": "job_auto_9988",
-          "accountId": "agent_buyer_quant_test",
-          "accountType": "BUYER",
-          "entryType": "DEBIT",
-          "amount": 100,
-          "currency": "CREDITS",
-          "description": "Debit buyer for job settlement: job_auto_9988",
-          "balanceBefore": 1000,
-          "balanceAfter": 900,
-          "createdAt": "2026-08-21T13:04:45.612Z"
-        },
-        {
-          "entryId": "ent_5e4865e933b1",
-          "transactionId": "tx_b20d5b0b3f2b4a33",
-          "jobId": "job_auto_9988",
-          "accountId": "agent_seller_research_test",
-          "accountType": "SELLER",
-          "entryType": "CREDIT",
-          "amount": 95,
-          "currency": "CREDITS",
-          "description": "Credit seller net earnings (net of 5% platform fee) for job: job_auto_9988",
-          "balanceBefore": 0,
-          "balanceAfter": 95,
-          "createdAt": "2026-08-21T13:04:45.612Z"
-        },
-        {
-          "entryId": "ent_441fbe1543de",
-          "transactionId": "tx_b20d5b0b3f2b4a33",
-          "jobId": "job_auto_9988",
-          "accountId": "platform_treasury",
-          "accountType": "PLATFORM_TREASURY",
-          "entryType": "CREDIT",
-          "amount": 5,
-          "currency": "CREDITS",
-          "description": "Platform treasury fee revenue (5%) for job: job_auto_9988",
-          "balanceBefore": 0,
-          "balanceAfter": 5,
-          "createdAt": "2026-08-21T13:04:45.612Z"
-        }
-      ],
-      "balancesAfter": {
-        "buyerBalance": 900,
-        "sellerBalance": 95,
-        "treasuryBalance": 5
-      },
-      "createdAt": "2026-08-21T13:04:45.612Z",
-      "completedAt": "2026-08-21T13:04:45.612Z"
-    }
-  },
-  "idempotency_keys": {
-    "idem_autonomous_loop_9988": {
-      "idempotencyKey": "idem_autonomous_loop_9988",
-      "transactionId": "tx_b20d5b0b3f2b4a33",
-      "jobId": "job_auto_9988",
-      "status": "SETTLED",
-      "createdAt": "2026-08-21T13:04:45.612Z"
-    }
-  },
-  "ledger_entries": {
-    "ent_19ef9955b70b": {
-      "entryId": "ent_19ef9955b70b",
-      "transactionId": "tx_b20d5b0b3f2b4a33",
-      "jobId": "job_auto_9988",
-      "accountId": "agent_buyer_quant_test",
-      "accountType": "BUYER",
-      "entryType": "DEBIT",
-      "amount": 100,
-      "currency": "CREDITS",
-      "description": "Debit buyer for job settlement: job_auto_9988",
-      "balanceBefore": 1000,
-      "balanceAfter": 900,
-      "createdAt": "2026-08-21T13:04:45.612Z"
-    },
-    "ent_5e4865e933b1": {
-      "entryId": "ent_5e4865e933b1",
-      "transactionId": "tx_b20d5b0b3f2b4a33",
-      "jobId": "job_auto_9988",
-      "accountId": "agent_seller_research_test",
-      "accountType": "SELLER",
-      "entryType": "CREDIT",
-      "amount": 95,
-      "currency": "CREDITS",
-      "description": "Credit seller net earnings (net of 5% platform fee) for job: job_auto_9988",
-      "balanceBefore": 0,
-      "balanceAfter": 95,
-      "createdAt": "2026-08-21T13:04:45.612Z"
-    },
-    "ent_441fbe1543de": {
-      "entryId": "ent_441fbe1543de",
-      "transactionId": "tx_b20d5b0b3f2b4a33",
-      "jobId": "job_auto_9988",
-      "accountId": "platform_treasury",
-      "accountType": "PLATFORM_TREASURY",
-      "entryType": "CREDIT",
-      "amount": 5,
-      "currency": "CREDITS",
-      "description": "Platform treasury fee revenue (5%) for job: job_auto_9988",
-      "balanceBefore": 0,
-      "balanceAfter": 5,
-      "createdAt": "2026-08-21T13:04:45.612Z"
-    }
-  },
+  "agent_wallets": {},
+  "platform_transactions": {},
+  "idempotency_keys": {},
+  "ledger_entries": {},
   "bounties": {
     "bounty_nvda_capex_01": {
       "bountyId": "bounty_nvda_capex_01",
@@ -969,6 +816,19 @@
       "createdAt": "2026-08-14T12:57:08.092Z",
       "updatedAt": "2026-08-14T12:57:09.006Z",
       "expiresAt": "2026-09-13T12:57:08.092Z"
+    }
+  },
+  "blockchain_settled_transactions": {
+    "polkadot-asset-hub_0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef": {
+      "txHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+      "network": "polkadot-asset-hub",
+      "assetId": "1337",
+      "jobId": "job_dot_01",
+      "transactionId": "tx_polkadot_d8633891cc120aab",
+      "grossAmount": 50,
+      "platformFee": 3,
+      "netSellerAmount": 47,
+      "settledAt": "2026-08-21T13:46:26.888Z"
     }
   }
 }

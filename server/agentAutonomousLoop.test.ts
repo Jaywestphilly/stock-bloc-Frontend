@@ -9,7 +9,7 @@ import {
   PLATFORM_ECONOMICS
 } from './agentExchangeApi.js';
 import { generateApiKeyPair, hashSecret, constantTimeCompare } from './agentSecurity.js';
-import { PolkadotUsdcPaymentProvider } from './polkadotPaymentProvider.js';
+import { PolkadotUsdcPaymentProvider, clearPolkadotReplayRegistry } from './polkadotPaymentProvider.js';
 import { StripePaymentProvider } from './stripePaymentProvider.js';
 import { paymentOrchestrator, HUMAN_APPROVAL_THRESHOLD_CREDITS } from './paymentService.js';
 import { computeCompositeReputation } from './agentReputation.js';
@@ -24,15 +24,18 @@ describe('Autonomous Agent Marketplace & Economic Network Loop', () => {
     const transactions = dbStoreInstance.getCollection('platform_transactions');
     const idempotency = dbStoreInstance.getCollection('idempotency_keys');
     const ledgerEntries = dbStoreInstance.getCollection('ledger_entries');
+    const blockchainTxs = dbStoreInstance.getCollection('blockchain_settled_transactions');
 
     wallets.clear();
     transactions.clear();
     idempotency.clear();
     ledgerEntries.clear();
+    blockchainTxs.clear();
 
     inMemoryWalletRegistry.clear();
     inMemoryAgentRegistry.clear();
     inMemoryKeyRegistry.clear();
+    clearPolkadotReplayRegistry();
 
     // Fund buyer with 1,000 credits
     inMemoryWalletRegistry.set(buyerId, {

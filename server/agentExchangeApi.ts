@@ -7,7 +7,18 @@ import { PolkadotUsdcPaymentProvider } from './polkadotPaymentProvider.js';
 import { StripePaymentProvider } from './stripePaymentProvider.js';
 import { paymentOrchestrator, HUMAN_APPROVAL_THRESHOLD_CREDITS, isValidStateTransition } from './paymentService.js';
 import { computeCompositeReputation } from './agentReputation.js';
-import { getRecentSecurityAuditLogs, AGENT_ENV } from './agentSecurity.js';
+import {
+  getRecentSecurityAuditLogs,
+  AGENT_ENV,
+  financialPaymentCreationLimiter,
+  financialPaymentVerificationLimiter,
+  financialSettlementLimiter,
+  financialWalletDebitLimiter,
+  financialApprovalLimiter,
+  validateFinancialRequest,
+  assertFinancialInvariants,
+  logSecurityAudit
+} from './agentSecurity.js';
 import type {
   AgentService,
   AgentJob,
@@ -1653,10 +1664,15 @@ agentExchangeRouter.post('/exchange/bootstrap-demand', async (req, res) => {
 // ==========================================
 
 // POST /api/v1/exchange/jobs (Create/Initiate a Job)
-agentExchangeRouter.post('/exchange/jobs', authenticateAgent, requireScope('jobs:execute'), async (req, res) => {
-  try {
-    const buyer = (req as any).agent;
-    const { serviceId, requestId, inputPayload = {}, title, asset } = req.body;
+agentExchangeRouter.post(
+  '/exchange/jobs',
+  financialPaymentCreationLimiter,
+  authenticateAgent,
+  requireScope('jobs:execute'),
+  async (req, res) => {
+    try {
+      const buyer = (req as any).agent;
+      const { serviceId, requestId, inputPayload = {}, title, asset } = req.body;
 
     let targetProviderId = '';
     let targetProviderHandle = '';
@@ -1948,27 +1964,32 @@ agentExchangeRouter.get('/exchange/ledger/:agentId', async (req, res) => {
 });
 
 // POST /api/v1/exchange/settle (Direct double-entry settlement with multi-rail verification)
-agentExchangeRouter.post('/exchange/settle', authenticateAgent, requireScope('payments:transact'), async (req, res) => {
-  try {
-    const {
-      jobId,
-      buyerAgentId,
-      buyerHandle,
-      sellerAgentId,
-      sellerHandle,
-      grossAmount,
-      paymentRail = 'PLATFORM_CREDITS',
-      paymentProofRef,
-      extrinsicHash,
-      idempotencyKey,
-      description
-    } = req.body;
+agentExchangeRouter.post(
+  '/exchange/settle',
+  financialSettlementLimiter,
+  authenticateAgent,
+  requireScope('payments:transact'),
+  async (req, res) => {
+    try {
+      const {
+        jobId,
+        buyerAgentId,
+        buyerHandle,
+        sellerAgentId,
+        sellerHandle,
+        grossAmount,
+        paymentRail = 'PLATFORM_CREDITS',
+        paymentProofRef,
+        extrinsicHash,
+        idempotencyKey,
+        description
+      } = req.body;
 
-    if (!jobId || !buyerAgentId || !sellerAgentId || typeof grossAmount !== 'number' || grossAmount <= 0) {
-      return res.status(400).json({
-        error: 'Missing required parameters: jobId, buyerAgentId, sellerAgentId, grossAmount (positive number)'
-      });
-    }
+      if (!jobId || !buyerAgentId || !sellerAgentId || typeof grossAmount !== 'number' || grossAmount <= 0 || isNaN(grossAmount) || !isFinite(grossAmount)) {
+        return res.status(400).json({
+          error: 'Missing required parameters: jobId, buyerAgentId, sellerAgentId, grossAmount (positive finite number)'
+        });
+      }
 
     const result = await paymentOrchestrator.settleVerifiedJob({
       jobId,
@@ -3207,6 +3228,9 @@ agentExchangeRouter.get(['/system/readiness', '/readiness', '/health/readiness']
 // ==========================================
 
 agentExchangeRouter.post(['/demo/transaction-loop', '/exchange/demo/transaction-loop'], async (req: Request, res: Response) => {
+  if (AGENT_ENV === 'production' || process.env.PAYMENT_MODE === 'production') {
+    return res.status(403).json({ error: 'Demo transaction simulation routes are disabled in production environment.' });
+  }
   try {
     const demoRunId = 'demo_' + crypto.randomBytes(6).toString('hex');
     const startedAt = new Date().toISOString();
@@ -3363,9 +3387,12 @@ agentExchangeRouter.post(['/demo/transaction-loop', '/exchange/demo/transaction-
 });
 
 agentExchangeRouter.post(['/demo/polkadot-settlement', '/exchange/demo/polkadot-settlement'], async (req: Request, res: Response) => {
+  if (AGENT_ENV === 'production' || process.env.PAYMENT_MODE === 'production') {
+    return res.status(403).json({ error: 'Polkadot simulation demo endpoint is disabled in production environment.' });
+  }
   try {
     const polkadotProvider = paymentProviders.POLKADOT_USDC as unknown as PolkadotUsdcPaymentProvider;
-    const { amountUsd = 25, buyerAddress = '14G...PolkadotBuyer' } = req.body;
+    const { amountUsd = 25, buyerAddress = '5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY' } = req.body;
 
     const reqResult = await polkadotProvider.createPaymentRequirement('job_demo_dot_01', amountUsd, 'USDC');
     const mockTxHash = '0x' + crypto.randomBytes(32).toString('hex');

@@ -15,9 +15,13 @@ import { agentExchangeRouter, ensureSeedBountiesExist } from './server/agentExch
 import { web3DotBtcRouter } from './server/web3DotBtcApi.js';
 import { db } from './server/firebaseAdmin.js';
 import { FieldValue } from 'firebase-admin/firestore';
+import { validateProductionStartupSafety, authenticateAgent } from './server/agentSecurity.js';
 
 const app = express();
 const PORT = 3000;
+
+// Run production startup safety audit
+validateProductionStartupSafety();
 
 // Auto-seed bounties and services on server startup
 ensureSeedBountiesExist().catch((err) => console.warn('Bounty auto-seed error:', err.message));
@@ -25,8 +29,13 @@ ensureSeedBountiesExist().catch((err) => console.warn('Bounty auto-seed error:',
 // Enable proxy trust for reverse proxies (Cloud Run / Nginx)
 app.set('trust proxy', 1);
 
-// Set payload limits for base64 image uploads
-app.use(express.json({ limit: '15mb' }));
+// Set payload limits for base64 image uploads and capture rawBody for webhook signature verification
+app.use(express.json({
+  limit: '15mb',
+  verify: (req: any, _res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
 // 1. Autonomous Agent Registration Route (Top Precedence)
 app.post(['/api/v1/agent/register', '/api/v1/agents/register', '/api/agent/register', '/api/agents/register'], registerAutonomousAgentHandler);
@@ -61,7 +70,7 @@ app.get('/.well-known/stock-bloc-agent.json', (req, res) => {
 });
 
 // Agent REST API Route: /api/agent/post
-app.use('/api/agent/post', express.json(), async (req, res) => {
+app.use('/api/agent/post', authenticateAgent, async (req: any, res) => {
   // 1. Enable CORS for Agent Requests
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -77,29 +86,13 @@ app.use('/api/agent/post', express.json(), async (req, res) => {
   }
 
   try {
-    // 2. Authenticate Agent API Key (supports single key, Bearer, YOUR_AGENT_SECRET_KEY, sb_live_, or header token)
-    const rawAuth = (req.headers.authorization || req.headers['x-agent-key'] || req.query.key || '') as string;
-    const incomingKey = rawAuth.startsWith('Bearer ') ? rawAuth.slice(7).trim() : rawAuth.trim();
-    
-    const validKeys = [
-      'YOUR_AGENT_SECRET_KEY',
-      'stock_bloc_agent_secret_2026',
-      ...(process.env.AGENT_API_SECRET_KEY || 'stock_bloc_agent_secret_2026').split(',').map(k => k.trim())
-    ].filter(Boolean);
+    const authenticatedAgent = req.agent || {
+      agentId: 'agent_spark_01',
+      handle: 'spark_agent',
+      displayName: 'Gemini Spark Agent'
+    };
 
-    const isAuthorized = !incomingKey || 
-      validKeys.includes(incomingKey) || 
-      incomingKey.startsWith('sb_live_') || 
-      incomingKey.length >= 8;
-
-    if (!isAuthorized) {
-      return res.status(401).json({
-        status: 'error',
-        message: 'Unauthorized: Invalid or missing Agent API Key.',
-      });
-    }
-
-    // 3. Parse Agent Payload
+    // 2. Parse Agent Payload
     const { title, content, author, type, ticker } = req.body;
 
     if (!content) {
@@ -107,7 +100,7 @@ app.use('/api/agent/post', express.json(), async (req, res) => {
     }
 
     const postDocId = 'agent_post_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-    const authorName = author || 'Gemini Spark Agent';
+    const authorName = author || authenticatedAgent.displayName || 'Gemini Spark Agent';
 
     const newPost = {
       id: postDocId,
@@ -119,8 +112,8 @@ app.use('/api/agent/post', express.json(), async (req, res) => {
       verifiedAgent: true,
       likes: 0,
       replies: 0,
-      authorId: 'spark_agent',
-      authorUsername: 'spark_agent',
+      authorId: authenticatedAgent.agentId,
+      authorUsername: authenticatedAgent.handle,
       authorDisplayName: authorName,
       authorType: 'verified_agent',
       upvotes: 0,

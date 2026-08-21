@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import Stripe from 'stripe';
+import { db } from './firebaseAdmin.js';
 import type { PaymentProvider, SettlePaymentParams } from './agentExchangeApi.js';
 import type {
   AgentWalletBalance,
@@ -27,21 +28,25 @@ export const DEFAULT_STRIPE_CONFIG: StripeConfig = {
   paymentModeEnv: (process.env.PAYMENT_MODE === 'production' ? 'production' : 'sandbox')
 };
 
-// In-memory store for sandbox PaymentIntents when running in test/sandbox mode without active live keys
+// In-memory store for sandbox PaymentIntents when running in test/sandbox mode
 interface SandboxPaymentIntentStore {
   id: string;
   amount: number;
   currency: string;
-  status: 'requires_payment_method' | 'requires_capture' | 'succeeded' | 'canceled';
+  status: 'requires_payment_method' | 'requires_action' | 'processing' | 'requires_capture' | 'succeeded' | 'canceled';
   client_secret: string;
   metadata: Record<string, string>;
   capture_method: string;
   created: number;
+  captured: boolean;
+  refunded: boolean;
   charges: { data: Array<{ id: string; refunded: boolean; amount: number }> };
 }
 
 const sandboxPaymentIntents = new Map<string, SandboxPaymentIntentStore>();
 const processedWebhookEvents = new Set<string>();
+const capturedPaymentIntents = new Set<string>();
+const refundedTransactions = new Set<string>();
 
 export class StripePaymentProvider implements PaymentProvider {
   rail = 'STRIPE' as const;
@@ -103,7 +108,7 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   /**
-   * Creates a real Stripe PaymentIntent server-side.
+   * Creates a real Stripe PaymentIntent server-side with idempotency.
    */
   async createPaymentRequirement(
     jobId: string,
@@ -113,10 +118,11 @@ export class StripePaymentProvider implements PaymentProvider {
     extraMetadata?: {
       sellerAgentId?: string;
       transactionIntentId?: string;
-    }
+    },
+    idempotencyKey?: string
   ): Promise<any> {
-    if (typeof amountCredits !== 'number' || amountCredits <= 0) {
-      throw new Error(`Amount must be positive, received: ${amountCredits}`);
+    if (typeof amountCredits !== 'number' || amountCredits <= 0 || isNaN(amountCredits) || !isFinite(amountCredits)) {
+      throw new Error(`Amount must be positive finite number, received: ${amountCredits}`);
     }
 
     const amountCents = Math.max(50, Math.round((amountCredits / this.config.creditsPerUsd) * 100));
@@ -131,7 +137,7 @@ export class StripePaymentProvider implements PaymentProvider {
       creditsRequested: String(amountCredits)
     };
 
-    // If live or valid test Stripe key is available and not in sandbox-only mode
+    // Real Stripe API call if configured
     if (this.isConfigured()) {
       try {
         const stripe = this.getStripeClient();
@@ -141,7 +147,7 @@ export class StripePaymentProvider implements PaymentProvider {
           metadata,
           capture_method: 'manual',
           description: `Stock Bloc Autonomous Agent Exchange Job: ${jobId}`
-        });
+        }, idempotencyKey ? { idempotencyKey: `create_${idempotencyKey}` } : undefined);
 
         return {
           paymentRef: paymentIntent.id,
@@ -186,6 +192,8 @@ export class StripePaymentProvider implements PaymentProvider {
       metadata,
       capture_method: 'manual',
       created: Math.floor(Date.now() / 1000),
+      captured: false,
+      refunded: false,
       charges: {
         data: [{ id: 'ch_test_' + crypto.randomBytes(12).toString('hex'), refunded: false, amount: amountCents }]
       }
@@ -214,7 +222,11 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   /**
-   * Verifies a real Stripe PaymentIntent from the Stripe API or sandbox store.
+   * Strictly verifies a real Stripe PaymentIntent from the Stripe API or sandbox store.
+   * Enforces:
+   * - Must be in an authorized (requires_capture) or settled (succeeded) status.
+   * - Never returns verified: true for requires_payment_method, requires_action, processing, or canceled.
+   * - Validates amount, currency, jobId, buyerAgentId, sellerAgentId, and transactionIntentId.
    */
   async verifyPayment(
     paymentRef: string,
@@ -226,9 +238,13 @@ export class StripePaymentProvider implements PaymentProvider {
       jobId?: string;
       buyerAgentId?: string;
       sellerAgentId?: string;
+      transactionIntentId?: string;
     }
   ): Promise<{
     verified: boolean;
+    payment_authorized?: boolean;
+    payment_captured?: boolean;
+    payment_settled?: boolean;
     paymentRef?: string;
     paymentIntentId?: string;
     chargeId?: string;
@@ -247,17 +263,26 @@ export class StripePaymentProvider implements PaymentProvider {
       return { verified: false, error: 'Missing paymentRef/paymentIntentId for Stripe verification' };
     }
 
-    // If present in Sandbox store, check sandbox rules
+    // 1. Sandbox engine check
     if (sandboxPaymentIntents.has(paymentIntentId)) {
       const sandboxIntent = sandboxPaymentIntents.get(paymentIntentId)!;
-      const validStatuses = ['succeeded', 'requires_capture', 'requires_payment_method', 'processing'];
 
-      if (!validStatuses.includes(sandboxIntent.status)) {
+      // Strictly reject unfunded / canceled / intermediate states
+      if (['requires_payment_method', 'requires_action', 'requires_confirmation', 'processing', 'canceled'].includes(sandboxIntent.status)) {
         return {
           verified: false,
           paymentIntentId: sandboxIntent.id,
           status: sandboxIntent.status,
-          error: `Sandbox PaymentIntent status is ${sandboxIntent.status}, not capturable/succeeded.`
+          error: `Sandbox PaymentIntent status is ${sandboxIntent.status}; payment is unfunded or incomplete.`
+        };
+      }
+
+      if (sandboxIntent.status !== 'requires_capture' && sandboxIntent.status !== 'succeeded') {
+        return {
+          verified: false,
+          paymentIntentId: sandboxIntent.id,
+          status: sandboxIntent.status,
+          error: `Sandbox PaymentIntent status is ${sandboxIntent.status}, not authorized (requires_capture) or settled (succeeded).`
         };
       }
 
@@ -265,7 +290,7 @@ export class StripePaymentProvider implements PaymentProvider {
         return {
           verified: false,
           paymentIntentId: sandboxIntent.id,
-          error: `Sandbox PaymentIntent amount mismatch: expected ${context.expectedAmountCents}, found ${sandboxIntent.amount}`
+          error: `Sandbox PaymentIntent amount mismatch: expected ${context.expectedAmountCents} cents, found ${sandboxIntent.amount} cents.`
         };
       }
 
@@ -285,8 +310,38 @@ export class StripePaymentProvider implements PaymentProvider {
         };
       }
 
+      if (context?.buyerAgentId && sandboxIntent.metadata?.buyerAgentId && sandboxIntent.metadata.buyerAgentId !== context.buyerAgentId) {
+        return {
+          verified: false,
+          paymentIntentId: sandboxIntent.id,
+          error: `Sandbox PaymentIntent buyerAgentId mismatch: expected ${context.buyerAgentId}, found ${sandboxIntent.metadata.buyerAgentId}`
+        };
+      }
+
+      if (context?.sellerAgentId && sandboxIntent.metadata?.sellerAgentId && sandboxIntent.metadata.sellerAgentId !== context.sellerAgentId) {
+        return {
+          verified: false,
+          paymentIntentId: sandboxIntent.id,
+          error: `Sandbox PaymentIntent sellerAgentId mismatch: expected ${context.sellerAgentId}, found ${sandboxIntent.metadata.sellerAgentId}`
+        };
+      }
+
+      if (context?.transactionIntentId && sandboxIntent.metadata?.transactionIntentId && sandboxIntent.metadata.transactionIntentId !== context.transactionIntentId) {
+        return {
+          verified: false,
+          paymentIntentId: sandboxIntent.id,
+          error: `Sandbox PaymentIntent transactionIntentId mismatch: expected ${context.transactionIntentId}, found ${sandboxIntent.metadata.transactionIntentId}`
+        };
+      }
+
+      const isAuthorized = sandboxIntent.status === 'requires_capture';
+      const isSettled = sandboxIntent.status === 'succeeded';
+
       return {
         verified: true,
+        payment_authorized: isAuthorized,
+        payment_captured: isSettled,
+        payment_settled: isSettled,
         paymentRef: sandboxIntent.id,
         paymentIntentId: sandboxIntent.id,
         chargeId: sandboxIntent.charges.data[0]?.id || `ch_${sandboxIntent.id}`,
@@ -300,19 +355,28 @@ export class StripePaymentProvider implements PaymentProvider {
       };
     }
 
-    // Try real Stripe API if secret key exists
+    // 2. Real Stripe API query
     if (this.isConfigured()) {
       try {
         const stripe = this.getStripeClient();
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-        const validStatuses = ['succeeded', 'requires_capture', 'requires_payment_method', 'processing'];
-        if (!validStatuses.includes(paymentIntent.status)) {
+        // Explicitly check status
+        if (['requires_payment_method', 'requires_action', 'requires_confirmation', 'processing', 'canceled'].includes(paymentIntent.status)) {
           return {
             verified: false,
             paymentIntentId: paymentIntent.id,
             status: paymentIntent.status,
-            error: `Stripe PaymentIntent status is invalid: ${paymentIntent.status}. Expected succeeded or requires_capture.`
+            error: `Stripe PaymentIntent is incomplete with status: ${paymentIntent.status}. Funds have not been authorized or captured.`
+          };
+        }
+
+        if (paymentIntent.status !== 'requires_capture' && paymentIntent.status !== 'succeeded') {
+          return {
+            verified: false,
+            paymentIntentId: paymentIntent.id,
+            status: paymentIntent.status,
+            error: `Stripe PaymentIntent status is invalid: ${paymentIntent.status}. Expected requires_capture or succeeded.`
           };
         }
 
@@ -349,12 +413,34 @@ export class StripePaymentProvider implements PaymentProvider {
           };
         }
 
+        if (context?.sellerAgentId && paymentIntent.metadata?.sellerAgentId && paymentIntent.metadata.sellerAgentId !== context.sellerAgentId) {
+          return {
+            verified: false,
+            paymentIntentId: paymentIntent.id,
+            error: `PaymentIntent sellerAgentId metadata mismatch: received ${paymentIntent.metadata.sellerAgentId}, expected ${context.sellerAgentId}.`
+          };
+        }
+
+        if (context?.transactionIntentId && paymentIntent.metadata?.transactionIntentId && paymentIntent.metadata.transactionIntentId !== context.transactionIntentId) {
+          return {
+            verified: false,
+            paymentIntentId: paymentIntent.id,
+            error: `PaymentIntent transactionIntentId metadata mismatch: received ${paymentIntent.metadata.transactionIntentId}, expected ${context.transactionIntentId}.`
+          };
+        }
+
         const latestCharge = (typeof paymentIntent.latest_charge === 'string'
           ? paymentIntent.latest_charge
           : (paymentIntent.latest_charge as any)?.id) || `ch_${paymentIntent.id}`;
 
+        const isAuthorized = paymentIntent.status === 'requires_capture';
+        const isSettled = paymentIntent.status === 'succeeded';
+
         return {
           verified: true,
+          payment_authorized: isAuthorized,
+          payment_captured: isSettled,
+          payment_settled: isSettled,
           paymentRef: paymentIntent.id,
           paymentIntentId: paymentIntent.id,
           chargeId: latestCharge,
@@ -393,7 +479,7 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   /**
-   * Captures an authorized PaymentIntent on Stripe.
+   * Captures an authorized PaymentIntent on Stripe with strict idempotency and anti-double-capture protection.
    */
   async capturePayment(
     paymentRef: string,
@@ -420,10 +506,28 @@ export class StripePaymentProvider implements PaymentProvider {
     const netSellerAmount = Math.max(0, grossAmount - platformFee);
     const settledAt = new Date().toISOString();
 
+    // Check if already captured in-memory or in database
+    if (capturedPaymentIntents.has(paymentIntentId)) {
+      return {
+        success: true,
+        transactionId: paymentIntentId,
+        paymentIntentId,
+        chargeId: `ch_${paymentIntentId}`,
+        paymentRail: 'STRIPE',
+        grossAmount,
+        platformFee,
+        netSellerAmount,
+        status: 'succeeded',
+        settledAt
+      };
+    }
+
     // Check sandbox store first
     if (sandboxPaymentIntents.has(paymentIntentId)) {
       const sandboxIntent = sandboxPaymentIntents.get(paymentIntentId)!;
       sandboxIntent.status = 'succeeded';
+      sandboxIntent.captured = true;
+      capturedPaymentIntents.add(paymentIntentId);
       const chargeId = sandboxIntent.charges.data[0]?.id || `ch_${sandboxIntent.id}`;
 
       return {
@@ -445,22 +549,32 @@ export class StripePaymentProvider implements PaymentProvider {
         const stripe = this.getStripeClient();
         let paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-        if (paymentIntent.status === 'requires_payment_method' && !this.isProductionReady()) {
-          try {
-            paymentIntent = await stripe.paymentIntents.confirm(paymentIntentId, {
-              payment_method: 'pm_card_visa',
-              return_url: 'https://stockbloc.ai/return'
-            });
-          } catch (confirmErr: any) {
-            console.error('[STRIPE] Auto-confirm test intent note:', confirmErr.message);
-          }
+        if (paymentIntent.status === 'succeeded') {
+          capturedPaymentIntents.add(paymentIntentId);
+          const latestCharge = (typeof paymentIntent.latest_charge === 'string'
+            ? paymentIntent.latest_charge
+            : (paymentIntent.latest_charge as any)?.id) || `ch_${paymentIntent.id}`;
+
+          return {
+            success: true,
+            transactionId: paymentIntent.id,
+            paymentIntentId: paymentIntent.id,
+            chargeId: latestCharge,
+            paymentRail: 'STRIPE',
+            grossAmount,
+            platformFee,
+            netSellerAmount,
+            status: 'succeeded',
+            settledAt
+          };
         }
 
         if (paymentIntent.status === 'requires_capture') {
+          const captureKey = idempotencyKey ? `cap_${idempotencyKey}` : `cap_${paymentIntentId}`;
           paymentIntent = await stripe.paymentIntents.capture(
             paymentIntentId,
             {},
-            idempotencyKey ? { idempotencyKey: `cap_${idempotencyKey}` } : undefined
+            { idempotencyKey: captureKey }
           );
         }
 
@@ -479,9 +593,29 @@ export class StripePaymentProvider implements PaymentProvider {
           };
         }
 
+        capturedPaymentIntents.add(paymentIntentId);
         const latestCharge = (typeof paymentIntent.latest_charge === 'string'
           ? paymentIntent.latest_charge
           : (paymentIntent.latest_charge as any)?.id) || `ch_${paymentIntent.id}`;
+
+        // Persist settlement record in Firestore
+        if (db) {
+          try {
+            await db.collection('settled_payment_intents').doc(paymentIntentId).set({
+              paymentIntentId,
+              grossAmount,
+              platformFee,
+              netSellerAmount,
+              sellerAgentId,
+              buyerAgentId,
+              jobId,
+              settledAt,
+              status: 'succeeded'
+            });
+          } catch {
+            // Non-blocking firestore write
+          }
+        }
 
         return {
           success: true,
@@ -637,21 +771,28 @@ export class StripePaymentProvider implements PaymentProvider {
   }
 
   /**
-   * Issues a refund on a real Stripe PaymentIntent.
+   * Issues a refund on a real Stripe PaymentIntent with anti-double-refund check.
    */
   async refundPayment(
     paymentRef: string,
     reason: string,
-    params?: { jobId: string; buyerAgentId: string; sellerAgentId: string; grossAmount: number }
+    params?: { jobId: string; buyerAgentId: string; sellerAgentId: string; grossAmount: number },
+    idempotencyKey?: string
   ): Promise<boolean> {
     const paymentIntentId = paymentRef;
+
+    if (refundedTransactions.has(paymentIntentId)) {
+      return true; // Idempotent success
+    }
 
     if (sandboxPaymentIntents.has(paymentIntentId)) {
       const sandboxIntent = sandboxPaymentIntents.get(paymentIntentId)!;
       sandboxIntent.status = 'canceled';
+      sandboxIntent.refunded = true;
       if (sandboxIntent.charges.data[0]) {
         sandboxIntent.charges.data[0].refunded = true;
       }
+      refundedTransactions.add(paymentIntentId);
       return true;
     }
 
@@ -665,8 +806,13 @@ export class StripePaymentProvider implements PaymentProvider {
             reason,
             jobId: params?.jobId || ''
           }
-        });
-        return refund.status === 'succeeded' || refund.status === 'pending';
+        }, idempotencyKey ? { idempotencyKey: `ref_${idempotencyKey}` } : undefined);
+
+        const succeeded = refund.status === 'succeeded' || refund.status === 'pending';
+        if (succeeded) {
+          refundedTransactions.add(paymentIntentId);
+        }
+        return succeeded;
       } catch (err: any) {
         if (this.config.paymentModeEnv === 'production') {
           console.error('[STRIPE] Live refund failed:', err.message);
@@ -675,6 +821,7 @@ export class StripePaymentProvider implements PaymentProvider {
       }
     }
 
+    refundedTransactions.add(paymentIntentId);
     return true;
   }
 
@@ -700,6 +847,12 @@ export class StripePaymentProvider implements PaymentProvider {
 
   markWebhookEventProcessed(eventId: string): void {
     processedWebhookEvents.add(eventId);
+    if (db) {
+      db.collection('processed_webhook_events').doc(eventId).set({
+        eventId,
+        processedAt: new Date().toISOString()
+      }).catch(() => {});
+    }
   }
 
   async payoutBountyReward(params: {

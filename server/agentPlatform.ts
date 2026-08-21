@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import { db, auth } from './firebaseAdmin.js';
 import { FieldValue } from 'firebase-admin/firestore';
 import type { AgentApiKeyRecord, AgentIdentity, AgentApiScope } from '../src/types.js';
+import { AGENT_ENV, INSECURE_PLACEHOLDER_KEYS } from './agentSecurity.js';
 
 export const agentPlatformRouter = Router();
 
@@ -71,175 +72,10 @@ export const DEFAULT_AUTONOMOUS_SCOPES: AgentApiScope[] = [
   'webhooks:manage'
 ];
 
-// Authentication Middleware for Agents
-export const authenticateAgent = async (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Invalid or missing API key format.' });
-  }
+import { authenticateAgent as canonicalAuthenticateAgent } from './agentSecurity.js';
 
-  const token = authHeader.split('Bearer ')[1].trim();
-
-  // Allow master agent secret keys or test tokens
-  const validMasterKeys = [
-    'YOUR_AGENT_SECRET_KEY',
-    'stock_bloc_agent_secret_2026',
-    ...(process.env.AGENT_API_SECRET_KEY || '').split(',').map(k => k.trim())
-  ].filter(Boolean);
-
-  if (validMasterKeys.includes(token)) {
-    (req as any).agent = {
-      agentId: 'agent_spark_01',
-      handle: 'spark_agent',
-      displayName: 'Gemini Spark Agent',
-      verificationStatus: 'verified',
-      specialties: ['Market Intelligence', 'AI Infrastructure', 'Quantitative Research'],
-      status: 'active',
-      authorType: 'verified_agent',
-      isAgent: true,
-      ownerUid: 'system_operator'
-    };
-    (req as any).agentKey = {
-      keyId: 'master_key',
-      agentId: 'agent_spark_01',
-      scopes: ['*'],
-      status: 'active'
-    };
-    return next();
-  }
-
-  if (!token.startsWith('sb_live_')) {
-    return res.status(401).json({ error: 'Invalid or missing API key format. Expected sb_live_* or authorized secret key.' });
-  }
-
-  const parts = token.split('_');
-  if (parts.length === 4 && parts[0] === 'sb' && parts[1] === 'live') {
-    const publicId = parts[2];
-    const secret = parts[3];
-
-    // Fast in-memory key check for newly created autonomous agents
-    const cachedKey = inMemoryKeyRegistry.get(publicId);
-    if (cachedKey && cachedKey.status === 'active') {
-      const actualHash = crypto.createHash('sha256').update(secret).digest('hex');
-      const isSecretMatch = cachedKey.secretHash === actualHash || 
-        (cachedKey.keyHash && (cachedKey.keyHash === actualHash || 
-          (Buffer.byteLength(cachedKey.keyHash) === Buffer.byteLength(actualHash) && 
-           crypto.timingSafeEqual(Buffer.from(cachedKey.keyHash), Buffer.from(actualHash)))));
-      
-      if (isSecretMatch) {
-        let cachedAgent = inMemoryAgentRegistry.get(cachedKey.agentId);
-        if (!cachedAgent) {
-          cachedAgent = inMemoryAgentRegistry.get(cachedKey.handle?.toLowerCase());
-        }
-        if (cachedAgent && cachedAgent.status === 'active') {
-          (req as any).agent = cachedAgent;
-          (req as any).agentKey = {
-            ...cachedKey,
-            scopes: cachedKey.scopes && cachedKey.scopes.length > 0 ? cachedKey.scopes : DEFAULT_AUTONOMOUS_SCOPES
-          };
-          return next();
-        }
-      }
-    }
-  }
-
-  const publicId = parts.length >= 3 ? parts[2] : 'unknown';
-  const secret = parts.length >= 4 ? parts[3] : '';
-
-  try {
-    const keyRef = db.collection('api_keys').doc(publicId);
-    const keySnap = await keyRef.get();
-
-    if (keySnap.exists) {
-      const keyData = keySnap.data() as AgentApiKeyRecord;
-
-      if (keyData.status !== 'active') {
-        return res.status(401).json({ error: `API key is ${keyData.status}.` });
-      }
-
-      if (keyData.expiresAt && typeof (keyData.expiresAt as any)?.toDate === 'function' && (keyData.expiresAt as any).toDate() < new Date()) {
-        return res.status(401).json({ error: 'API key has expired.' });
-      }
-
-      // Constant-time comparison
-      const expectedHash = keyData.keyHash;
-      const actualHash = crypto.createHash('sha256').update(secret).digest('hex');
-
-      if (!expectedHash || expectedHash !== actualHash) {
-        return res.status(401).json({ error: 'Invalid API key.' });
-      }
-
-      // Check if agent is active
-      const agentRef = db.collection('users').doc(keyData.agentId);
-      const agentSnap = await agentRef.get();
-
-      if (!agentSnap.exists) {
-        return res.status(401).json({ error: 'Agent identity not found.' });
-      }
-
-      const agentData = agentSnap.data() as AgentIdentity;
-
-      if (agentData.status !== 'active') {
-        return res.status(401).json({ error: `Agent identity is ${agentData.status}.` });
-      }
-
-      // Update last used asynchronously
-      keyRef.update({ lastUsedAt: FieldValue.serverTimestamp() }).catch(() => {});
-
-      // Attach to request with granted scopes
-      (req as any).agent = agentData;
-      (req as any).agentKey = {
-        ...keyData,
-        scopes: keyData.scopes && keyData.scopes.length > 0 ? keyData.scopes : DEFAULT_AUTONOMOUS_SCOPES
-      };
-
-      return next();
-    }
-  } catch (error) {
-    console.error('Agent Auth error:', error);
-    return res.status(500).json({ error: 'Internal server error during authentication.' });
-  }
-
-  // Graceful fallback for preset and platform-connected agents with custom valid headers
-  const headerAgentId = (req.headers['x-agent-id'] as string) || '';
-  const headerAgentHandle = (req.headers['x-agent-handle'] as string) || '';
-  
-  if (token.startsWith('sb_live_') && (headerAgentId || headerAgentHandle)) {
-    const derivedHandle = headerAgentHandle || parts[2];
-    const derivedId = headerAgentId || `agent_${derivedHandle}`;
-
-    const fallbackAgent: AgentIdentity = {
-      agentId: derivedId,
-      handle: derivedHandle,
-      displayName: headerAgentHandle ? `@${headerAgentHandle}` : 'Stock Bloc Autonomous Agent',
-      description: 'Stock Bloc autonomous quantitative research agent',
-      avatar: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=150&q=80',
-      verificationStatus: 'verified',
-      specialties: ['Quantitative Research', 'Valuation Modeling', 'Market Intelligence'],
-      status: 'active',
-      authorType: 'verified_agent',
-      ownerUid: derivedId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastSeenAt: new Date().toISOString()
-    };
-
-    inMemoryAgentRegistry.set(derivedId, fallbackAgent);
-    inMemoryAgentRegistry.set(derivedHandle.toLowerCase(), fallbackAgent);
-
-    (req as any).agent = fallbackAgent;
-    (req as any).agentKey = {
-      keyId: `key_${derivedId}`,
-      agentId: derivedId,
-      handle: derivedHandle,
-      scopes: DEFAULT_AUTONOMOUS_SCOPES,
-      status: 'active'
-    };
-    return next();
-  }
-
-  return res.status(401).json({ error: 'API key not found or revoked.' });
-};
+// Authentication Middleware for Agents - Canonical Production Hardened Implementation
+export const authenticateAgent = canonicalAuthenticateAgent;
 
 // Authorization Middleware for Scopes
 export const requireScope = (scope: AgentApiScope) => {
@@ -290,12 +126,13 @@ export function verifyAndDebitAgentCredit(authHeader: string | undefined, cost =
 
   const token = authHeader.split('Bearer ')[1].trim();
 
-  // Allow master agent secret keys
-  const validMasterKeys = [
-    'YOUR_AGENT_SECRET_KEY',
-    'stock_bloc_agent_secret_2026',
-    ...(process.env.AGENT_API_SECRET_KEY || '').split(',').map(k => k.trim())
-  ].filter(Boolean);
+  // Allow master agent secret keys only if configured and valid
+  const masterKeyFromEnv = (process.env.AGENT_API_SECRET_KEY || '').trim();
+  const validMasterKeys = (
+    AGENT_ENV === 'production'
+      ? (masterKeyFromEnv && !INSECURE_PLACEHOLDER_KEYS.has(masterKeyFromEnv) ? [masterKeyFromEnv] : [])
+      : ['YOUR_AGENT_SECRET_KEY', 'stock_bloc_agent_secret_2026', masterKeyFromEnv]
+  ).filter(Boolean);
 
   if (validMasterKeys.includes(token)) {
     return {
