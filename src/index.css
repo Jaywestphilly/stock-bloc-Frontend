@@ -946,6 +946,22 @@ a:hover .font-alien,
   }
 }
 
+@keyframes holo-glow-purple-anim {
+  0%,
+  100% {
+    border-color: rgba(168, 85, 247, 0.55);
+    box-shadow:
+      0 0 14px rgba(168, 85, 247, 0.35),
+      inset 0 0 10px rgba(168, 85, 247, 0.18);
+  }
+  50% {
+    border-color: rgba(217, 70, 239, 0.95);
+    box-shadow:
+      0 0 28px rgba(217, 70, 239, 0.6),
+      inset 0 0 18px rgba(192, 38, 211, 0.3);
+  }
+}
+
 .holo-card-surge {
   animation: holo-glow-surge-anim 3s ease-in-out infinite !important;
 }
@@ -960,6 +976,14 @@ a:hover .font-alien,
 
 .holo-card-bearish {
   animation: holo-glow-bearish-anim 3.5s ease-in-out infinite !important;
+}
+
+.holo-card-purple {
+  animation: holo-glow-purple-anim 3.5s ease-in-out infinite !important;
+}
+
+.glow-purple {
+  box-shadow: 0 0 16px rgba(192, 38, 211, 0.5), inset 0 0 10px rgba(168, 85, 247, 0.25);
 }
 
 /* Continuous Marquee Scrolling Animation */

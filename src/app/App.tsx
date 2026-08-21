@@ -849,7 +849,25 @@ export function App() {
             price: backendStock.price,
             change: backendStock.change ?? 0,
             changePercent: backendStock.percent_change ?? 0,
-            category: backendStock.sector ? backendStock.sector.toLowerCase().replace(/[^a-z0-9]/g, "_") : "tsunami",
+            category: backendStock.sector
+              ? backendStock.sector.toLowerCase().includes("crypto") || backendStock.sector.toLowerCase().includes("index")
+                ? "indexes"
+                : backendStock.sector.toLowerCase().includes("robot")
+                ? "robotics"
+                : backendStock.sector.toLowerCase().includes("asymmetry")
+                ? "asymmetry"
+                : backendStock.sector.toLowerCase().includes("reit")
+                ? "reits"
+                : backendStock.sector.toLowerCase().includes("credit") || backendStock.sector.toLowerCase().includes("fin")
+                ? "credit_fin"
+                : backendStock.sector.toLowerCase().includes("memory")
+                ? "memory"
+                : backendStock.sector.toLowerCase().includes("energy") || backendStock.sector.toLowerCase().includes("power")
+                ? "energy"
+                : backendStock.sector.toLowerCase().includes("infra")
+                ? "ai_infra"
+                : backendStock.sector.toLowerCase().replace(/[^a-z0-9]/g, "_")
+              : "tsunami",
             sparkline: backendStock.sparkline || [],
             history: fakeHistory,
             marketCap: mktCapStr,
@@ -863,6 +881,9 @@ export function App() {
             description: backendStock.analysis_summary || "",
             tags: backendStock.sector ? [backendStock.sector] : [],
             isPinned: backendStock.pinned,
+            theme: backendStock.theme || backendStock.cardColor || backendStock.color,
+            cardColor: backendStock.cardColor || backendStock.theme || backendStock.color,
+            color: backendStock.color || backendStock.theme || backendStock.cardColor,
             targetPrice: backendStock.target_price,
             rating: backendStock.rating,
             instHolders: backendStock.inst_holders,

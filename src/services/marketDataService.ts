@@ -45,6 +45,9 @@ export interface WatchlistStock {
   sector?: string;
   analysis_summary?: string;
   sparkline?: number[];
+  theme?: string;
+  cardColor?: string;
+  color?: string;
   pinned?: boolean;
   target_price?: number;
   rating?: string;
@@ -351,12 +354,17 @@ export class MarketDataService {
   private static WATCHLIST_SYMBOLS = [
     "SPCX", "NVDA", "AEHR", "AAPL", "TSLA", "PLTR", "MSFT", "VST", "ASTS",
     "POET", "AAOI", "QUBT", "XSD", "HBM", "LITE", "CRWV", "BE", "SNDK",
-    "AMD", "GOOGL", "MU", "CORZ", "BTC-USD", "META", "TSM", "^NYA",
+    "AMD", "GOOGL", "MU", "CORZ", "BTC-USD", "DOT-USD", "META", "TSM", "^NYA",
     "SPY", "^GSPC", "AMZN", "NVT", "AIPO", "QQQ", "APLD", "^IXIC",
     "MOD", "INTC", "HAWK", "SMH", "SOXX", "POWL", "ASML"
   ];
 
   private static COMPANY_METADATA: Record<string, { name: string; sector: string; summary: string }> = {
+    "DOT-USD": {
+      name: "Polkadot Multi-Chain Protocol",
+      sector: "Major Indexes & Crypto",
+      summary: "Heterogeneous Multi-Chain Protocol: Scalable multi-chain architecture, Polkadot 2.0 Agile Coretime, Elastic Scaling, and Gavin Wood JAM (Join-Accumulate Machine) protocol."
+    },
     AAOI: {
       name: "Applied Optoelectronics, Inc.",
       sector: "AI Optical Interconnects",

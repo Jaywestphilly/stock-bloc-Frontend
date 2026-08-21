@@ -13397,6 +13397,80 @@ export const INITIAL_STOCKS: StockTicker[] = [
     "isPinned": false
   },
   {
+    "symbol": "DOT-USD",
+    "name": "Polkadot Multi-Chain Protocol",
+    "price": 0.82,
+    "change": 0.03,
+    "changePercent": 3.80,
+    "category": "indexes",
+    "theme": "purple",
+    "cardColor": "purple",
+    "color": "purple",
+    "sparkline": [
+      0.78,
+      0.79,
+      0.77,
+      0.80,
+      0.81,
+      0.79,
+      0.82
+    ],
+    "history": {
+      "1D": [
+        { "time": "0:00", "price": 0.78 },
+        { "time": "1:00", "price": 0.79 },
+        { "time": "2:00", "price": 0.77 },
+        { "time": "3:00", "price": 0.80 },
+        { "time": "4:00", "price": 0.81 },
+        { "time": "5:00", "price": 0.79 },
+        { "time": "6:00", "price": 0.82 }
+      ],
+      "1W": [
+        { "time": "Day 1", "price": 0.76 },
+        { "time": "Day 2", "price": 0.78 },
+        { "time": "Day 3", "price": 0.77 },
+        { "time": "Day 4", "price": 0.80 },
+        { "time": "Day 5", "price": 0.79 },
+        { "time": "Day 6", "price": 0.81 },
+        { "time": "Day 7", "price": 0.82 }
+      ],
+      "1M": [
+        { "time": "Week 1", "price": 0.85 },
+        { "time": "Week 2", "price": 0.80 },
+        { "time": "Week 3", "price": 0.76 },
+        { "time": "Week 4", "price": 0.79 },
+        { "time": "Week 5", "price": 0.82 }
+      ],
+      "1Y": [
+        { "time": "Month 1", "price": 4.50 },
+        { "time": "Month 3", "price": 3.20 },
+        { "time": "Month 6", "price": 1.80 },
+        { "time": "Month 9", "price": 1.10 },
+        { "time": "Month 12", "price": 0.82 }
+      ],
+      "ALL": [
+        { "time": "2020", "price": 4.50 },
+        { "time": "2021", "price": 54.00 },
+        { "time": "2022", "price": 6.50 },
+        { "time": "2023", "price": 7.20 },
+        { "time": "2024", "price": 9.50 },
+        { "time": "2025", "price": 4.88 },
+        { "time": "2026", "price": 0.82 }
+      ]
+    },
+    "marketCap": "1.38B",
+    "high52": 4.88,
+    "low52": 0.72,
+    "volume": "118.5M",
+    "description": "Heterogeneous Multi-Chain Protocol: Scalable multi-chain architecture, Polkadot 2.0 Agile Coretime, Elastic Scaling, and Gavin Wood JAM (Join-Accumulate Machine) protocol.",
+    "tags": [
+      "Major Indexes & Crypto",
+      "Heterogeneous Multi-Chain & Shared Security",
+      "Stack Level 9"
+    ],
+    "isPinned": false
+  },
+  {
     "symbol": "EQIX",
     "name": "Equinix, Inc.",
     "price": 884.2,

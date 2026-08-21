@@ -455,11 +455,44 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
 
   const isPositive = (stock.changePercent ?? 0) >= 0;
   const isHighVolatility = Math.abs(stock.changePercent ?? 0) >= 3;
+  const isPurple =
+    stock.theme === "purple" ||
+    stock.cardColor === "purple" ||
+    stock.color === "purple" ||
+    stock.symbol.toUpperCase() === "DOT" ||
+    stock.symbol.toUpperCase() === "DOT-USD" ||
+    (typeof stock.name === "string" && stock.name.toLowerCase().includes("polkadot"));
 
-  // Determine vibrant, high-contrast Red / Green card styling strictly based on positive gainers vs negative losers
+  // Determine vibrant, high-contrast Purple / Green / Red card styling
   const cardTheme = useMemo(() => {
     const isLiveUpFlash = priceFlashState === "up";
     const isLiveDownFlash = priceFlashState === "down";
+
+    if (isPurple) {
+      // CUSTOM PURPLE CARD THEME (e.g. Polkadot DOT)
+      const baseRgb = "168, 85, 247"; // purple-500 (#a855f7)
+      const glowRgb = "217, 70, 239"; // fuchsia-500 (#d946ef)
+      const deepRgb = "88, 28, 135"; // purple-900 (#581c87)
+      const darkVioletRgb = "147, 51, 234"; // purple-600 (#9333ea)
+
+      const effectiveOpacity = isLiveUpFlash || isLiveDownFlash ? 0.45 : 0.30;
+
+      return {
+        isPositive: isPositive,
+        isPurple: true,
+        background: `radial-gradient(ellipse at 35% 50%, rgba(${baseRgb}, ${effectiveOpacity * 1.5}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.8}) 60%, rgba(22, 6, 36, 0.94) 100%)`,
+        borderColor: isLiveUpFlash || isLiveDownFlash
+          ? "rgba(232, 121, 249, 0.95)"
+          : stock.isPinned
+            ? "rgba(217, 70, 239, 0.90)"
+            : "rgba(168, 85, 247, 0.65)",
+        boxShadow: stock.isPinned
+          ? `0 0 26px rgba(${glowRgb}, 0.45), inset 0 0 20px rgba(${darkVioletRgb}, 0.25)`
+          : isLiveUpFlash || isLiveDownFlash
+            ? `0 0 32px rgba(${glowRgb}, 0.6), inset 0 0 22px rgba(${glowRgb}, 0.3)`
+            : `0 0 22px rgba(${baseRgb}, 0.25), inset 0 0 16px rgba(${baseRgb}, 0.12)`,
+      };
+    }
 
     if (isPositive) {
       // POSITIVE GAINER (GREEN)
@@ -473,6 +506,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
 
       return {
         isPositive: true,
+        isPurple: false,
         background: `radial-gradient(ellipse at 35% 50%, rgba(${baseRgb}, ${effectiveOpacity * 1.5}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.6}) 60%, rgba(3, 20, 14, 0.92) 100%)`,
         borderColor: isLiveUpFlash
           ? "rgba(52, 211, 153, 0.95)"
@@ -497,6 +531,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
 
       return {
         isPositive: false,
+        isPurple: false,
         background: `radial-gradient(ellipse at 35% 50%, rgba(${baseRgb}, ${effectiveOpacity * 1.5}) 0%, rgba(${deepRgb}, ${effectiveOpacity * 0.6}) 60%, rgba(28, 4, 10, 0.92) 100%)`,
         borderColor: isLiveDownFlash
           ? "rgba(251, 113, 133, 0.95)"
@@ -510,7 +545,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
             : `0 0 20px rgba(${baseRgb}, 0.15), inset 0 0 15px rgba(${baseRgb}, 0.08)`,
       };
     }
-  }, [isPositive, stock.changePercent, stock.isPinned, priceFlashState]);
+  }, [isPositive, isPurple, stock.changePercent, stock.isPinned, priceFlashState]);
 
   // Volatility calculation for the 7D variance badge
   const volatilityOverlay = useMemo(() => {
@@ -594,7 +629,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     const minVal = Math.min(...rawData);
     const maxVal = Math.max(...rawData);
     const range = maxVal - minVal || 1;
-    const lineColor = trendIsPositive ? "#00ff88" : "#ff3b3b";
+    const lineColor = isPurple ? "#d946ef" : trendIsPositive ? "#00ff88" : "#ff3b3b";
 
     // HEIKIN-ASHI JAPANESE CANDLESTICK MODE (Selectable Option)
     if (watchlistChartStyle === "candlestick") {
@@ -865,8 +900,11 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
     }
   };
 
-  // Determine performance category for dynamic holographic border glow (green glow for gainers, red glow for losers)
+  // Determine performance category for dynamic holographic border glow (purple glow for purple cards, green for gainers, red for losers)
   const getPerformanceHoloClass = (changePct: number, category?: string) => {
+    if (isPurple) {
+      return "holo-card-purple";
+    }
     if (changePct >= 3.0 || category === "tsunami") {
       return "holo-card-surge";
     }
@@ -896,9 +934,11 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
       {/* Sleek Data Stream Edge Accent Beam */}
       <div
         className={`absolute left-0 top-0 bottom-0 w-[2px] transition-opacity duration-300 pointer-events-none z-20 ${
-          isPositive
-            ? "bg-gradient-to-b from-emerald-400 via-teal-300 to-emerald-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
-            : "bg-gradient-to-b from-rose-500 via-red-400 to-rose-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
+          isPurple
+            ? "bg-gradient-to-b from-purple-400 via-fuchsia-400 to-purple-600/0 opacity-80 group-hover/card-wrapper:opacity-100"
+            : isPositive
+              ? "bg-gradient-to-b from-emerald-400 via-teal-300 to-emerald-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
+              : "bg-gradient-to-b from-rose-500 via-red-400 to-rose-600/0 opacity-60 group-hover/card-wrapper:opacity-100"
         }`}
       />
 
@@ -1018,9 +1058,11 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
               exit={{ opacity: 0 }}
               transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
               className={`absolute inset-0 pointer-events-none z-0 rounded-[inherit] ${
-                priceFlashState === "up"
-                  ? "bg-gradient-to-r from-emerald-500/35 via-emerald-400/25 to-teal-500/35 price-flash-bg-green"
-                  : "bg-gradient-to-r from-rose-500/35 via-red-400/25 to-rose-600/35 price-flash-bg-red"
+                isPurple
+                  ? "bg-gradient-to-r from-purple-500/40 via-fuchsia-400/30 to-purple-600/40"
+                  : priceFlashState === "up"
+                    ? "bg-gradient-to-r from-emerald-500/35 via-emerald-400/25 to-teal-500/35 price-flash-bg-green"
+                    : "bg-gradient-to-r from-rose-500/35 via-red-400/25 to-rose-600/35 price-flash-bg-red"
               }`}
             />
           )}
@@ -1060,15 +1102,19 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                 <Star className={`w-4 h-4 ${isStarred ? "fill-amber-400" : ""}`} />
               </button>
               <span
-                className={`font-zen text-sm sm:text-base tracking-wider ${isSyncing ? "glitch-text-refresh text-cyan-300" : "text-cyan-100"}`}
+                className={`font-zen text-sm sm:text-base tracking-wider ${isSyncing ? "glitch-text-refresh text-cyan-300" : isPurple ? "text-fuchsia-100" : "text-cyan-100"}`}
               >
                 ${stock.symbol}
               </span>
               <div
-                className="inline-flex items-center gap-1.5 px-2 py-0.5 border alien-block-cut-sm transition-all bg-[#020b16] border-cyan-500/40"
+                className={`inline-flex items-center gap-1.5 px-2 py-0.5 border alien-block-cut-sm transition-all bg-[#020b16] ${
+                  isPurple ? "border-purple-500/50" : "border-cyan-500/40"
+                }`}
                 title={`SB Rating: ${computeDeterministicSignal(stock).score}/100`}
               >
-                <span className="text-[10px] font-martian font-black tracking-tight text-cyan-300">
+                <span className={`text-[10px] font-martian font-black tracking-tight ${
+                  isPurple ? "text-purple-300" : "text-cyan-300"
+                }`}>
                   SB {computeDeterministicSignal(stock).score}
                 </span>
               </div>
@@ -1090,7 +1136,7 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
                 </span>
               )}
             </div>
-            <span className="text-[11px] font-medium font-sans text-cyan-400/80 truncate">
+            <span className={`text-[11px] font-medium font-sans truncate ${isPurple ? "text-purple-300/90" : "text-cyan-400/80"}`}>
               {stock.name}
             </span>
           </div>
@@ -1116,9 +1162,11 @@ export const StockCard: React.FC<StockCardProps> = React.memo(({
             </span>
             <div
               className={`min-w-[76px] text-center px-2 py-0.5 mt-1 alien-block-cut-sm font-martian font-bold text-xs tracking-wider transition-all flex items-center justify-center gap-1 ${
-                isPositive
-                  ? "bg-emerald-950/90 text-emerald-300 border-2 border-emerald-400 glow-emerald"
-                  : "bg-rose-950/90 text-rose-300 border-2 border-rose-500 glow-rose"
+                isPurple
+                  ? "bg-purple-950/90 text-purple-200 border-2 border-purple-400 glow-purple shadow-[0_0_12px_rgba(192,38,211,0.45)]"
+                  : isPositive
+                    ? "bg-emerald-950/90 text-emerald-300 border-2 border-emerald-400 glow-emerald"
+                    : "bg-rose-950/90 text-rose-300 border-2 border-rose-500 glow-rose"
               } ${isSyncing ? "glitch-text-refresh" : ""}`}
             >
               <span className="text-[9px] font-bold text-current/80 mr-0.5">1D</span>

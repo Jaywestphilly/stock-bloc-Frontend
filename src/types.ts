@@ -44,6 +44,9 @@ export interface StockTicker {
   avgVolumeNum?: number;
   volumeVsAvgRatio?: number;
   lastUpdatedIso?: string;
+  theme?: string;
+  cardColor?: string;
+  color?: string;
   quantMetrics?: any;
   asymmetryPotentialStars?: number; // 1.0 to 5.0 rating scale
   targetPrice?: number;
