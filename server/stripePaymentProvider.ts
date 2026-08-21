@@ -33,7 +33,7 @@ interface SandboxPaymentIntentStore {
   id: string;
   amount: number;
   currency: string;
-  status: 'requires_payment_method' | 'requires_action' | 'processing' | 'requires_capture' | 'succeeded' | 'canceled';
+  status: 'requires_payment_method' | 'requires_action' | 'processing' | 'requires_capture' | 'succeeded' | 'canceled' | 'requires_confirmation';
   client_secret: string;
   metadata: Record<string, string>;
   capture_method: string;

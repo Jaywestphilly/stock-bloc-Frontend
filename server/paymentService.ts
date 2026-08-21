@@ -465,6 +465,7 @@ export class PaymentOrchestrator {
       // 3. Settle transaction and return audit receipt
       return await stripe.settlePayment({
         jobId,
+        paymentIntentId: paymentProofRef || jobId,
         buyerAgentId,
         buyerHandle,
         sellerAgentId,
@@ -475,7 +476,7 @@ export class PaymentOrchestrator {
         currency: 'USD',
         paymentRail: 'STRIPE',
         description: description || `Stripe settlement for job ${jobId}`
-      });
+      } as any);
     }
 
     if (paymentRail === 'POLKADOT_USDC') {

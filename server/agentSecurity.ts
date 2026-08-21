@@ -193,6 +193,9 @@ export function validateProductionStartupSafety(): {
   // 1. Check Agent API Secret configuration
   let agentSecret = process.env.AGENT_API_SECRET_KEY || process.env.AGENT_PLATFORM_MASTER_KEY || '';
   if (!agentSecret || INSECURE_PLACEHOLDER_KEYS.has(agentSecret) || agentSecret.includes('stock_bloc_agent_secret_2026') || agentSecret.includes('insecure')) {
+    if (isProd) {
+      errors.push(`CRITICAL: Insecure default or placeholder key ("${agentSecret || 'empty'}") detected in production mode.`);
+    }
     const generatedSecret = crypto.randomBytes(32).toString('hex');
     process.env.AGENT_API_SECRET_KEY = generatedSecret;
     warnings.push('AGENT_API_SECRET_KEY was missing or insecure; dynamically generated secure runtime key.');
@@ -230,6 +233,10 @@ export function validateProductionStartupSafety(): {
     console.warn('⚠️ PRODUCTION STARTUP SAFETY AUDIT ⚠️');
     warnings.forEach(w => console.warn(`  - ${w}`));
     console.warn('====================================================');
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Production Startup Safety Check Failed: ${errors.join('; ')}`);
   }
 
   return {
