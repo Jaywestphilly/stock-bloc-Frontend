@@ -304,10 +304,290 @@
   "forecasts": {},
   "theses": {},
   "chats": {},
-  "agent_wallets": {},
-  "platform_transactions": {},
-  "idempotency_keys": {},
-  "ledger_entries": {},
+  "agent_wallets": {
+    "agent_ledger_buyer": {
+      "agentId": "agent_ledger_buyer",
+      "creditsBalance": 50,
+      "availableBalance": 50,
+      "usdPendingBalance": 0,
+      "usdSettledBalance": 0,
+      "usdcPendingBalance": 0,
+      "usdcSettledBalance": 0,
+      "lifetimeGrossEarnings": 0,
+      "lifetimePlatformFeesPaid": 0,
+      "lifetimeNetEarnings": 0,
+      "lifetimeSpent": 50,
+      "maxSpendPerRequest": 50,
+      "maxDailySpend": 250,
+      "spentToday": 0,
+      "spendingLimitsConfigured": true,
+      "updatedAt": "2026-08-22T14:05:52.677Z"
+    },
+    "agent_ledger_seller": {
+      "agentId": "agent_ledger_seller",
+      "creditsBalance": 47,
+      "availableBalance": 47,
+      "usdPendingBalance": 0,
+      "usdSettledBalance": 0,
+      "usdcPendingBalance": 0,
+      "usdcSettledBalance": 0,
+      "lifetimeGrossEarnings": 50,
+      "lifetimePlatformFeesPaid": 3,
+      "lifetimeNetEarnings": 47,
+      "lifetimeSpent": 0,
+      "maxSpendPerRequest": 50,
+      "maxDailySpend": 250,
+      "spentToday": 0,
+      "spendingLimitsConfigured": true,
+      "updatedAt": "2026-08-22T14:05:52.677Z"
+    },
+    "platform_treasury": {
+      "agentId": "platform_treasury",
+      "creditsBalance": 3,
+      "lifetimeGrossEarnings": 3,
+      "lifetimeFeesCollected": 3,
+      "totalSettledVolume": 50,
+      "accountType": "PLATFORM_TREASURY",
+      "availableBalance": 3,
+      "updatedAt": "2026-08-22T14:05:52.677Z"
+    }
+  },
+  "platform_transactions": {
+    "tx_68879c4fb2dfc809": {
+      "transactionId": "tx_68879c4fb2dfc809",
+      "idempotencyKey": "idemp_ledger_1",
+      "jobId": "job_ledger_1",
+      "buyerAgentId": "agent_ledger_buyer",
+      "sellerAgentId": "agent_ledger_seller",
+      "treasuryAccountId": "platform_treasury",
+      "grossAmount": 20,
+      "platformFeeBps": 500,
+      "platformFee": 1,
+      "providerAmount": 19,
+      "currency": "CREDITS",
+      "paymentRail": "PLATFORM_CREDITS",
+      "status": "SETTLED",
+      "entries": [
+        {
+          "entryId": "ent_10a375c98013",
+          "transactionId": "tx_68879c4fb2dfc809",
+          "jobId": "job_ledger_1",
+          "accountId": "agent_ledger_buyer",
+          "accountType": "BUYER",
+          "entryType": "DEBIT",
+          "amount": 20,
+          "currency": "CREDITS",
+          "description": "Debit buyer for job settlement: job_ledger_1",
+          "balanceBefore": 100,
+          "balanceAfter": 80,
+          "createdAt": "2026-08-22T14:05:52.417Z"
+        },
+        {
+          "entryId": "ent_003994675c08",
+          "transactionId": "tx_68879c4fb2dfc809",
+          "jobId": "job_ledger_1",
+          "accountId": "agent_ledger_seller",
+          "accountType": "SELLER",
+          "entryType": "CREDIT",
+          "amount": 19,
+          "currency": "CREDITS",
+          "description": "Credit seller net earnings (net of 5% platform fee) for job: job_ledger_1",
+          "balanceBefore": 0,
+          "balanceAfter": 19,
+          "createdAt": "2026-08-22T14:05:52.417Z"
+        },
+        {
+          "entryId": "ent_794527fffe4b",
+          "transactionId": "tx_68879c4fb2dfc809",
+          "jobId": "job_ledger_1",
+          "accountId": "platform_treasury",
+          "accountType": "PLATFORM_TREASURY",
+          "entryType": "CREDIT",
+          "amount": 1,
+          "currency": "CREDITS",
+          "description": "Platform treasury fee revenue (5%) for job: job_ledger_1",
+          "balanceBefore": 0,
+          "balanceAfter": 1,
+          "createdAt": "2026-08-22T14:05:52.417Z"
+        }
+      ],
+      "balancesAfter": {
+        "buyerBalance": 80,
+        "sellerBalance": 19,
+        "treasuryBalance": 1
+      },
+      "createdAt": "2026-08-22T14:05:52.417Z",
+      "completedAt": "2026-08-22T14:05:52.417Z"
+    },
+    "tx_4580025e7947475e": {
+      "transactionId": "tx_4580025e7947475e",
+      "idempotencyKey": "idemp_ledger_2",
+      "jobId": "job_ledger_2",
+      "buyerAgentId": "agent_ledger_buyer",
+      "sellerAgentId": "agent_ledger_seller",
+      "treasuryAccountId": "platform_treasury",
+      "grossAmount": 30,
+      "platformFeeBps": 500,
+      "platformFee": 2,
+      "providerAmount": 28,
+      "currency": "CREDITS",
+      "paymentRail": "PLATFORM_CREDITS",
+      "status": "SETTLED",
+      "entries": [
+        {
+          "entryId": "ent_e907b969c5f4",
+          "transactionId": "tx_4580025e7947475e",
+          "jobId": "job_ledger_2",
+          "accountId": "agent_ledger_buyer",
+          "accountType": "BUYER",
+          "entryType": "DEBIT",
+          "amount": 30,
+          "currency": "CREDITS",
+          "description": "Debit buyer for job settlement: job_ledger_2",
+          "balanceBefore": 80,
+          "balanceAfter": 50,
+          "createdAt": "2026-08-22T14:05:52.677Z"
+        },
+        {
+          "entryId": "ent_cb7caf1ac80f",
+          "transactionId": "tx_4580025e7947475e",
+          "jobId": "job_ledger_2",
+          "accountId": "agent_ledger_seller",
+          "accountType": "SELLER",
+          "entryType": "CREDIT",
+          "amount": 28,
+          "currency": "CREDITS",
+          "description": "Credit seller net earnings (net of 5% platform fee) for job: job_ledger_2",
+          "balanceBefore": 19,
+          "balanceAfter": 47,
+          "createdAt": "2026-08-22T14:05:52.677Z"
+        },
+        {
+          "entryId": "ent_5c900d8c706a",
+          "transactionId": "tx_4580025e7947475e",
+          "jobId": "job_ledger_2",
+          "accountId": "platform_treasury",
+          "accountType": "PLATFORM_TREASURY",
+          "entryType": "CREDIT",
+          "amount": 2,
+          "currency": "CREDITS",
+          "description": "Platform treasury fee revenue (5%) for job: job_ledger_2",
+          "balanceBefore": 1,
+          "balanceAfter": 3,
+          "createdAt": "2026-08-22T14:05:52.677Z"
+        }
+      ],
+      "balancesAfter": {
+        "buyerBalance": 50,
+        "sellerBalance": 47,
+        "treasuryBalance": 3
+      },
+      "createdAt": "2026-08-22T14:05:52.677Z",
+      "completedAt": "2026-08-22T14:05:52.677Z"
+    }
+  },
+  "idempotency_keys": {
+    "idemp_ledger_1": {
+      "idempotencyKey": "idemp_ledger_1",
+      "transactionId": "tx_68879c4fb2dfc809",
+      "jobId": "job_ledger_1",
+      "status": "SETTLED",
+      "createdAt": "2026-08-22T14:05:52.417Z"
+    },
+    "idemp_ledger_2": {
+      "idempotencyKey": "idemp_ledger_2",
+      "transactionId": "tx_4580025e7947475e",
+      "jobId": "job_ledger_2",
+      "status": "SETTLED",
+      "createdAt": "2026-08-22T14:05:52.677Z"
+    }
+  },
+  "ledger_entries": {
+    "ent_10a375c98013": {
+      "entryId": "ent_10a375c98013",
+      "transactionId": "tx_68879c4fb2dfc809",
+      "jobId": "job_ledger_1",
+      "accountId": "agent_ledger_buyer",
+      "accountType": "BUYER",
+      "entryType": "DEBIT",
+      "amount": 20,
+      "currency": "CREDITS",
+      "description": "Debit buyer for job settlement: job_ledger_1",
+      "balanceBefore": 100,
+      "balanceAfter": 80,
+      "createdAt": "2026-08-22T14:05:52.417Z"
+    },
+    "ent_003994675c08": {
+      "entryId": "ent_003994675c08",
+      "transactionId": "tx_68879c4fb2dfc809",
+      "jobId": "job_ledger_1",
+      "accountId": "agent_ledger_seller",
+      "accountType": "SELLER",
+      "entryType": "CREDIT",
+      "amount": 19,
+      "currency": "CREDITS",
+      "description": "Credit seller net earnings (net of 5% platform fee) for job: job_ledger_1",
+      "balanceBefore": 0,
+      "balanceAfter": 19,
+      "createdAt": "2026-08-22T14:05:52.417Z"
+    },
+    "ent_794527fffe4b": {
+      "entryId": "ent_794527fffe4b",
+      "transactionId": "tx_68879c4fb2dfc809",
+      "jobId": "job_ledger_1",
+      "accountId": "platform_treasury",
+      "accountType": "PLATFORM_TREASURY",
+      "entryType": "CREDIT",
+      "amount": 1,
+      "currency": "CREDITS",
+      "description": "Platform treasury fee revenue (5%) for job: job_ledger_1",
+      "balanceBefore": 0,
+      "balanceAfter": 1,
+      "createdAt": "2026-08-22T14:05:52.417Z"
+    },
+    "ent_e907b969c5f4": {
+      "entryId": "ent_e907b969c5f4",
+      "transactionId": "tx_4580025e7947475e",
+      "jobId": "job_ledger_2",
+      "accountId": "agent_ledger_buyer",
+      "accountType": "BUYER",
+      "entryType": "DEBIT",
+      "amount": 30,
+      "currency": "CREDITS",
+      "description": "Debit buyer for job settlement: job_ledger_2",
+      "balanceBefore": 80,
+      "balanceAfter": 50,
+      "createdAt": "2026-08-22T14:05:52.677Z"
+    },
+    "ent_cb7caf1ac80f": {
+      "entryId": "ent_cb7caf1ac80f",
+      "transactionId": "tx_4580025e7947475e",
+      "jobId": "job_ledger_2",
+      "accountId": "agent_ledger_seller",
+      "accountType": "SELLER",
+      "entryType": "CREDIT",
+      "amount": 28,
+      "currency": "CREDITS",
+      "description": "Credit seller net earnings (net of 5% platform fee) for job: job_ledger_2",
+      "balanceBefore": 19,
+      "balanceAfter": 47,
+      "createdAt": "2026-08-22T14:05:52.677Z"
+    },
+    "ent_5c900d8c706a": {
+      "entryId": "ent_5c900d8c706a",
+      "transactionId": "tx_4580025e7947475e",
+      "jobId": "job_ledger_2",
+      "accountId": "platform_treasury",
+      "accountType": "PLATFORM_TREASURY",
+      "entryType": "CREDIT",
+      "amount": 2,
+      "currency": "CREDITS",
+      "description": "Platform treasury fee revenue (5%) for job: job_ledger_2",
+      "balanceBefore": 1,
+      "balanceAfter": 3,
+      "createdAt": "2026-08-22T14:05:52.677Z"
+    }
+  },
   "bounties": {
     "bounty_nvda_capex_01": {
       "bountyId": "bounty_nvda_capex_01",
@@ -818,19 +1098,7 @@
       "expiresAt": "2026-09-13T12:57:08.092Z"
     }
   },
-  "blockchain_settled_transactions": {
-    "polkadot-asset-hub_0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef": {
-      "txHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
-      "network": "polkadot-asset-hub",
-      "assetId": "1337",
-      "jobId": "job_dot_01",
-      "transactionId": "tx_polkadot_2b106606fb1f5883",
-      "grossAmount": 50,
-      "platformFee": 3,
-      "netSellerAmount": 47,
-      "settledAt": "2026-08-21T15:57:45.115Z"
-    }
-  },
+  "blockchain_settled_transactions": {},
   "payment_requirements": {
     "dot_req_72af113b5c9377fe096aa4f6": {
       "paymentRef": "dot_req_72af113b5c9377fe096aa4f6",
@@ -1492,6 +1760,58 @@
       "status": "pending",
       "jobId": "job_dot_01",
       "expiresAt": "2026-08-21T16:27:44.459Z"
+    },
+    "dot_req_93374dba4955505b5409ac23": {
+      "paymentRef": "dot_req_93374dba4955505b5409ac23",
+      "paymentRail": "POLKADOT_USDC",
+      "amount": 50,
+      "amountRaw": "50000000",
+      "currency": "USDC",
+      "paymentAddress": "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+      "recipientAddress": "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+      "network": "polkadot-asset-hub",
+      "assetId": "1337",
+      "tokenDecimals": 6,
+      "confirmationsRequired": 2,
+      "explorerTrackingUrl": "https://assethub-polkadot.subscan.io/account/15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+      "status": "pending",
+      "jobId": "job_dot_01",
+      "expiresAt": "2026-08-22T14:35:30.266Z"
+    },
+    "dot_req_abea96bfb2f9ef8b8ff83051": {
+      "paymentRef": "dot_req_abea96bfb2f9ef8b8ff83051",
+      "paymentRail": "POLKADOT_USDC",
+      "amount": 50,
+      "amountRaw": "50000000",
+      "currency": "USDC",
+      "paymentAddress": "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+      "recipientAddress": "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+      "network": "polkadot-asset-hub",
+      "assetId": "1337",
+      "tokenDecimals": 6,
+      "confirmationsRequired": 2,
+      "explorerTrackingUrl": "https://assethub-polkadot.subscan.io/account/15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+      "status": "pending",
+      "jobId": "job_test_001",
+      "buyerAgentId": "buyer_agent_1",
+      "expiresAt": "2026-08-22T14:35:37.635Z"
+    },
+    "dot_req_7dc476651b54defdf2c5e8dc": {
+      "paymentRef": "dot_req_7dc476651b54defdf2c5e8dc",
+      "paymentRail": "POLKADOT_USDC",
+      "amount": 100,
+      "amountRaw": "100000000",
+      "currency": "USDC",
+      "paymentAddress": "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+      "recipientAddress": "15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+      "network": "polkadot-asset-hub",
+      "assetId": "1337",
+      "tokenDecimals": 6,
+      "confirmationsRequired": 2,
+      "explorerTrackingUrl": "https://assethub-polkadot.subscan.io/account/15oF4uVJwmo4TdGW7VfQxNLavjCXviqxT9S1MgbjMNHr6Sp5",
+      "status": "pending",
+      "jobId": "job_test_002",
+      "expiresAt": "2026-08-22T14:35:37.754Z"
     }
   },
   "processed_webhook_events": {
@@ -1514,6 +1834,14 @@
     "evt_test_80dea2444711": {
       "eventId": "evt_test_80dea2444711",
       "processedAt": "2026-08-21T15:58:02.191Z"
+    },
+    "evt_test_ca6e766255c7": {
+      "eventId": "evt_test_ca6e766255c7",
+      "processedAt": "2026-08-22T14:05:23.893Z"
+    },
+    "evt_test_a834abc65c8f": {
+      "eventId": "evt_test_a834abc65c8f",
+      "processedAt": "2026-08-22T14:05:46.443Z"
     }
   }
 }

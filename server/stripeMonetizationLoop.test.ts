@@ -28,7 +28,7 @@ describe('STOCK BLOC STRIPE MONETIZATION MILESTONE — End-to-End Loop & Securit
 
       const buyerAgentId = 'agent_a_hedge_fund_' + crypto.randomBytes(4).toString('hex');
       const sellerAgentId = discoveredService.providerAgentId;
-      const jobPriceCredits = discoveredService.price || 50; // $0.50 USD
+      const jobPriceCredits = 100; // $1.00 USD as requested
 
       // Step 2: Create Job
       const jobId = 'job_monetize_' + crypto.randomBytes(6).toString('hex');

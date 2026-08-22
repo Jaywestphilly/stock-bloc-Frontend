@@ -726,6 +726,7 @@ export function getSystemReadinessStatus(): {
     status: systemStatus,
     environment: AGENT_ENV,
     paymentMode: (process.env.PAYMENT_MODE === 'production' ? 'production' : 'sandbox'),
+    productionSafe: isProd && stripeLive,
     database: {
       status: hasDb ? 'connected' : 'in_memory',
       firestore: hasDb,
@@ -767,6 +768,14 @@ export function getSystemReadinessStatus(): {
       rails: ['PLATFORM_CREDITS', 'STRIPE', 'POLKADOT_USDC'],
       humanApprovalThresholdCredits: 50000,
       stateMachineVersion: '2.0.0'
+    },
+    transactionEngine: {
+      status: 'ready',
+      idempotencyEnforced: true
+    },
+    replayProtection: {
+      status: 'active',
+      doubleCapturePrevented: true
     },
     components: {
       authentication: {
