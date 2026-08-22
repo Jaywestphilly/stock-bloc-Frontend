@@ -526,7 +526,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
                         return (
                           <div
-                            key={`${stock.symbol}-${idx}`}
+                            key={stock.symbol}
                             onClick={() => {
                               triggerHaptic("light");
                               onSelectStock(stock);
@@ -613,7 +613,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
                   return (
                     <div
-                      key={`${stock.symbol}-${idx}`}
+                      key={stock.symbol}
                       onClick={() => {
                         triggerHaptic("light");
                         onSelectStock(stock);
@@ -707,7 +707,7 @@ export const HeatmapView: React.FC<HeatmapViewProps> = ({
 
             return (
               <div
-                key={`${stock.symbol}-${idx}`}
+                key={stock.symbol}
                 onClick={() => {
                   triggerHaptic("light");
                   onSelectStock(stock);

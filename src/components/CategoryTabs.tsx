@@ -94,9 +94,6 @@ export const CategoryTabs: React.FC<CategoryTabsProps> = ({
               onClick={() => {
                 triggerHaptic("selection");
                 onSelectCategory(cat.id);
-                if (typeof window !== "undefined") {
-                  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-                }
               }}
               className={`flex items-center gap-1.5 px-3 py-1.5 alien-block-cut-sm font-black transition-all whitespace-nowrap active:scale-95 cursor-pointer ${
                 isActive

@@ -411,10 +411,15 @@ export function App() {
   // Sync route history and window popstate
   useEffect(() => {
     pushAppRoute(activeTab, isBloombergTerminalOpen, selectedStock?.symbol);
+  }, [activeTab, isBloombergTerminalOpen, selectedStock?.symbol]);
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
     }
+  }, [activeTab]);
 
+  useEffect(() => {
     const handlePopState = () => {
       const route = getRouteFromLocation();
       setActiveTab(route.tab);
@@ -441,7 +446,7 @@ export function App() {
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [activeTab, isBloombergTerminalOpen, selectedStock?.symbol, stocks]);
+  }, [stocks]);
 
   // Ensure scroll resets when category or subtab changes
   useEffect(() => {
@@ -604,6 +609,7 @@ export function App() {
   const parseVolumeNumber = (volStr?: string): number => {
     if (!volStr) return 0;
     const clean = volStr.trim().toUpperCase();
+    if (clean.includes("T")) return parseFloat(clean) * 1_000_000_000_000 || 0;
     if (clean.includes("B")) return parseFloat(clean) * 1_000_000_000 || 0;
     if (clean.includes("M")) return parseFloat(clean) * 1_000_000 || 0;
     if (clean.includes("K")) return parseFloat(clean) * 1_000 || 0;
@@ -684,10 +690,10 @@ export function App() {
         return b.changePercent - a.changePercent;
       }
       if (sortField === "name") {
-        return a.symbol.localeCompare(b.symbol);
+        return a.symbol.localeCompare(b.symbol) * dir;
       }
       if (sortField === "companyName") {
-        return (a.name || a.symbol).localeCompare(b.name || b.symbol);
+        return (a.name || a.symbol).localeCompare(b.name || b.symbol) * dir;
       }
       if (sortField === "volatility") {
         return (calculateStockVolatility(b) - calculateStockVolatility(a)) * dir;
@@ -881,7 +887,7 @@ export function App() {
             change: backendStock.change ?? 0,
             changePercent: backendStock.percent_change ?? 0,
             category: backendStock.sector
-              ? backendStock.sector.toLowerCase().includes("crypto") || backendStock.sector.toLowerCase().includes("index")
+              ? backendStock.sector.toLowerCase().includes("crypto") || backendStock.sector.toLowerCase().includes("index") || backendStock.sector.toLowerCase().includes("market")
                 ? "indexes"
                 : backendStock.sector.toLowerCase().includes("robot")
                 ? "robotics"
@@ -1341,7 +1347,7 @@ export function App() {
                 {filteredStocks.length > 0 ? (
                   filteredStocks.map((stock, index) => (
                     <StockCard
-                      key={`${selectedCategory}-${searchQuery}-${stock.symbol}-${index}`}
+                      key={stock.symbol}
                       index={index}
                       stock={stock}
                       onSelect={setSelectedStock}
