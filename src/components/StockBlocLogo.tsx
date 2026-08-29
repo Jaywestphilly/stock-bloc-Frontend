@@ -36,62 +36,126 @@ export const StockBlocLogo: React.FC<StockBlocLogoProps> = ({
     <div
       className={`flex flex-col items-center justify-center select-none ${className}`}
     >
-      {/* Official Stock Bloc Bell & SB Arrow Logo Emblem with subtle geometric framing */}
+      {/* Official Stock Bloc Liberty Bell & SB Bull Arrow Logo Emblem */}
       <div
         className={`relative ${iconDimensions} flex items-center justify-center group overflow-hidden rounded-2xl ${
           framed
-            ? "p-1.5 bg-[#060b13] border border-cyan-500/40 shadow-[0_0_25px_rgba(0,242,254,0.25)]"
+            ? "p-1 bg-[#030712] border border-cyan-500/40 shadow-[0_0_30px_rgba(0,242,254,0.3)]"
             : ""
         }`}
       >
         {framed && (
           <>
-            <span className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-cyan-400 pointer-events-none" />
-            <span className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-cyan-400 pointer-events-none" />
-            <span className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-cyan-400 pointer-events-none" />
-            <span className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-cyan-400 pointer-events-none" />
+            <span className="absolute top-0 left-0 w-2.5 h-2.5 border-t-2 border-l-2 border-cyan-400 pointer-events-none" />
+            <span className="absolute top-0 right-0 w-2.5 h-2.5 border-t-2 border-r-2 border-cyan-400 pointer-events-none" />
+            <span className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b-2 border-l-2 border-cyan-400 pointer-events-none" />
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b-2 border-r-2 border-cyan-400 pointer-events-none" />
           </>
         )}
         <svg
-          viewBox="0 0 100 100"
-          className="w-full h-full rounded-xl relative z-10 drop-shadow-[0_0_20px_rgba(34,211,238,0.5)]"
+          viewBox="0 0 500 500"
+          className="w-full h-full rounded-xl relative z-10 drop-shadow-[0_0_16px_rgba(34,211,238,0.45)]"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
         >
           <defs>
-            <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#22d3ee" />
-              <stop offset="100%" stopColor="#0891b2" />
+            <linearGradient id="sbCyanGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#67fbf7" />
+              <stop offset="50%" stopColor="#4deeea" />
+              <stop offset="100%" stopColor="#22d3ee" />
             </linearGradient>
-            <linearGradient id="neonGlow" x1="0%" y1="100%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#0891b2" stopOpacity="0.4" />
-              <stop offset="100%" stopColor="#030712" stopOpacity="0.9" />
+            <linearGradient id="bellGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#5ef3eb" />
+              <stop offset="70%" stopColor="#38e6e2" />
+              <stop offset="100%" stopColor="#14b8a6" />
             </linearGradient>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="6" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
           </defs>
-          {/* Background circle / polygon */}
-          <rect width="100" height="100" rx="16" fill="#030712" />
-          
-          {/* Geometric grid lines inside */}
-          <path d="M 10 0 L 10 100 M 30 0 L 30 100 M 50 0 L 50 100 M 70 0 L 70 100 M 90 0 L 90 100" stroke="#0891b2" strokeWidth="0.5" strokeOpacity="0.2" />
-          <path d="M 0 10 L 100 10 M 0 30 L 100 30 M 0 50 L 100 50 M 0 70 L 100 70 M 0 90 L 100 90" stroke="#0891b2" strokeWidth="0.5" strokeOpacity="0.2" />
-          
-          {/* Bell base outline */}
+
+          {/* Background fill */}
+          <rect width="500" height="500" rx="32" fill="#030712" />
+
+          {/* === 1. TOP YOKE (Wooden Liberty Bell Beam) === */}
           <path
-            d="M 25 75 Q 25 35 50 22 Q 75 35 75 75 Z"
-            fill="url(#neonGlow)"
-            stroke="#0891b2"
-            strokeWidth="2"
+            d="M 102 215 L 102 180 L 112 180 L 112 165 L 132 165 L 132 125 L 145 125 C 175 125 210 100 250 100 C 290 100 325 125 355 125 L 368 125 L 368 165 L 388 165 L 388 180 L 398 180 L 398 215 L 350 215 C 345 185 330 160 250 160 C 170 160 155 185 150 215 Z"
+            fill="#23606d"
+            stroke="#123a43"
+            strokeWidth="6"
+            strokeLinejoin="round"
           />
-          
-          {/* SB Arrow - Futuristic Arrow pointing up/right */}
+          {/* Yoke Inner Accent Cutout */}
           <path
-            d="M 43 65 L 43 45 L 34 52 L 34 42 L 50 28 L 66 42 L 66 52 L 57 45 L 57 65 Z"
-            fill="url(#cyanGrad)"
-            stroke="#22d3ee"
-            strokeWidth="1.5"
+            d="M 165 155 C 190 135 220 128 250 128 C 280 128 310 135 335 155 C 315 145 285 140 250 140 C 215 140 185 145 165 155 Z"
+            fill="#0f2b32"
           />
-          
-          {/* Little tech accent circles */}
-          <circle cx="50" cy="15" r="3" fill="#22d3ee" />
-          <circle cx="50" cy="75" r="4.5" fill="#ef4444" /> {/* Red clapper alert */}
+
+          {/* === 2. BELL CROWN / LOOP === */}
+          <path
+            d="M 218 200 C 218 175 282 175 282 200 Z"
+            fill="#38e6e2"
+            stroke="#164e63"
+            strokeWidth="5"
+          />
+          <rect x="238" y="172" width="24" height="18" rx="4" fill="#030712" />
+
+          {/* === 3. BELL CLAPPER (Hangs at bottom) === */}
+          <path d="M 243 360 L 257 360 L 255 400 L 245 400 Z" fill="#23606d" />
+          <circle cx="250" cy="402" r="16" fill="#23606d" stroke="#123a43" strokeWidth="4" />
+
+          {/* === 4. MAIN LIBERTY BELL BODY === */}
+          <path
+            d="M 212 208 C 212 208 220 220 220 238 C 220 265 210 295 192 335 C 178 360 160 375 155 385 C 205 380 295 380 345 385 C 340 375 322 360 308 335 C 290 295 280 265 280 238 C 280 220 288 208 288 208 Z"
+            fill="url(#bellGrad)"
+          />
+
+          {/* Bell Sound Bow Rim Highlight & Shadow */}
+          <path
+            d="M 155 385 C 205 372 295 372 345 385 C 325 396 175 396 155 385 Z"
+            fill="#1ba89c"
+          />
+
+          {/* === 5. THE STYLIZED "S" (Left Wing / Glyph) === */}
+          <path
+            d="M 200 232 C 160 220 102 245 102 300 C 102 348 150 365 200 378 L 195 400 C 130 388 72 355 72 288 C 72 215 145 185 200 200 Z"
+            fill="url(#sbCyanGlow)"
+          />
+          {/* Top curve of the S */}
+          <path
+            d="M 198 226 C 145 226 104 250 104 290 C 120 260 160 252 200 252 Z"
+            fill="#8bfdf9"
+          />
+          {/* Bottom curve of the S */}
+          <path
+            d="M 102 355 C 130 385 180 398 235 392 L 230 370 C 185 378 140 368 120 342 Z"
+            fill="url(#sbCyanGlow)"
+          />
+
+          {/* === 6. THE STYLIZED "B" (Right Wing / Glyph) === */}
+          {/* Top Bowl of B */}
+          <path
+            d="M 298 226 C 345 226 385 240 385 272 C 385 298 355 308 315 310 C 365 312 400 325 400 360 C 400 398 345 406 295 400 L 300 378 C 335 382 375 376 375 354 C 375 334 340 328 300 328 L 300 310 C 335 310 362 302 362 282 C 362 265 335 252 298 252 Z"
+            fill="url(#sbCyanGlow)"
+          />
+
+          {/* === 7. THE ZIGZAG BULL MARKET ARROW (Crossing the Bell) === */}
+          {/* Main Zigzag Body */}
+          <path
+            d="M 215 310 L 275 250 L 315 285 L 382 195 L 358 190 L 418 168 L 402 232 L 388 208 L 322 298 L 278 262 L 222 320 Z"
+            fill="#15434e"
+            stroke="#0b242a"
+            strokeWidth="3"
+            strokeLinejoin="miter"
+          />
+          {/* Arrow Center Glow Stripe */}
+          <path
+            d="M 226 314 L 276 257 L 318 292 L 388 198"
+            stroke="#1b5a68"
+            strokeWidth="3"
+            strokeLinecap="round"
+          />
         </svg>
       </div>
 
@@ -113,4 +177,5 @@ export const StockBlocLogo: React.FC<StockBlocLogoProps> = ({
     </div>
   );
 };
+
 
